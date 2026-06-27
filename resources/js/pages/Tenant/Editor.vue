@@ -1,7 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
-import axios from 'axios';
 import draggable from 'vuedraggable';
 
 
@@ -55,15 +54,26 @@ const queueSave = () => {
     currentAbortController = new AbortController();
 
     try {
-      await axios.post(`/editor/save`, {
-        page_id: props.page.id,
-        draft_config: blocks.value
-      }, {
+      const response = await fetch(`/editor/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify({
+          page_id: props.page.id,
+          draft_config: blocks.value
+        }),
         signal: currentAbortController.signal
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       console.log('Canvas state synced securely.');
     } catch (error) {
-      if (axios.isCancel(error)) {
+      if (error.name === 'AbortError') {
         console.log('Stale request aborted safely.');
       } else {
         console.error('Save failed:', error);

@@ -12,11 +12,11 @@ class Tenant extends Model
 
     public function user(): BelongsTo
     {
-        return $table->belongsTo(User::class);
+        return $this->belongsTo(User::class);
     }
 
     public function pages(): HasMany
     {
-        return $table->hasMany(Page::class);
+        return $this->hasMany(Page::class);
     }
 }

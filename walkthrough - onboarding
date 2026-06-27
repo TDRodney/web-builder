@@ -1,0 +1,45 @@
+# Walkthrough - Multi-Tenant Authentication & Redirects
+
+Successfully set up the wildcard subdomain routing, automated tenant generation on registration, session domain wildcard cookies, and editor canvas page load/save logic.
+
+## Changes Made
+
+### Core Models & Controllers
+1. **[Controller.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/Controller.php)**: Restored as the standard base abstract controller.
+2. **[TenantEditorController.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantEditorController.php)**: Created to handle editor loading, checking tenant ownership, and lazy page initialization.
+3. **[User.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Models/User.php)**: Added a `tenant` relationship (`HasOne`) to check workspace ownership.
+4. **[Tenant.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Models/Tenant.php)**: Fixed relationship methods that incorrectly referenced `$table` instead of `$this`.
+5. **[Page.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Models/Page.php)**: Fixed relationships and added the missing `App\Models\Scopes\TenantScope` import.
+
+### Custom Subdomain Redirection Controllers
+1. **[CentralRegisteredUserController.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/Auth/CentralRegisteredUserController.php)**: 
+   - Handles guest user registration.
+   - Generates a unique, URL-safe tenant subdomain deterministically from the user's name.
+   - Automatically initializes a default `home` page with starting canvas components.
+   - Redirects to `http://{subdomain}.domain.localhost/editor` using `Inertia::location`.
+2. **[CentralAuthenticatedSessionController.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/Auth/CentralAuthenticatedSessionController.php)**:
+   - Validates user credentials.
+   - Implements standard security rate-limiting matching the test suite's expectations.
+   - Redirects to the tenant's editor subdomain if a workspace is present, or defaults to the central management panel.
+   - Destroys active sessions on sign out.
+
+### Routing & Configuration
+1. **[web.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/routes/web.php)**: Split routing using `Route::domain()` structures, assigning unique route names (`central.login` and `central.register`) to avoid Wayfinder TypeScript generated duplicates.
+2. **[.env](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/.env)** & **[.env.example](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/.env.example)**: Set `SESSION_DOMAIN=.domain.localhost` to enable cross-subdomain sessions, and mapped `CENTRAL_DOMAIN=domain.localhost`.
+
+### Frontend Pages
+1. **[CentralDashboard.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/pages/CentralDashboard.vue)**: Created a premium dark-mode central control page containing link shortcuts to access the editor canvas and view the public site.
+2. **[Editor.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/pages/Tenant/Editor.vue)**: Swapped Axios out for standard `fetch` requests with CSRF tokens to fit within Inertia v3's deprecations.
+
+---
+
+## Verification Results
+
+### Automated Tests
+* Enabled `RefreshDatabase` in `tests/Pest.php` to automate sqlite migration.
+* Modified the registration, login, and dashboard tests to target the new domain-aware routes and subdomain redirect assertions.
+* Successfully ran the Pest test suite:
+  ```bash
+  php artisan test --compact
+  ```
+  **Result:** `tests: 40, passed: 39, assertions: 135, skipped: 1` (All 39 feature tests successfully passed!)

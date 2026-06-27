@@ -15,11 +15,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tenant_id')->constrained()->onDelete('cascade');
             $table->string('slug')->default('home');
-            
+
             // Layout payloads stored as native JSON text
             $table->json('draft_config')->nullable();
             $table->json('published_config')->nullable();
-            
+
             $table->timestamps();
 
             // A tenant cannot have duplicate slugs (e.g., two 'about' pages)

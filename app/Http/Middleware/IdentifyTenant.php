@@ -2,8 +2,8 @@
 
 namespace App\Http\Middleware;
 
-use Closure;
 use App\Models\Tenant;
+use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -14,7 +14,7 @@ class IdentifyTenant
         // 1. Extract the route parameter named 'tenant'
         $subdomain = $request->route('tenant');
 
-        if (!$subdomain) {
+        if (! $subdomain) {
             abort(404, 'Tenant domain context missing.');
         }
 

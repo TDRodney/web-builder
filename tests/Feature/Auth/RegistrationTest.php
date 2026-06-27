@@ -7,13 +7,13 @@ beforeEach(function () {
 });
 
 test('registration screen can be rendered', function () {
-    $response = $this->get(route('register'));
+    $response = $this->get(route('central.register'));
 
     $response->assertOk();
 });
 
 test('new users can register', function () {
-    $response = $this->post(route('register.store'), [
+    $response = $this->post(route('central.register.store'), [
         'name' => 'Test User',
         'email' => 'test@example.com',
         'password' => 'password',
@@ -21,5 +21,5 @@ test('new users can register', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect('http://test-user.domain.localhost/editor');
 });

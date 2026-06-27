@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Page;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class TenantPageSaveController extends Controller
 {
@@ -20,20 +20,20 @@ class TenantPageSaveController extends Controller
         // 2. Strict Input Validation
         $validated = $request->validate([
             'page_id' => 'required|integer',
-            'draft_config' => 'required|array'
+            'draft_config' => 'required|array',
         ]);
 
         /**
          * Because Page has the Global TenantScope applied, the query compiled will be:
          * SELECT * FROM pages WHERE id = ? AND tenant_id = ?
-         * * If a user passes a page_id belonging to another tenant, 
+         * * If a user passes a page_id belonging to another tenant,
          * this will throw a 404 ModelNotFoundException, completely blocking the request.
          */
         $page = Page::findOrFail($validated['page_id']);
 
         // Overwrite the JSON payload seamlessly
         $page->update([
-            'draft_config' => $validated['draft_config']
+            'draft_config' => $validated['draft_config'],
         ]);
 
         return response()->json(['status' => 'success', 'message' => 'Draft saved safely.']);

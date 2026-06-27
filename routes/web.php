@@ -1,36 +1,52 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\CentralAuthenticatedSessionController;
+use App\Http\Controllers\Auth\CentralRegisteredUserController;
+use App\Http\Controllers\TenantEditorController;
+use App\Http\Controllers\TenantPageSaveController;
+use App\Http\Controllers\TenantPublicSiteController;
 use App\Http\Middleware\IdentifyTenant;
-
-
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 // 1. CENTRAL DOMAIN ROUTES (Dashboard, Landing Page, Billing)
 Route::domain(config('app.central_domain', 'domain.localhost'))->group(function () {
-    
+
     Route::get('/', function () {
-        return view('welcome'); // TODO : Landing page on main domain - nexura.com/editor
+        return Inertia::render('Welcome');
+    })->name('home');
+
+    Route::middleware('guest')->group(function () {
+        Route::get('/register', [CentralRegisteredUserController::class, 'create'])->name('central.register');
+        Route::post('/register', [CentralRegisteredUserController::class, 'store'])->name('central.register.store');
+        Route::get('/login', [CentralAuthenticatedSessionController::class, 'create'])->name('central.login');
+        Route::post('/login', [CentralAuthenticatedSessionController::class, 'store'])->name('central.login.store');
     });
 
-    // Central Auth & Management Dashboard (via Breeze)
+    Route::post('/logout', [CentralAuthenticatedSessionController::class, 'destroy'])->name('central.logout');
+
     Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/dashboard', function () {
-            return Inertia::render('CentralDashboard'); // TODO: anything dashboard view goes here.
-        })->name('dashboard'); // make CentralDashboard on vue pages
+            return Inertia::render('CentralDashboard', [
+                'tenant' => auth()->user()->tenant ? auth()->user()->tenant->only(['id', 'subdomain']) : null,
+            ]);
+        })->name('dashboard');
     });
+
+    require __DIR__.'/settings.php';
 });
 
 // 2. TENANT DOMAIN ROUTES (Public Sites & Live Editors)
-// We capture the dynamic {tenant} subdomain string directly via Laravel routing
-Route::domain('{tenant}.' . config('app.central_domain', 'domain.localhost'))
+Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
     ->middleware([IdentifyTenant::class])
     ->group(function () {
 
         // State 2: Public User visiting the live published site
-        Route::get('/', [TenantPageController::class, 'show'])->name('tenant.page.public');
+        Route::get('/', [TenantPublicSiteController::class, 'show'])->name('tenant.page.public');
 
         // State 1: Authed Tenant Owner modifying their workspace canvas
         Route::middleware(['auth'])->prefix('editor')->group(function () {
             Route::get('/', [TenantEditorController::class, 'edit'])->name('tenant.editor');
+            Route::post('/save', [TenantPageSaveController::class, 'store'])->name('tenant.page.save');
         });
-});
+    });
