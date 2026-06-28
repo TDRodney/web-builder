@@ -12,15 +12,17 @@ defineProps({
 
 const blockRegistry = inject('blockRegistry');
 const selectedBlock = inject('selectedBlock');
+const canvasSelection = inject('canvasSelection', null);
 const isDragging = inject('isDragging', null);
 const forceSave = inject('forceSave', null);
 
 const selectBlock = (node) => {
-  if (selectedBlock) {
+  if (canvasSelection) {
+    canvasSelection.selectNode(node);
+  } else if (selectedBlock) {
     selectedBlock.value = node;
   }
 };
-
 const handleDragStart = () => {
   if (isDragging) {
     isDragging.value = true;
@@ -41,10 +43,10 @@ const handleDragEnd = () => {
   <div 
     @click.stop="selectBlock(node)"
     :style="{ 
-      '--block-padding': (node.styles?.padding ?? 0) + 'px',
-      '--block-bg': node.styles?.backgroundColor ?? 'transparent'
+      padding: (node.styles?.padding ?? 0) + 'px',
+      backgroundColor: node.styles?.backgroundColor ?? 'transparent'
     }"
-    class="border-2 border-transparent hover:border-indigo-500 rounded-lg p-[var(--block-padding)] bg-[var(--block-bg)] transition-all relative group my-2 cursor-pointer"
+    class="border-2 border-transparent hover:border-indigo-500 rounded-lg transition-all relative group my-2 cursor-pointer"
   >
     <div class="drag-handle absolute top-2 left-2 opacity-0 group-hover:opacity-100 bg-indigo-600 text-white px-2 py-0.5 rounded text-xs cursor-move z-10">
       ::: Move

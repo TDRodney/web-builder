@@ -47,7 +47,12 @@ const selectedBlock = selectedNode;
 provide('selectedBlock', selectedBlock);
 provide('canvasSelection', {
   selectedNode,
-  selectNode: (node) => { selectedNode.value = node; }
+  selectNode: (node) => {
+    if (node && !node.styles) {
+      node.styles = { padding: 20, backgroundColor: '#ffffff' };
+    }
+    selectedNode.value = node;
+  }
 });
 
 const isDragging = ref(false);
@@ -117,18 +122,21 @@ const addBlock = (type) => {
       {
         id: `layoutcolumn-${Date.now()}-1`,
         type: 'LayoutColumn',
+        styles: { padding: 20, backgroundColor: '#ffffff' },
         propsData: { span: 1 },
         children: []
       },
       {
         id: `layoutcolumn-${Date.now()}-2`,
         type: 'LayoutColumn',
+        styles: { padding: 20, backgroundColor: '#ffffff' },
         propsData: { span: 1 },
         children: []
       },
       {
         id: `layoutcolumn-${Date.now()}-3`,
         type: 'LayoutColumn',
+        styles: { padding: 20, backgroundColor: '#ffffff' },
         propsData: { span: 1 },
         children: []
       }
