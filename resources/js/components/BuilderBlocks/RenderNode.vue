@@ -56,7 +56,6 @@ const handleDragEnd = () => {
       :content="node.content"
     >
       <draggable 
-        v-slot:default
         v-if="node.children"
         v-model="node.children" 
         item-key="id" 
