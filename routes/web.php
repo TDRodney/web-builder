@@ -48,6 +48,7 @@ Route::domain(config('app.central_domain', 'domain.localhost'))->group(function 
 
 // 2. TENANT DOMAIN ROUTES (Public Sites & Live Editors)
 Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
+    ->where(['tenant' => '^[a-z0-9-]+$'])
     ->middleware([IdentifyTenant::class])
     ->group(function () {
 
