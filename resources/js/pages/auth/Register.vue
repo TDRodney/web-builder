@@ -62,11 +62,31 @@ defineOptions({
             </div>
 
             <div class="grid gap-2">
+                <Label for="subdomain">Workspace URL</Label>
+                <div class="relative flex items-center">
+                    <Input
+                        id="subdomain"
+                        type="text"
+                        required
+                        :tabindex="3"
+                        autocomplete="off"
+                        name="subdomain"
+                        placeholder="your-workspace"
+                        class="pr-36"
+                    />
+                    <span class="absolute right-3 text-sm text-muted-foreground select-none pointer-events-none">
+                        .domain.localhost
+                    </span>
+                </div>
+                <InputError :message="errors.subdomain" />
+            </div>
+
+            <div class="grid gap-2">
                 <Label for="password">Password</Label>
                 <PasswordInput
                     id="password"
                     required
-                    :tabindex="3"
+                    :tabindex="4"
                     autocomplete="new-password"
                     name="password"
                     placeholder="Password"
@@ -80,7 +100,7 @@ defineOptions({
                 <PasswordInput
                     id="password_confirmation"
                     required
-                    :tabindex="4"
+                    :tabindex="5"
                     autocomplete="new-password"
                     name="password_confirmation"
                     placeholder="Confirm password"
@@ -92,7 +112,7 @@ defineOptions({
             <Button
                 type="submit"
                 class="mt-2 w-full"
-                tabindex="5"
+                tabindex="6"
                 :disabled="processing"
                 data-test="register-user-button"
             >
@@ -106,7 +126,7 @@ defineOptions({
             <TextLink
                 :href="login()"
                 class="underline underline-offset-4"
-                :tabindex="6"
+                :tabindex="7"
                 >Log in</TextLink
             >
         </div>

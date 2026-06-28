@@ -64,7 +64,9 @@ class CentralAuthenticatedSessionController extends Controller
         if ($tenant) {
             $scheme = $request->getScheme();
             $domain = config('app.central_domain', 'domain.localhost');
-            $url = "{$scheme}://{$tenant->subdomain}.{$domain}/editor";
+            $port = $request->getPort();
+            $portSuffix = ($port && ! in_array($port, [80, 443])) ? ":{$port}" : '';
+            $url = "{$scheme}://{$tenant->subdomain}.{$domain}{$portSuffix}/editor";
 
             return Inertia::location($url);
         }

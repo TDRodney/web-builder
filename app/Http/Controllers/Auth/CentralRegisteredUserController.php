@@ -8,7 +8,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -37,6 +36,20 @@ class CentralRegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Password::defaults()],
+            'subdomain' => [
+                'required',
+                'string',
+                'min:3',
+                'max:50',
+                'alpha_dash',
+                'unique:tenants,subdomain',
+                function ($attribute, $value, $fail) {
+                    $reserved = ['www', 'admin', 'api', 'mail', 'blog', 'domain', 'central', 'app', 'webmaster', 'host', 'system', 'editor'];
+                    if (in_array(strtolower($value), $reserved)) {
+                        $fail('This subdomain is reserved and cannot be used.');
+                    }
+                },
+            ],
         ]);
 
         $user = User::create([
@@ -45,23 +58,10 @@ class CentralRegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // Generate a unique subdomain slug based on name
-        $subdomain = Str::slug($request->name);
-        if (empty($subdomain)) {
-            $subdomain = 'user-'.$user->id;
-        }
-
-        $originalSubdomain = $subdomain;
-        $counter = 1;
-        while (Tenant::where('subdomain', $subdomain)->exists()) {
-            $subdomain = $originalSubdomain.'-'.$counter;
-            $counter++;
-        }
-
         // Create Tenant record
         $tenant = Tenant::create([
             'user_id' => $user->id,
-            'subdomain' => $subdomain,
+            'subdomain' => strtolower($request->subdomain),
         ]);
 
         // Create default home page for the tenant
@@ -90,7 +90,9 @@ class CentralRegisteredUserController extends Controller
         // Redirect to the tenant workspace editor (cross-domain)
         $scheme = $request->getScheme();
         $domain = config('app.central_domain', 'domain.localhost');
-        $url = "{$scheme}://{$tenant->subdomain}.{$domain}/editor";
+        $port = $request->getPort();
+        $portSuffix = ($port && ! in_array($port, [80, 443])) ? ":{$port}" : '';
+        $url = "{$scheme}://{$tenant->subdomain}.{$domain}{$portSuffix}/editor";
 
         return Inertia::location($url);
     }

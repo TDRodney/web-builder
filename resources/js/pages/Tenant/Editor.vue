@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, useHttp } from '@inertiajs/vue3';
 import draggable from 'vuedraggable';
 
 
@@ -35,9 +35,11 @@ const blocks = ref(props.page.draft_config || [
 
 const selectedBlock = ref(null);
 
-
-// Track the active network request controller
-let currentAbortController = null;
+// Initialize Inertia v3 stand-alone HTTP request hook
+const http = useHttp({
+  page_id: props.page.id,
+  draft_config: blocks.value
+});
 
 // 2. Debounced, Race-Condition-Safe Auto-Save Engine
 let saveTimeout = null;
@@ -45,45 +47,27 @@ const queueSave = () => {
   clearTimeout(saveTimeout);
   
   saveTimeout = setTimeout(async () => {
-    // If a previous save is still flying over the wire, abort it instantly!
-    if (currentAbortController) {
-      currentAbortController.abort();
-    }
-    
-    // Create a fresh controller for this new request
-    currentAbortController = new AbortController();
-
     try {
-      const response = await fetch(`/editor/save`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+      await http.post(`/editor/save`, {
+        onHttpException(response) {
+          console.warn('Background auto-save failed silently:', response.status);
+          return false; // Prevent Inertia from redirecting/crashing the page
         },
-        body: JSON.stringify({
-          page_id: props.page.id,
-          draft_config: blocks.value
-        }),
-        signal: currentAbortController.signal
+        onNetworkError(error) {
+          console.warn('Network error during auto-save:', error.message);
+          return false;
+        }
       });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
       console.log('Canvas state synced securely.');
     } catch (error) {
-      if (error.name === 'AbortError') {
-        console.log('Stale request aborted safely.');
-      } else {
-        console.error('Save failed:', error);
-      }
+      console.error('Save failed:', error);
     }
   }, 400); // Wait for 400ms of user inactivity before sending
 };
 
 // Deep watch the layout array. Any drag or slider change triggers a safe save.
-watch(blocks, () => {
+watch(blocks, (newBlocks) => {
+  http.draft_config = newBlocks;
   queueSave();
 }, { deep: true });
 </script>
