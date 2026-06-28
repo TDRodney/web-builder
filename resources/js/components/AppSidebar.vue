@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { usePage, Link } from '@inertiajs/vue3';
 import { BookOpen, FolderGit2, LayoutGrid } from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
@@ -16,11 +16,23 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
+/*import CentralDashboard from '@/pages/CentralDashboard.vue';*/
+
+const page = usePage();
+
+
+const getDashboardUrl = () => {
+    const props = page.props as any;
+    const subdomain = props.tenant?.subdomain;
+    
+    return subdomain ? dashboard({ tenant: subdomain }) : '/dashboard';
+};
+
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        href: dashboard(),
+        href: '#',
         icon: LayoutGrid,
     },
 ];
@@ -45,7 +57,7 @@ const footerNavItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link :href="dashboard()">
+                        <Link :href="getDashboardUrl()">
                             <AppLogo />
                         </Link>
                     </SidebarMenuButton>
@@ -54,7 +66,7 @@ const footerNavItems: NavItem[] = [
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain :items="mainNavItems" />
+           <NavMain :items="mainNavItems.map(item => item.title === 'Dashboard' ? { ...item, href: getDashboardUrl() } : item)" />
         </SidebarContent>
 
         <SidebarFooter>

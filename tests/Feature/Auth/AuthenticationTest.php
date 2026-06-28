@@ -20,7 +20,7 @@ test('users can authenticate using the login screen and redirect to central dash
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect(route('central.dashboard', absolute: false));
 });
 
 test('users can authenticate and redirect to tenant subdomain editor if they have a tenant', function () {

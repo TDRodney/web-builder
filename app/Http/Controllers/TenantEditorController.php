@@ -30,9 +30,18 @@ class TenantEditorController extends Controller
             ]
         );
 
+        $port = request()->getPort();
+        $portSuffix = ($port && ! in_array($port, [80, 443])) ? ":{$port}" : '';
+        $centralHost = config('app.central_domain', 'domain.localhost').$portSuffix;
+        $protocol = request()->getScheme();
+
         return Inertia::render('Tenant/Editor', [
             'tenant' => $tenant->only(['id', 'subdomain']),
             'page' => $homePage->only(['id', 'slug', 'draft_config']),
+            'urls' => [
+                'dashboard' => '/dashboard',
+                'logout' => "{$protocol}://{$centralHost}/logout",
+            ],
         ]);
     }
 }

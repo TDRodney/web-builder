@@ -107,7 +107,7 @@ class CentralAuthenticatedSessionController extends Controller
             return Inertia::location($url);
         }
 
-        return redirect()->intended(route('dashboard'));
+        return redirect()->intended(route('central.dashboard'));
     }
 
     /**
