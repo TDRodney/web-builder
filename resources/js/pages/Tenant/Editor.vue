@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, provide, nextTick } from 'vue';
 import { useHttp, Link } from '@inertiajs/vue3';
 import draggable from 'vuedraggable';
 
@@ -10,6 +10,8 @@ const blockRegistry = {
   HeroBlock,
   FeatureBlock
 };
+
+provide('blockRegistry', blockRegistry);
 
 const props = defineProps({
   tenant: Object,
@@ -34,6 +36,50 @@ const blocks = ref(props.page.draft_config || [
 ]);
 
 const selectedBlock = ref(null);
+provide('selectedBlock', selectedBlock);
+
+// History management state
+const undoStack = ref([]);
+const redoStack = ref([]);
+let isTraveling = false;
+
+const snapshotState = () => {
+  return JSON.parse(JSON.stringify(blocks.value));
+};
+
+let lastSavedState = snapshotState();
+
+const undo = () => {
+  if (undoStack.value.length === 0) {
+    return;
+  }
+  isTraveling = true;
+  redoStack.value.push(snapshotState());
+  const prevState = undoStack.value.pop();
+  blocks.value = prevState;
+  lastSavedState = JSON.parse(JSON.stringify(prevState));
+  http.draft_config = prevState;
+  queueSave();
+  nextTick(() => {
+    isTraveling = false;
+  });
+};
+
+const redo = () => {
+  if (redoStack.value.length === 0) {
+    return;
+  }
+  isTraveling = true;
+  undoStack.value.push(snapshotState());
+  const nextState = redoStack.value.pop();
+  blocks.value = nextState;
+  lastSavedState = JSON.parse(JSON.stringify(nextState));
+  http.draft_config = nextState;
+  queueSave();
+  nextTick(() => {
+    isTraveling = false;
+  });
+};
 
 // Initialize Inertia v3 stand-alone HTTP request hook
 const http = useHttp({
@@ -76,6 +122,13 @@ const forceSave = async () => {
 
 // Deep watch the layout array. Any drag or slider change triggers a safe save.
 watch(blocks, (newBlocks) => {
+  if (isTraveling) {
+    return;
+  }
+  undoStack.value.push(lastSavedState);
+  redoStack.value = [];
+  lastSavedState = snapshotState();
+
   http.draft_config = newBlocks;
   queueSave();
 }, { deep: true });
@@ -150,6 +203,23 @@ const publishPage = async () => {
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
           <h3 class="text-base font-bold text-white">Content Inspector</h3>
           <span class="text-indigo-400 text-[10px] font-semibold uppercase tracking-widest bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">Canvas</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button 
+            @click="undo" 
+            :disabled="undoStack.length === 0"
+            class="flex-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 text-white text-xs font-semibold py-1.5 px-3 rounded-lg transition-all cursor-pointer border border-slate-700"
+          >
+            Undo
+          </button>
+          <button 
+            @click="redo" 
+            :disabled="redoStack.length === 0"
+            class="flex-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 text-white text-xs font-semibold py-1.5 px-3 rounded-lg transition-all cursor-pointer border border-slate-700"
+          >
+            Redo
+          </button>
         </div>
         
         <div v-if="selectedBlock" class="space-y-4">
