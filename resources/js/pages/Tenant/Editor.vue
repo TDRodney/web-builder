@@ -42,8 +42,13 @@ const blocks = ref(props.page.draft_config || [
   }
 ]);
 
-const selectedBlock = ref(null);
+const selectedNode = ref(null);
+const selectedBlock = selectedNode;
 provide('selectedBlock', selectedBlock);
+provide('canvasSelection', {
+  selectedNode,
+  selectNode: (node) => { selectedNode.value = node; }
+});
 
 const isDragging = ref(false);
 provide('isDragging', isDragging);
