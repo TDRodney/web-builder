@@ -195,3 +195,68 @@ test('sub-pages are accessible via public wildcard slug routing', function () {
     $response->assertOk();
     $response->assertSee('About Us page content');
 });
+
+test('tenant routes block invalid subdomain formats', function () {
+    $user = User::factory()->create();
+    $tenant = Tenant::create([
+        'user_id' => $user->id,
+        'subdomain' => 'invalid_subdomain',
+    ]);
+
+    // Send request to invalid subdomain
+    $response = $this->get('http://invalid_subdomain.domain.localhost/');
+
+    // The route domain pattern constraint ->where(['tenant' => '^[a-z0-9-]+$']) should prevent it from routing, resulting in 404
+    $response->assertNotFound();
+});
+
+test('tenant owners can save and render recursive ast configuration', function () {
+    $user = User::factory()->create();
+    $tenant = Tenant::create([
+        'user_id' => $user->id,
+        'subdomain' => 'test-tenant',
+    ]);
+
+    $page = $tenant->pages()->create([
+        'slug' => 'home',
+        'draft_config' => [],
+        'published_config' => [],
+    ]);
+
+    $this->actingAs($user);
+
+    $recursiveData = [
+        [
+            'id' => 'grid-1',
+            'type' => 'LayoutGrid',
+            'propsData' => ['columns' => 3, 'gap' => '1rem', 'padding' => '1rem'],
+            'children' => [
+                [
+                    'id' => 'column-1',
+                    'type' => 'LayoutColumn',
+                    'propsData' => ['span' => 2],
+                    'children' => [
+                        [
+                            'id' => 'text-1',
+                            'type' => 'AtomicText',
+                            'propsData' => ['content' => 'Deeply nested text content', 'fontSize' => '18px', 'color' => '#ff0000'],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ];
+
+    // Post save request to tenant editor save
+    $response = $this->postJson('http://test-tenant.domain.localhost/editor/save', [
+        'page_id' => $page->id,
+        'draft_config' => $recursiveData,
+    ]);
+
+    $response->assertOk();
+    $response->assertJson(['status' => 'success']);
+
+    // Check database
+    $page->refresh();
+    expect($page->draft_config)->toBe($recursiveData);
+});
