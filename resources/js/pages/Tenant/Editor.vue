@@ -5,6 +5,7 @@ import draggable from 'vuedraggable';
 
 import HeroBlock from '@/components/BuilderBlocks/HeroBlock.vue';
 import FeatureBlock from '@/components/BuilderBlocks/FeatureBlock.vue';
+import RenderNode from '@/components/BuilderBlocks/RenderNode.vue';
 
 const blockRegistry = {
   HeroBlock,
@@ -37,6 +38,9 @@ const blocks = ref(props.page.draft_config || [
 
 const selectedBlock = ref(null);
 provide('selectedBlock', selectedBlock);
+
+const isDragging = ref(false);
+provide('isDragging', isDragging);
 
 // History management state
 const undoStack = ref([]);
@@ -108,6 +112,9 @@ const saveCanvasState = async () => {
 
 let saveTimeout = null;
 const queueSave = () => {
+  if (isDragging.value) {
+    return;
+  }
   clearTimeout(saveTimeout);
   saveTimeout = setTimeout(saveCanvasState, 400); // Wait for 400ms of user inactivity before sending
 };
@@ -119,6 +126,7 @@ const forceSave = async () => {
   }
   await saveCanvasState();
 };
+provide('forceSave', forceSave);
 
 // Deep watch the layout array. Any drag or slider change triggers a safe save.
 watch(blocks, (newBlocks) => {
@@ -170,27 +178,17 @@ const publishPage = async () => {
     <div class="flex-1 overflow-y-auto p-8 bg-slate-950 h-screen">
       <div class="max-w-4xl mx-auto bg-white text-slate-900 rounded-xl shadow-2xl min-h-[600px] p-6 canvas-runtime">
         
-        <draggable v-model="blocks" item-key="id" handle=".drag-handle" ghost-class="opacity-40">
+        <draggable 
+          v-model="blocks" 
+          item-key="id" 
+          handle=".drag-handle" 
+          ghost-class="opacity-40"
+          :group="{ name: 'canvas-tree' }"
+          @start="isDragging = true"
+          @end="isDragging = false; forceSave();"
+        >
           <template #item="{ element }">
-            <div 
-              @click="selectedBlock = element"
-              :style="{ 
-                '--block-padding': element.styles.padding + 'px',
-                '--block-bg': element.styles.backgroundColor 
-              }"
-              class="border-2 border-transparent hover:border-indigo-500 rounded-lg p-[var(--block-padding)] bg-[var(--block-bg)] transition-all relative group my-2 cursor-pointer"
-            >
-              <div class="drag-handle absolute top-2 left-2 opacity-0 group-hover:opacity-100 bg-indigo-600 text-white px-2 py-0.5 rounded text-xs cursor-move z-10">
-                ::: Move
-              </div>
-              
-              <component 
-                :is="blockRegistry[element.type]" 
-                :styles="element.styles"
-                :content="element.content"
-              />
-
-            </div>
+            <RenderNode :node="element" />
           </template>
         </draggable>
 
