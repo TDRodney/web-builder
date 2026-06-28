@@ -91,6 +91,79 @@ const redo = () => {
   });
 };
 
+const addBlock = (type) => {
+  const newBlock = {
+    id: `${type.toLowerCase()}-${Date.now()}`,
+    type: type,
+    styles: { padding: 20, backgroundColor: '#ffffff' },
+    content: {},
+    propsData: {}
+  };
+
+  if (type === 'HeroBlock') {
+    newBlock.content = { headline: 'New Hero Heading', subheadline: 'Add your description here' };
+  } else if (type === 'FeatureBlock') {
+    newBlock.content = { title: 'New Feature Item', body: 'Feature description details go here.' };
+  } else if (type === 'AtomicText') {
+    newBlock.propsData = { content: 'Atomic Text Element', fontSize: '16px', color: '#0f172a' };
+  } else if (type === 'LayoutGrid') {
+    newBlock.propsData = { columns: 3, gap: '1rem', padding: '1rem' };
+    newBlock.children = [
+      {
+        id: `layoutcolumn-${Date.now()}-1`,
+        type: 'LayoutColumn',
+        propsData: { span: 1 },
+        children: []
+      },
+      {
+        id: `layoutcolumn-${Date.now()}-2`,
+        type: 'LayoutColumn',
+        propsData: { span: 1 },
+        children: []
+      },
+      {
+        id: `layoutcolumn-${Date.now()}-3`,
+        type: 'LayoutColumn',
+        propsData: { span: 1 },
+        children: []
+      }
+    ];
+  } else if (type === 'LayoutColumn') {
+    newBlock.propsData = { span: 1 };
+    newBlock.children = [];
+  }
+
+  // If a block with children is selected, add it as a child. Otherwise add to root blocks.
+  if (selectedBlock.value && selectedBlock.value.children) {
+    if (!Array.isArray(selectedBlock.value.children)) {
+      selectedBlock.value.children = [];
+    }
+    selectedBlock.value.children.push(newBlock);
+  } else {
+    blocks.value.push(newBlock);
+  }
+};
+
+const deleteSelectedBlock = () => {
+  if (!selectedBlock.value) return;
+
+  const removeNode = (nodes, id) => {
+    for (let i = 0; i < nodes.length; i++) {
+      if (nodes[i].id === id) {
+        nodes.splice(i, 1);
+        return true;
+      }
+      if (nodes[i].children && removeNode(nodes[i].children, id)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  removeNode(blocks.value, selectedBlock.value.id);
+  selectedBlock.value = null;
+};
+
 // Initialize Inertia v3 stand-alone HTTP request hook
 const http = useHttp({
   page_id: props.page.id,
@@ -249,8 +322,65 @@ const publishPage = async () => {
             <label class="text-xs font-semibold text-slate-400 block mb-1">Feature Title</label>
             <input type="text" v-model="selectedBlock.content.title" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
           </div>
+
+          <div v-if="selectedBlock.type === 'AtomicText'">
+            <label class="text-xs font-semibold text-slate-400 block mb-1">Text Content</label>
+            <input type="text" v-model="selectedBlock.propsData.content" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
+            
+            <label class="text-xs font-semibold text-slate-400 block mt-3 mb-1">Font Size (e.g. 18px or 1.25rem)</label>
+            <input type="text" v-model="selectedBlock.propsData.fontSize" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
+            
+            <label class="text-xs font-semibold text-slate-400 block mt-3 mb-1">Color (Hex or CSS Var like --color-name)</label>
+            <input type="text" v-model="selectedBlock.propsData.color" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
+          </div>
+
+          <div v-if="selectedBlock.type === 'LayoutGrid'">
+            <label class="text-xs font-semibold text-slate-400 block mb-1">Columns Count</label>
+            <input type="number" min="1" max="12" v-model.number="selectedBlock.propsData.columns" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
+            
+            <label class="text-xs font-semibold text-slate-400 block mt-3 mb-1">Gap Size (e.g. 1rem or 16px)</label>
+            <input type="text" v-model="selectedBlock.propsData.gap" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
+            
+            <label class="text-xs font-semibold text-slate-400 block mt-3 mb-1">Padding (e.g. 1rem or 20px)</label>
+            <input type="text" v-model="selectedBlock.propsData.padding" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
+          </div>
+
+          <div v-if="selectedBlock.type === 'LayoutColumn'">
+            <label class="text-xs font-semibold text-slate-400 block mb-1">Grid Column Span (1-12) or Flex Basis (e.g. 50%)</label>
+            <input type="text" v-model="selectedBlock.propsData.span" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
+          </div>
+
+          <button 
+            @click="deleteSelectedBlock" 
+            class="w-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold py-2 px-3 rounded-lg transition-all cursor-pointer border-0 mt-4"
+          >
+            Delete Block
+          </button>
         </div>
         <p v-else class="text-sm text-slate-500 mt-4 italic">Click a block on the canvas to inspect it.</p>
+
+        <!-- Block Library -->
+        <div class="border-t border-slate-800 pt-4 mt-4">
+          <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Add Block</h4>
+          <div class="grid grid-cols-2 gap-2">
+            <button @click="addBlock('HeroBlock')" class="bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 text-xs py-2 px-2.5 rounded font-medium transition-colors cursor-pointer">
+              + Hero
+            </button>
+            <button @click="addBlock('FeatureBlock')" class="bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 text-xs py-2 px-2.5 rounded font-medium transition-colors cursor-pointer">
+              + Feature
+            </button>
+            <button @click="addBlock('LayoutGrid')" class="bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 text-xs py-2 px-2.5 rounded font-medium transition-colors cursor-pointer">
+              + Grid Layout
+            </button>
+            <button @click="addBlock('LayoutColumn')" class="bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 text-xs py-2 px-2.5 rounded font-medium transition-colors cursor-pointer">
+              + Column
+            </button>
+            <button @click="addBlock('AtomicText')" class="col-span-2 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 text-xs py-2 px-2.5 rounded font-medium transition-colors cursor-pointer">
+              + Atomic Text
+            </button>
+          </div>
+          <p class="text-[10px] text-slate-500 mt-2 italic">Tip: If a Layout container is selected, the new block is nested inside it.</p>
+        </div>
       </div>
 
       <!-- Action Panel at the Bottom of Sidebar -->
