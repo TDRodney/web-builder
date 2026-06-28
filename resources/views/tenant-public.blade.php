@@ -10,15 +10,7 @@
 
     <main class="max-w-4xl mx-auto my-12 p-6 bg-white rounded-xl shadow">
         @foreach($blocks as $block)
-            
-            @if($block['type'] === 'HeroBlock')
-                <div class="text-center" style="padding: {{ $block['styles']['padding'] }}px; background-color: {{ $block['styles']['backgroundColor'] }};">
-                    <h1 class="text-4xl font-black">
-                        {{ $block['content']['headline'] ?? 'Default Headline' }}
-                    </h1>
-                </div>
-            @endif
-
+            @include('partials.block', ['block' => $block])
         @endforeach
     </main>
 
