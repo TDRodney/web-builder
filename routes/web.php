@@ -19,8 +19,8 @@ Route::domain(config('app.central_domain', 'domain.localhost'))->group(function 
     Route::middleware('guest')->group(function () {
         Route::get('/register', [CentralRegisteredUserController::class, 'create'])->name('central.register');
         Route::post('/register', [CentralRegisteredUserController::class, 'store'])->name('central.register.store');
-        Route::get('/login', [CentralAuthenticatedSessionController::class, 'create'])->name('central.login');
-        Route::post('/login', [CentralAuthenticatedSessionController::class, 'store'])->name('central.login.store');
+        Route::get('/login', [CentralAuthenticatedSessionController::class, 'create'])->name('login');
+        Route::post('/login', [CentralAuthenticatedSessionController::class, 'store'])->name('login.store');
     });
 
     Route::post('/logout', [CentralAuthenticatedSessionController::class, 'destroy'])->name('central.logout');
@@ -41,12 +41,15 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
     ->middleware([IdentifyTenant::class])
     ->group(function () {
 
-        // State 2: Public User visiting the live published site
-        Route::get('/', [TenantPublicSiteController::class, 'show'])->name('tenant.page.public');
-
         // State 1: Authed Tenant Owner modifying their workspace canvas
         Route::middleware(['auth'])->prefix('editor')->group(function () {
             Route::get('/', [TenantEditorController::class, 'edit'])->name('tenant.editor');
             Route::post('/save', [TenantPageSaveController::class, 'store'])->name('tenant.page.save');
+            Route::post('/publish', [TenantPageSaveController::class, 'publish'])->name('tenant.page.publish');
         });
+
+        // State 2: Public User visiting the live published site
+        Route::get('/{slug?}', [TenantPublicSiteController::class, 'show'])
+            ->where('slug', '.*')
+            ->name('tenant.page.public');
     });

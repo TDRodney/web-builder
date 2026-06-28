@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Fortify\Features;
 
 test('login screen can be rendered', function () {
-    $response = $this->get(route('central.login'));
+    $response = $this->get(route('login'));
 
     $response->assertOk();
 });
@@ -14,7 +14,7 @@ test('login screen can be rendered', function () {
 test('users can authenticate using the login screen and redirect to central dashboard if no tenant', function () {
     $user = User::factory()->create();
 
-    $response = $this->post(route('central.login.store'), [
+    $response = $this->post(route('login.store'), [
         'email' => $user->email,
         'password' => 'password',
     ]);
@@ -30,7 +30,7 @@ test('users can authenticate and redirect to tenant subdomain editor if they hav
         'subdomain' => 'test-user',
     ]);
 
-    $response = $this->post(route('central.login.store'), [
+    $response = $this->post(route('login.store'), [
         'email' => $user->email,
         'password' => 'password',
     ]);
@@ -49,7 +49,7 @@ test('users with two factor enabled are redirected to two factor challenge', fun
 
     $user = User::factory()->withTwoFactor()->create();
 
-    $response = $this->post(route('central.login'), [
+    $response = $this->post(route('login.store'), [
         'email' => $user->email,
         'password' => 'password',
     ]);
@@ -62,7 +62,7 @@ test('users with two factor enabled are redirected to two factor challenge', fun
 test('users can not authenticate with invalid password', function () {
     $user = User::factory()->create();
 
-    $this->post(route('central.login.store'), [
+    $this->post(route('login.store'), [
         'email' => $user->email,
         'password' => 'wrong-password',
     ]);
@@ -85,7 +85,7 @@ test('users are rate limited', function () {
 
     RateLimiter::increment(md5('login'.implode('|', [$user->email, '127.0.0.1'])), amount: 5);
 
-    $response = $this->post(route('central.login.store'), [
+    $response = $this->post(route('login.store'), [
         'email' => $user->email,
         'password' => 'wrong-password',
     ]);

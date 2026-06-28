@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Page;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,7 +16,7 @@ class TenantEditorController extends Controller
         }
 
         // Because of our TenantScope, this only searches pages belonging to this tenant.
-        $homePage = Page::firstOrCreate(
+        $homePage = $tenant->pages()->firstOrCreate(
             ['slug' => 'home'],
             [
                 'draft_config' => [

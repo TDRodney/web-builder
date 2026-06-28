@@ -88,7 +88,7 @@ return [
 
     'prefix' => '',
 
-    'domain' => null,
+    'domain' => config('app.central_domain', 'domain.localhost'),
 
     /*
     |--------------------------------------------------------------------------

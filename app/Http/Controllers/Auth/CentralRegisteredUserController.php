@@ -40,9 +40,9 @@ class CentralRegisteredUserController extends Controller
                 'required',
                 'string',
                 'min:3',
-                'max:50',
-                'alpha_dash',
+                'max:63',
                 'unique:tenants,subdomain',
+                'regex:/^[a-z0-9-]+$/i',
                 function ($attribute, $value, $fail) {
                     $reserved = ['www', 'admin', 'api', 'mail', 'blog', 'domain', 'central', 'app', 'webmaster', 'host', 'system', 'editor'];
                     if (in_array(strtolower($value), $reserved)) {

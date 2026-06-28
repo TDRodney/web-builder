@@ -38,4 +38,19 @@ class TenantPageSaveController extends Controller
 
         return response()->json(['status' => 'success', 'message' => 'Draft saved safely.']);
     }
+
+    public function publish(Request $request): JsonResponse
+    {
+        $tenant = app('currentTenant');
+        if (auth()->id() !== $tenant->user_id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        $validated = $request->validate(['page_id' => 'required|integer']);
+
+        // Auto-scoped via TenantScope
+        $page = Page::findOrFail($validated['page_id']);
+        $page->update(['published_config' => $page->draft_config]);
+
+        return response()->json(['status' => 'success', 'message' => 'Site published successfully!']);
+    }
 }

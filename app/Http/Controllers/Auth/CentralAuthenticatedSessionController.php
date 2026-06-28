@@ -10,7 +10,9 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Laravel\Fortify\Events\TwoFactorAuthenticationChallenged;
 use Laravel\Fortify\Features;
+use Laravel\Fortify\Fortify;
 use Symfony\Component\HttpFoundation\Response;
 
 class CentralAuthenticatedSessionController extends Controller
@@ -47,7 +49,11 @@ class CentralAuthenticatedSessionController extends Controller
             ]));
         }
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        // Validate credentials before logging in, checking if 2FA is needed
+        $provider = Auth::guard('web')->getProvider();
+        $user = $provider->retrieveByCredentials($credentials);
+
+        if (! $user || ! $provider->validateCredentials($user, $credentials)) {
             RateLimiter::hit($throttleKey, 60);
 
             throw ValidationException::withMessages([
@@ -55,10 +61,40 @@ class CentralAuthenticatedSessionController extends Controller
             ]);
         }
 
+        // Check if user has Two-Factor Authentication enabled
+        if (Features::enabled(Features::twoFactorAuthentication())) {
+            $hasTwoFactor = false;
+
+            if ($user->two_factor_secret) {
+                if (Fortify::confirmsTwoFactorAuthentication()) {
+                    if (! is_null($user->two_factor_confirmed_at)) {
+                        $hasTwoFactor = true;
+                    }
+                } else {
+                    $hasTwoFactor = true;
+                }
+            }
+
+            if ($hasTwoFactor) {
+                $request->session()->put([
+                    'login.id' => $user->getKey(),
+                    'login.remember' => $request->boolean('remember'),
+                ]);
+
+                event(new TwoFactorAuthenticationChallenged($user));
+
+                return $request->wantsJson()
+                    ? response()->json(['two_factor' => true])
+                    : redirect()->route('two-factor.login');
+            }
+        }
+
+        // Proceed with normal login
+        Auth::login($user, $request->boolean('remember'));
+
         RateLimiter::clear($throttleKey);
         $request->session()->regenerate();
 
-        $user = Auth::user();
         $tenant = $user->tenant;
 
         if ($tenant) {
