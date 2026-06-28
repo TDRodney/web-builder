@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{$tenant->name}}'s Website</title> <!-- $tenant is resolved by the global middleware TODO: change this to the actual tenant SITE TITLE-->
+    <title>{{$tenant->name}}</title> 
     @vite(['resources/css/app.css'])
 </head>
 <body class="bg-slate-50 text-slate-900">

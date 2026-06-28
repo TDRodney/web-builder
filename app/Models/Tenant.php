@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Tenant extends Model
 {
@@ -12,11 +13,19 @@ class Tenant extends Model
 
     public function user(): BelongsTo
     {
-        return $table->belongsTo(User::class);
+        return $this->belongsTo(User::class);
     }
 
     public function pages(): HasMany
     {
-        return $table->hasMany(Page::class);
+        return $this->hasMany(Page::class);
+    }
+
+    /**
+     * Get the name of the tenant (defaults to owner user's workspace name).
+     */
+    public function getNameAttribute(): string
+    {
+        return Str::title(str_replace(['-', '_'], ' ', $this->subdomain));
     }
 }

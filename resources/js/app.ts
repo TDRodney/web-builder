@@ -1,9 +1,19 @@
-import { createInertiaApp } from '@inertiajs/vue3';
+import { createInertiaApp, router } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
+
+// Add dynamic port mapping for local development subdomain routing
+if (typeof window !== 'undefined') {
+    router.on('before', (event) => {
+        const url = event.detail.visit.url;
+        if (window.location.port && (url.hostname === 'domain.localhost' || url.hostname.endsWith('.domain.localhost')) && !url.port) {
+            url.port = window.location.port;
+        }
+    });
+}
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 

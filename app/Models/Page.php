@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -11,9 +12,8 @@ class Page extends Model
 
     protected static function booted(): void
     {
-        static::addGlobalScope(new TenantScope());
+        static::addGlobalScope(new TenantScope);
     }
-
 
     /**
      * Get the attributes that should be cast.
@@ -29,6 +29,6 @@ class Page extends Model
 
     public function tenant(): BelongsTo
     {
-        return $table->belongsTo(Tenant::class);
+        return $this->belongsTo(Tenant::class);
     }
 }
