@@ -6,10 +6,16 @@ import draggable from 'vuedraggable';
 import HeroBlock from '@/components/BuilderBlocks/HeroBlock.vue';
 import FeatureBlock from '@/components/BuilderBlocks/FeatureBlock.vue';
 import RenderNode from '@/components/BuilderBlocks/RenderNode.vue';
+import LayoutGrid from '@/components/BuilderBlocks/LayoutGrid.vue';
+import LayoutColumn from '@/components/BuilderBlocks/LayoutColumn.vue';
+import AtomicText from '@/components/BuilderBlocks/AtomicText.vue';
 
 const blockRegistry = {
   HeroBlock,
-  FeatureBlock
+  FeatureBlock,
+  LayoutGrid,
+  LayoutColumn,
+  AtomicText
 };
 
 provide('blockRegistry', blockRegistry);
