@@ -65,7 +65,7 @@ const handleDragEnd = () => {
         item-key="id" 
         handle=".drag-handle" 
         ghost-class="opacity-40"
-        :group="{ name: 'canvas-tree' }"
+        :group="{ name: 'canvas-tree', pull: true, put: true }"
         @start="handleDragStart"
         @end="handleDragEnd"
         class="min-h-[50px] w-full"
