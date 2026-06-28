@@ -7,13 +7,13 @@ beforeEach(function () {
 });
 
 test('registration screen can be rendered', function () {
-    $response = $this->get(route('central.register'));
+    $response = $this->get(route('register'));
 
     $response->assertOk();
 });
 
 test('new users can register', function () {
-    $response = $this->post(route('central.register.store'), [
+    $response = $this->post(route('register.store'), [
         'name' => 'Test User',
         'email' => 'test@example.com',
         'subdomain' => 'test-user',
@@ -22,11 +22,13 @@ test('new users can register', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect('http://test-user.domain.localhost/editor');
+    $port = parse_url(config('app.url'), PHP_URL_PORT);
+    $portSuffix = ($port && ! in_array($port, [80, 443])) ? ":{$port}" : '';
+    $response->assertRedirect("http://test-user.domain.localhost{$portSuffix}/editor");
 });
 
 test('new users cannot register with a reserved subdomain', function () {
-    $response = $this->post(route('central.register.store'), [
+    $response = $this->post(route('register.store'), [
         'name' => 'Test User',
         'email' => 'test@example.com',
         'subdomain' => 'admin',
@@ -38,7 +40,7 @@ test('new users cannot register with a reserved subdomain', function () {
 });
 
 test('new users cannot register with underscores in subdomain', function () {
-    $response = $this->post(route('central.register.store'), [
+    $response = $this->post(route('register.store'), [
         'name' => 'Test User',
         'email' => 'test@example.com',
         'subdomain' => 'test_user',

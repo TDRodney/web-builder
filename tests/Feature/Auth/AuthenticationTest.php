@@ -36,7 +36,9 @@ test('users can authenticate and redirect to tenant subdomain editor if they hav
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect('http://test-user.domain.localhost/editor');
+    $port = parse_url(config('app.url'), PHP_URL_PORT);
+    $portSuffix = ($port && ! in_array($port, [80, 443])) ? ":{$port}" : '';
+    $response->assertRedirect("http://test-user.domain.localhost{$portSuffix}/editor");
 });
 
 test('users with two factor enabled are redirected to two factor challenge', function () {
@@ -73,7 +75,7 @@ test('users can not authenticate with invalid password', function () {
 test('users can logout', function () {
     $user = User::factory()->create();
 
-    $response = $this->actingAs($user)->post(route('central.logout'));
+    $response = $this->actingAs($user)->post(route('logout'));
 
     $response->assertRedirect(route('home'));
 

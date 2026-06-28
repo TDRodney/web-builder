@@ -17,13 +17,13 @@ Route::domain(config('app.central_domain', 'domain.localhost'))->group(function 
     })->name('home');
 
     Route::middleware('guest')->group(function () {
-        Route::get('/register', [CentralRegisteredUserController::class, 'create'])->name('central.register');
-        Route::post('/register', [CentralRegisteredUserController::class, 'store'])->name('central.register.store');
+        Route::get('/register', [CentralRegisteredUserController::class, 'create'])->name('register');
+        Route::post('/register', [CentralRegisteredUserController::class, 'store'])->name('register.store');
         Route::get('/login', [CentralAuthenticatedSessionController::class, 'create'])->name('login');
         Route::post('/login', [CentralAuthenticatedSessionController::class, 'store'])->name('login.store');
     });
 
-    Route::post('/logout', [CentralAuthenticatedSessionController::class, 'destroy'])->name('central.logout');
+    Route::post('/logout', [CentralAuthenticatedSessionController::class, 'destroy'])->name('logout');
 
     Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/dashboard', function () {
