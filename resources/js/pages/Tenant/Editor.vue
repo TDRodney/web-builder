@@ -275,7 +275,7 @@ const publishPage = async () => {
           item-key="id" 
           handle=".drag-handle" 
           ghost-class="opacity-40"
-          :group="{ name: 'canvas-tree' }"
+          :group="{ name: 'canvas-tree', pull: true, put: true }"
           @start="isDragging = true"
           @end="isDragging = false; forceSave();"
         >
