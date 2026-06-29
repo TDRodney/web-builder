@@ -55,7 +55,7 @@ const handleDragEnd = () => {
     <component 
       :is="blockRegistry[node.type]" 
       :node-id="node.id"
-      :props-data="node.propsData"
+      :props="node.props"
       :styles="node.styles"
       :content="node.content"
     >

@@ -6,7 +6,7 @@ const props = defineProps({
     type: String,
     required: true
   },
-  propsData: {
+  props: {
     type: Object,
     default: () => ({
       columns: 3,
@@ -26,11 +26,11 @@ const isEmpty = computed(() => {
 });
 
 const computedStyles = computed(() => {
-  const columns = props.propsData?.columns ?? 3;
-  const gapValue = props.propsData?.gap ?? '1rem';
-  const paddingValue = props.propsData?.padding ?? '1rem';
-  const widthValue = props.propsData?.width;
-  const heightValue = props.propsData?.height;
+  const columns = props.props?.columns ?? 3;
+  const gapValue = props.props?.gap ?? '1rem';
+  const paddingValue = props.props?.padding ?? '1rem';
+  const widthValue = props.props?.width;
+  const heightValue = props.props?.height;
 
   return {
     '--grid-columns': columns,

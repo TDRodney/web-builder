@@ -6,7 +6,7 @@ const props = defineProps({
     type: String,
     required: true
   },
-  propsData: {
+  props: {
     type: Object,
     default: () => ({})
   }
@@ -15,14 +15,14 @@ const props = defineProps({
 const computedStyles = computed(() => {
   const styles = {};
   
-  if (props.propsData?.fontSize) {
-    styles.fontSize = typeof props.propsData.fontSize === 'number' 
-      ? `${props.propsData.fontSize}px` 
-      : props.propsData.fontSize;
+  if (props.props?.fontSize) {
+    styles.fontSize = typeof props.props.fontSize === 'number' 
+      ? `${props.props.fontSize}px` 
+      : props.props.fontSize;
   }
   
-  if (props.propsData?.color) {
-    const colorVal = props.propsData.color;
+  if (props.props?.color) {
+    const colorVal = props.props.color;
     styles.color = String(colorVal).startsWith('--') ? `var(${colorVal})` : colorVal;
   }
   
@@ -36,6 +36,6 @@ const computedStyles = computed(() => {
     :style="computedStyles"
     class="focus:ring-2 focus:ring-indigo-500 focus:outline-none hover:ring-1 hover:ring-indigo-300 rounded p-1 transition-all cursor-pointer"
   >
-    {{ propsData?.content ?? '' }}
+    {{ props?.content ?? '' }}
   </div>
 </template>

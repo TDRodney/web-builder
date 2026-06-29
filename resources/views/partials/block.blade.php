@@ -20,24 +20,24 @@
         </div>
     @elseif($block['type'] === 'AtomicText')
         @php
-            $fontSize = $block['propsData']['fontSize'] ?? '';
+            $fontSize = $block['props']['fontSize'] ?? '';
             $fontStyle = $fontSize ? (is_numeric($fontSize) ? "font-size: {$fontSize}px;" : "font-size: {$fontSize};") : '';
-            $color = $block['propsData']['color'] ?? '';
+            $color = $block['props']['color'] ?? '';
             $colorStyle = $color ? (str_starts_with($color, '--') ? "color: var({$color});" : "color: {$color};") : '';
         @endphp
         <div style="{{ $fontStyle }} {{ $colorStyle }}">
-            {{ $block['propsData']['content'] ?? '' }}
+            {{ $block['props']['content'] ?? '' }}
         </div>
     @elseif($block['type'] === 'LayoutGrid')
         @php
-            $columns = $block['propsData']['columns'] ?? 3;
-            $gapVal = $block['propsData']['gap'] ?? '1rem';
+            $columns = $block['props']['columns'] ?? 3;
+            $gapVal = $block['props']['gap'] ?? '1rem';
             $gap = is_numeric($gapVal) ? "{$gapVal}px" : $gapVal;
-            $gridPaddingVal = $block['propsData']['padding'] ?? '1rem';
+            $gridPaddingVal = $block['props']['padding'] ?? '1rem';
             $gridPadding = is_numeric($gridPaddingVal) ? "{$gridPaddingVal}px" : $gridPaddingVal;
-            $widthVal = $block['propsData']['width'] ?? 'auto';
+            $widthVal = $block['props']['width'] ?? 'auto';
             $width = is_numeric($widthVal) ? "{$widthVal}px" : $widthVal;
-            $heightVal = $block['propsData']['height'] ?? 'auto';
+            $heightVal = $block['props']['height'] ?? 'auto';
             $height = is_numeric($heightVal) ? "{$heightVal}px" : $heightVal;
         @endphp
         <div style="display: grid; grid-template-columns: repeat({{ $columns }}, minmax(0, 1fr)); gap: {{ $gap }}; padding: {{ $gridPadding }}; width: {{ $width }}; height: {{ $height }};">
@@ -49,7 +49,7 @@
         </div>
     @elseif($block['type'] === 'LayoutColumn')
         @php
-            $span = $block['propsData']['span'] ?? '';
+            $span = $block['props']['span'] ?? '';
             $gridColumn = 'auto';
             $flexBasis = 'auto';
             if ($span) {
@@ -59,13 +59,13 @@
                     $gridColumn = "span {$span} / span {$span}";
                 }
             }
-            $colPaddingVal = $block['propsData']['padding'] ?? '0px';
+            $colPaddingVal = $block['props']['padding'] ?? '0px';
             $colPadding = is_numeric($colPaddingVal) ? "{$colPaddingVal}px" : $colPaddingVal;
-            $colWidthVal = $block['propsData']['width'] ?? 'auto';
+            $colWidthVal = $block['props']['width'] ?? 'auto';
             $colWidth = is_numeric($colWidthVal) ? "{$colWidthVal}px" : $colWidthVal;
-            $colHeightVal = $block['propsData']['height'] ?? 'auto';
+            $colHeightVal = $block['props']['height'] ?? 'auto';
             $colHeight = is_numeric($colHeightVal) ? "{$colHeightVal}px" : $colHeightVal;
-            $colGapVal = $block['propsData']['gap'] ?? '0px';
+            $colGapVal = $block['props']['gap'] ?? '0px';
             $colGap = is_numeric($colGapVal) ? "{$colGapVal}px" : $colGapVal;
         @endphp
         <div style="grid-column: {{ $gridColumn }}; flex-basis: {{ $flexBasis }}; padding: {{ $colPadding }}; width: {{ $colWidth }}; height: {{ $colHeight }}; gap: {{ $colGap }};" class="w-full min-h-[50px]">

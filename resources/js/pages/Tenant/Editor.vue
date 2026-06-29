@@ -107,7 +107,7 @@ const addBlock = (type) => {
     type: type,
     styles: { padding: 20, backgroundColor: '#ffffff' },
     content: {},
-    propsData: {}
+    props: {}
   };
 
   if (type === 'HeroBlock') {
@@ -115,34 +115,34 @@ const addBlock = (type) => {
   } else if (type === 'FeatureBlock') {
     newBlock.content = { title: 'New Feature Item', body: 'Feature description details go here.' };
   } else if (type === 'AtomicText') {
-    newBlock.propsData = { content: 'Atomic Text Element', fontSize: '16px', color: '#0f172a' };
+    newBlock.props = { content: 'Atomic Text Element', fontSize: '16px', color: '#0f172a' };
   } else if (type === 'LayoutGrid') {
-    newBlock.propsData = { columns: 3, gap: '1rem', padding: '1rem' };
+    newBlock.props = { columns: 3, gap: '1rem', padding: '1rem' };
     newBlock.children = [
       {
         id: `layoutcolumn-${Date.now()}-1`,
         type: 'LayoutColumn',
         styles: { padding: 20, backgroundColor: '#ffffff' },
-        propsData: { span: 1 },
+        props: { span: 1 },
         children: []
       },
       {
         id: `layoutcolumn-${Date.now()}-2`,
         type: 'LayoutColumn',
         styles: { padding: 20, backgroundColor: '#ffffff' },
-        propsData: { span: 1 },
+        props: { span: 1 },
         children: []
       },
       {
         id: `layoutcolumn-${Date.now()}-3`,
         type: 'LayoutColumn',
         styles: { padding: 20, backgroundColor: '#ffffff' },
-        propsData: { span: 1 },
+        props: { span: 1 },
         children: []
       }
     ];
   } else if (type === 'LayoutColumn') {
-    newBlock.propsData = { span: 1 };
+    newBlock.props = { span: 1 };
     newBlock.children = [];
   }
 
@@ -338,29 +338,29 @@ const publishPage = async () => {
 
           <div v-if="selectedBlock.type === 'AtomicText'">
             <label class="text-xs font-semibold text-slate-400 block mb-1">Text Content</label>
-            <input type="text" v-model="selectedBlock.propsData.content" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
+            <input type="text" v-model="selectedBlock.props.content" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
             
             <label class="text-xs font-semibold text-slate-400 block mt-3 mb-1">Font Size (e.g. 18px or 1.25rem)</label>
-            <input type="text" v-model="selectedBlock.propsData.fontSize" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
+            <input type="text" v-model="selectedBlock.props.fontSize" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
             
             <label class="text-xs font-semibold text-slate-400 block mt-3 mb-1">Color (Hex or CSS Var like --color-name)</label>
-            <input type="text" v-model="selectedBlock.propsData.color" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
+            <input type="text" v-model="selectedBlock.props.color" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
           </div>
 
           <div v-if="selectedBlock.type === 'LayoutGrid'">
             <label class="text-xs font-semibold text-slate-400 block mb-1">Columns Count</label>
-            <input type="number" min="1" max="12" v-model.number="selectedBlock.propsData.columns" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
+            <input type="number" min="1" max="12" v-model.number="selectedBlock.props.columns" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
             
             <label class="text-xs font-semibold text-slate-400 block mt-3 mb-1">Gap Size (e.g. 1rem or 16px)</label>
-            <input type="text" v-model="selectedBlock.propsData.gap" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
+            <input type="text" v-model="selectedBlock.props.gap" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
             
             <label class="text-xs font-semibold text-slate-400 block mt-3 mb-1">Padding (e.g. 1rem or 20px)</label>
-            <input type="text" v-model="selectedBlock.propsData.padding" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
+            <input type="text" v-model="selectedBlock.props.padding" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
           </div>
 
           <div v-if="selectedBlock.type === 'LayoutColumn'">
             <label class="text-xs font-semibold text-slate-400 block mb-1">Grid Column Span (1-12) or Flex Basis (e.g. 50%)</label>
-            <input type="text" v-model="selectedBlock.propsData.span" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
+            <input type="text" v-model="selectedBlock.props.span" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
           </div>
 
           <button 

@@ -6,18 +6,18 @@ const props = defineProps({
     type: String,
     required: true
   },
-  propsData: {
+  props: {
     type: Object,
     default: () => ({})
   }
 });
 
 const computedStyles = computed(() => {
-  const span = props.propsData?.span;
-  const paddingValue = props.propsData?.padding;
-  const widthValue = props.propsData?.width;
-  const heightValue = props.propsData?.height;
-  const gapValue = props.propsData?.gap;
+  const span = props.props?.span;
+  const paddingValue = props.props?.padding;
+  const widthValue = props.props?.width;
+  const heightValue = props.props?.height;
+  const gapValue = props.props?.gap;
   const styles = {};
 
   if (span) {
