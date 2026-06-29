@@ -54,12 +54,23 @@ const computedStyles = computed(() => {
 </script>
 
 <template>
-  <div :style="computedStyles" class="layout-column-container w-full min-h-[50px]">
-    <slot />
+  <div class="layout-column-wrapper">
+    <div :style="computedStyles" class="layout-column-container w-full min-h-[50px]">
+      <slot />
+    </div>
   </div>
 </template>
 
 <style scoped>
+.layout-column-wrapper {
+  --column-grid-span: auto !important;
+  --column-flex-basis: auto !important;
+  --column-padding: 0px !important;
+  --column-width: auto !important;
+  --column-height: auto !important;
+  --column-gap: 0px !important;
+}
+
 .layout-column-container {
   grid-column: var(--column-grid-span, auto);
   flex-basis: var(--column-flex-basis, auto);

@@ -43,16 +43,24 @@ const computedStyles = computed(() => {
 </script>
 
 <template>
-  <div 
-    class="layout-grid-container min-h-[50px] transition-all"
-    :class="{ 'border-2 border-dashed border-slate-300 rounded-lg p-6 bg-slate-50/50': isEmpty }"
-    :style="computedStyles"
-  >
-    <slot />
+  <div class="layout-grid-wrapper">
+    <div 
+      class="layout-grid-container min-h-[50px] transition-all"
+      :class="{ 'border-2 border-dashed border-slate-300 rounded-lg p-6 bg-slate-50/50': isEmpty }"
+      :style="computedStyles"
+    >
+      <slot />
+    </div>
   </div>
 </template>
 
 <style scoped>
+.layout-grid-wrapper {
+  --grid-columns: 1 !important;
+  --grid-gap: 0px !important;
+  --grid-padding: 0px !important;
+}
+
 .layout-grid-container {
   display: grid;
   grid-template-columns: repeat(var(--grid-columns, 3), minmax(0, 1fr));

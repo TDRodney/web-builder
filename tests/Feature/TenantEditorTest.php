@@ -229,17 +229,17 @@ test('tenant owners can save and render recursive ast configuration', function (
         [
             'id' => 'grid-1',
             'type' => 'LayoutGrid',
-            'propsData' => ['columns' => 3, 'gap' => '1rem', 'padding' => '1rem'],
+            'props' => ['columns' => 3, 'gap' => '1rem', 'padding' => '1rem'],
             'children' => [
                 [
                     'id' => 'column-1',
                     'type' => 'LayoutColumn',
-                    'propsData' => ['span' => 2],
+                    'props' => ['span' => 2],
                     'children' => [
                         [
                             'id' => 'text-1',
                             'type' => 'AtomicText',
-                            'propsData' => ['content' => 'Deeply nested text content', 'fontSize' => '18px', 'color' => '#ff0000'],
+                            'props' => ['content' => 'Deeply nested text content', 'fontSize' => '18px', 'color' => '#ff0000'],
                         ],
                     ],
                 ],
