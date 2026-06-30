@@ -1,3 +1,11 @@
+<script>
+export default {
+  blueprint: {
+    props: { content: 'Atomic Text Element', fontSize: '16px', color: '#0f172a' }
+  }
+}
+</script>
+
 <script setup>
 import { computed } from 'vue';
 
@@ -36,6 +44,6 @@ const computedStyles = computed(() => {
     :style="computedStyles"
     class="focus:ring-2 focus:ring-indigo-500 focus:outline-none hover:ring-1 hover:ring-indigo-300 rounded p-1 transition-all cursor-pointer"
   >
-    {{ props?.content ?? '' }}
+    {{ props.props?.content ?? '' }}
   </div>
 </template>
