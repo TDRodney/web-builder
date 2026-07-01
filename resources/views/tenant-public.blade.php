@@ -8,7 +8,7 @@
 </head>
 <body class="bg-slate-50 text-slate-900">
 
-    <main class="max-w-4xl mx-auto my-12 p-6 bg-white rounded-xl shadow">
+    <main class="mx-auto my-12 p-6 bg-white rounded-xl shadow">
         @foreach($blocks as $block)
             @include('partials.block', ['block' => $block])
         @endforeach

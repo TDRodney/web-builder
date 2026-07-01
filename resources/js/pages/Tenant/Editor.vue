@@ -1,6 +1,6 @@
 <script setup>
 import { useHttp, Link } from '@inertiajs/vue3';
-import { ref, watch, provide, nextTick } from 'vue';
+import { ref, computed, watch, provide, nextTick } from 'vue';
 import draggable from 'vuedraggable';
 
 import AtomicText from '@/components/BuilderBlocks/AtomicText.vue';
@@ -58,6 +58,16 @@ provide('canvasSelection', {
 
 const isDragging = ref(false);
 provide('isDragging', isDragging);
+
+const viewMode = ref('desktop');
+
+const canvasMaxWidth = computed(() => {
+  switch (viewMode.value) {
+    case 'mobile': return '375px';
+    case 'tablet': return '768px';
+    default: return 'none';
+  }
+});
 
 // History management state
 const undoStack = ref([]);
@@ -298,7 +308,7 @@ const publishPage = async () => {
   <div class="flex h-screen bg-slate-900 text-slate-100 font-sans overflow-hidden">
     
     <div class="flex-1 overflow-y-auto p-8 bg-slate-950 h-screen">
-      <div class="max-w-4xl mx-auto bg-white text-slate-900 rounded-xl shadow-2xl min-h-[600px] p-6 canvas-runtime">
+      <div class="mx-auto bg-white text-slate-900 rounded-xl shadow-2xl min-h-[600px] p-6 canvas-runtime" :style="{ maxWidth: canvasMaxWidth }">
         
         <draggable 
           v-model="blocks" 
@@ -323,6 +333,12 @@ const publishPage = async () => {
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
           <h3 class="text-base font-bold text-white">Content Inspector</h3>
           <span class="text-indigo-400 text-[10px] font-semibold uppercase tracking-widest bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">Canvas</span>
+        </div>
+
+        <div class="flex items-center gap-2 bg-slate-800 rounded-lg p-0.5">
+          <button v-for="mode in ['desktop', 'tablet', 'mobile']" :key="mode" @click="viewMode = mode" :class="viewMode === mode ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-400 hover:text-white'" class="flex-1 text-xs font-semibold py-1.5 px-3 rounded-md transition-all cursor-pointer border-0 capitalize">
+            {{ mode === 'desktop' ? 'Desktop' : mode === 'tablet' ? 'Tablet' : 'Mobile' }}
+          </button>
         </div>
 
         <div class="flex items-center gap-2">
@@ -468,7 +484,7 @@ const publishPage = async () => {
 <style scoped>
 .canvas-runtime {
   position: relative;
-  /* Contain styles and prevent overflow bleeding */
+  container-type: inline-size;
   contain: layout style;
   box-sizing: border-box;
 }

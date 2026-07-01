@@ -12,7 +12,7 @@ TODO:
 
 <template>
   <div class="text-center">
-    <h1 class="text-4xl font-extrabold tracking-tight sm:text-6xl text-slate-900">
+    <h1 class="text-4xl font-extrabold tracking-tight @md:text-6xl text-slate-900">
       {{ content?.headline || 'Click to Edit Headline' }}
     </h1>
     <p class="mt-4 text-xl text-slate-500">
