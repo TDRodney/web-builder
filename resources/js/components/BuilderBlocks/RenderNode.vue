@@ -44,8 +44,8 @@ const handleDragEnd = () => {
   <div 
     @click.stop="selectBlock(node)"
     :style="{ 
-      padding: (node.styles?.padding ?? 0) + 'px',
-      backgroundColor: node.styles?.backgroundColor ?? 'transparent'
+      padding: (node.props?.padding ?? 0) + 'px',
+      backgroundColor: node.props?.backgroundColor ?? 'transparent'
     }"
     class="border-2 border-transparent hover:border-indigo-500 rounded-lg relative group my-2 cursor-pointer transition-[border-color,background-color]"
   >
@@ -57,8 +57,6 @@ const handleDragEnd = () => {
       :is="blockRegistry[node.type]" 
       :node-id="node.id"
       :props="node.props"
-      :styles="node.styles"
-      :content="node.content"
     >
       <draggable 
         v-if="node.children"
