@@ -47,7 +47,7 @@ const handleDragEnd = () => {
       padding: (node.styles?.padding ?? 0) + 'px',
       backgroundColor: node.styles?.backgroundColor ?? 'transparent'
     }"
-    class="border-2 border-transparent hover:border-indigo-500 rounded-lg transition-all relative group my-2 cursor-pointer"
+    class="border-2 border-transparent hover:border-indigo-500 rounded-lg relative group my-2 cursor-pointer transition-[border-color,background-color]"
   >
     <div class="drag-handle absolute top-2 left-2 opacity-0 group-hover:opacity-100 bg-indigo-600 text-white px-2 py-0.5 rounded text-xs cursor-move z-10">
       ::: Move
@@ -65,7 +65,7 @@ const handleDragEnd = () => {
         v-model="node.children" 
         item-key="id" 
         handle=".drag-handle" 
-        ghost-class="opacity-40"
+        ghost-class="drag-ghost"
         :group="{ name: 'canvas-tree', pull: true, put: true }"
         @start="handleDragStart"
         @end="handleDragEnd"

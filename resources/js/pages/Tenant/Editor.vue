@@ -304,7 +304,7 @@ const publishPage = async () => {
           v-model="blocks" 
           item-key="id" 
           handle=".drag-handle" 
-          ghost-class="opacity-40"
+          ghost-class="drag-ghost"
           :group="{ name: 'canvas-tree', pull: true, put: true }"
           @start="isDragging = true"
           @end="isDragging = false; forceSave();"
@@ -480,5 +480,12 @@ const publishPage = async () => {
 
 .canvas-runtime :deep(.p-\[var\(--block-padding\)\]) {
   padding: var(--block-padding) !important;
+}
+</style>
+
+<style>
+.drag-ghost {
+  opacity: 0.4;
+  transition: none !important;
 }
 </style>
