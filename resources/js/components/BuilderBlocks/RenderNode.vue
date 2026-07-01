@@ -33,6 +33,7 @@ const handleDragEnd = () => {
   if (isDragging) {
     isDragging.value = false;
   }
+
   if (forceSave) {
     forceSave();
   }

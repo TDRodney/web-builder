@@ -18,10 +18,14 @@ const props = defineProps({
 
 const slots = useSlots();
 const isEmpty = computed(() => {
-  if (!slots.default) return true;
+  if (!slots.default) {
+return true;
+}
+
   const children = slots.default().filter(c => {
     return c.type && c.type.toString() !== 'Symbol(Comment)' && c.type.toString() !== 'Symbol(v-cmt)';
   });
+
   return children.length === 0;
 });
 

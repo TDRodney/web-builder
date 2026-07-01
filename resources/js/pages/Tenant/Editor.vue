@@ -1,14 +1,14 @@
 <script setup>
-import { ref, watch, provide, nextTick } from 'vue';
 import { useHttp, Link } from '@inertiajs/vue3';
+import { ref, watch, provide, nextTick } from 'vue';
 import draggable from 'vuedraggable';
 
-import HeroBlock from '@/components/BuilderBlocks/HeroBlock.vue';
-import FeatureBlock from '@/components/BuilderBlocks/FeatureBlock.vue';
-import RenderNode from '@/components/BuilderBlocks/RenderNode.vue';
-import LayoutGrid from '@/components/BuilderBlocks/LayoutGrid.vue';
-import LayoutColumn from '@/components/BuilderBlocks/LayoutColumn.vue';
 import AtomicText from '@/components/BuilderBlocks/AtomicText.vue';
+import FeatureBlock from '@/components/BuilderBlocks/FeatureBlock.vue';
+import HeroBlock from '@/components/BuilderBlocks/HeroBlock.vue';
+import LayoutColumn from '@/components/BuilderBlocks/LayoutColumn.vue';
+import LayoutGrid from '@/components/BuilderBlocks/LayoutGrid.vue';
+import RenderNode from '@/components/BuilderBlocks/RenderNode.vue';
 
 const blockRegistry = {
   HeroBlock,
@@ -51,6 +51,7 @@ provide('canvasSelection', {
     if (node && !node.styles) {
       node.styles = { padding: 20, backgroundColor: '#ffffff' };
     }
+
     selectedNode.value = node;
   }
 });
@@ -73,6 +74,7 @@ const undo = () => {
   if (undoStack.value.length === 0) {
     return;
   }
+
   isTraveling = true;
   redoStack.value.push(snapshotState());
   const prevState = undoStack.value.pop();
@@ -89,6 +91,7 @@ const redo = () => {
   if (redoStack.value.length === 0) {
     return;
   }
+
   isTraveling = true;
   undoStack.value.push(snapshotState());
   const nextState = redoStack.value.pop();
@@ -109,6 +112,8 @@ const addBlock = (type) => {
     content: {},
     props: {}
   };
+
+  // TODO - Create a block registry to manage block structures
 
   if (type === 'HeroBlock') {
     newBlock.content = { headline: 'New Hero Heading', subheadline: 'Add your description here' };
@@ -151,6 +156,7 @@ const addBlock = (type) => {
     if (!Array.isArray(selectedBlock.value.children)) {
       selectedBlock.value.children = [];
     }
+
     selectedBlock.value.children.push(newBlock);
   } else {
     blocks.value.push(newBlock);
@@ -158,18 +164,23 @@ const addBlock = (type) => {
 };
 
 const deleteSelectedBlock = () => {
-  if (!selectedBlock.value) return;
+  if (!selectedBlock.value) {
+return;
+}
 
   const removeNode = (nodes, id) => {
     for (let i = 0; i < nodes.length; i++) {
       if (nodes[i].id === id) {
         nodes.splice(i, 1);
+
         return true;
       }
+
       if (nodes[i].children && removeNode(nodes[i].children, id)) {
         return true;
       }
     }
+
     return false;
   };
 
@@ -184,21 +195,35 @@ const http = useHttp({
 });
 
 // 2. Debounced, Race-Condition-Safe Auto-Save Engine
+let currentSaveVisit = null;
+
 const saveCanvasState = async () => {
+  if (currentSaveVisit) {
+    currentSaveVisit.cancel();
+  }
+
   try {
-    await http.post(`/editor/save`, {
+    currentSaveVisit = http.post(`/editor/save`, {
+      onCancel: () => {
+        console.log('Previous background save aborted cleanly.');
+      },
       onHttpException(response) {
         console.warn('Background auto-save failed silently:', response.status);
-        return false; // Prevent Inertia from redirecting/crashing the page
+
+        return false;
       },
       onNetworkError(error) {
         console.warn('Network error during auto-save:', error.message);
+
         return false;
       }
     });
-    console.log('Canvas state synced securely.');
-  } catch (error) {
-    console.error('Save failed:', error);
+
+    await currentSaveVisit;
+  } catch (_error) {
+    // Absorb native Inertia cancellation states
+  } finally {
+    currentSaveVisit = null;
   }
 };
 
@@ -207,6 +232,7 @@ const queueSave = () => {
   if (isDragging.value) {
     return;
   }
+
   clearTimeout(saveTimeout);
   saveTimeout = setTimeout(saveCanvasState, 400); // Wait for 400ms of user inactivity before sending
 };
@@ -216,6 +242,7 @@ const forceSave = async () => {
     clearTimeout(saveTimeout);
     saveTimeout = null;
   }
+
   await saveCanvasState();
 };
 provide('forceSave', forceSave);
@@ -225,6 +252,7 @@ watch(blocks, (newBlocks) => {
   if (isTraveling) {
     return;
   }
+
   undoStack.value.push(lastSavedState);
   redoStack.value = [];
   lastSavedState = snapshotState();
@@ -244,12 +272,14 @@ const publishHttp = useHttp({
 const publishPage = async () => {
   isPublishing.value = true;
   publishMessage.value = '';
+
   try {
     // 1. Flush any pending draft changes immediately before publishing
     await forceSave();
 
     // 2. Perform the publish promotion
     const res = await publishHttp.post(`/editor/publish`);
+
     if (res && res.status === 'success') {
       publishMessage.value = res.message || 'Site published successfully!';
       setTimeout(() => {
