@@ -31,14 +31,14 @@ const blocks = ref(props.page.draft_config || [
   { 
     id: 'hero-' + Date.now(), 
     type: 'HeroBlock', 
-    styles: { padding: 40, backgroundColor: '#ffffff' },
-    content: { headline: 'Welcome to your Site', subheadline: 'Built with our engine.' }
+    props: { padding: 40, backgroundColor: '#ffffff', headline: 'Welcome to your Site', subheadline: 'Built with our engine.' },
+    children: []
   },
   { 
     id: 'feat-' + Date.now(), 
     type: 'FeatureBlock', 
-    styles: { padding: 20, backgroundColor: '#f8fafc' },
-    content: { title: 'Blazing Fast Performance', body: '60fps reactive customization rendering.' }
+    props: { padding: 20, backgroundColor: '#f8fafc', title: 'Blazing Fast Performance', body: '60fps reactive customization rendering.' },
+    children: []
   }
 ]);
 
@@ -48,8 +48,8 @@ provide('selectedBlock', selectedBlock);
 provide('canvasSelection', {
   selectedNode,
   selectNode: (node) => {
-    if (node && !node.styles) {
-      node.styles = { padding: 20, backgroundColor: '#ffffff' };
+    if (node && !node.props) {
+      node.props = { padding: 20, backgroundColor: '#ffffff' };
     }
 
     selectedNode.value = node;
@@ -118,47 +118,40 @@ const addBlock = (type) => {
   const newBlock = {
     id: `${type.toLowerCase()}-${Date.now()}`,
     type: type,
-    styles: { padding: 20, backgroundColor: '#ffffff' },
-    content: {},
-    props: {}
+    props: { padding: 20, backgroundColor: '#ffffff' },
+    children: []
   };
 
-  // TODO - Create a block registry to manage block structures
-
   if (type === 'HeroBlock') {
-    newBlock.content = { headline: 'New Hero Heading', subheadline: 'Add your description here' };
+    Object.assign(newBlock.props, { headline: 'New Hero Heading', subheadline: 'Add your description here' });
   } else if (type === 'FeatureBlock') {
-    newBlock.content = { title: 'New Feature Item', body: 'Feature description details go here.' };
+    Object.assign(newBlock.props, { title: 'New Feature Item', body: 'Feature description details go here.' });
   } else if (type === 'AtomicText') {
-    newBlock.props = { content: 'Atomic Text Element', fontSize: '16px', color: '#0f172a' };
+    Object.assign(newBlock.props, { content: 'Atomic Text Element', fontSize: '16px', color: '#0f172a' });
   } else if (type === 'LayoutGrid') {
-    newBlock.props = { columns: 3, gap: '1rem', padding: '1rem' };
+    Object.assign(newBlock.props, { columns: 3, gap: '1rem', padding: '1rem' });
     newBlock.children = [
       {
         id: `layoutcolumn-${Date.now()}-1`,
         type: 'LayoutColumn',
-        styles: { padding: 20, backgroundColor: '#ffffff' },
-        props: { span: 1 },
+        props: { padding: 20, backgroundColor: '#ffffff', span: 1 },
         children: []
       },
       {
         id: `layoutcolumn-${Date.now()}-2`,
         type: 'LayoutColumn',
-        styles: { padding: 20, backgroundColor: '#ffffff' },
-        props: { span: 1 },
+        props: { padding: 20, backgroundColor: '#ffffff', span: 1 },
         children: []
       },
       {
         id: `layoutcolumn-${Date.now()}-3`,
         type: 'LayoutColumn',
-        styles: { padding: 20, backgroundColor: '#ffffff' },
-        props: { span: 1 },
+        props: { padding: 20, backgroundColor: '#ffffff', span: 1 },
         children: []
       }
     ];
   } else if (type === 'LayoutColumn') {
-    newBlock.props = { span: 1 };
-    newBlock.children = [];
+    Object.assign(newBlock.props, { span: 1 });
   }
 
   // If a block with children is selected, add it as a child. Otherwise add to root blocks.
@@ -360,26 +353,26 @@ const publishPage = async () => {
         
         <div v-if="selectedBlock" class="space-y-4">
           <div>
-            <label class="text-xs font-semibold text-slate-400 block mb-1">Padding: {{ selectedBlock.styles.padding }}px</label>
-            <input type="range" min="10" max="150" v-model.number="selectedBlock.styles.padding" class="w-full accent-indigo-500"/>
+            <label class="text-xs font-semibold text-slate-400 block mb-1">Padding: {{ selectedBlock.props.padding }}px</label>
+            <input type="range" min="10" max="150" v-model.number="selectedBlock.props.padding" class="w-full accent-indigo-500"/>
           </div>
 
           <div>
             <label class="text-xs font-semibold text-slate-400 block mb-1">Background Color</label>
             <div class="flex items-center gap-2">
-              <input type="color" v-model="selectedBlock.styles.backgroundColor" class="h-8 w-12 border border-slate-700 bg-transparent cursor-pointer rounded p-0"/>
-              <span class="text-xs font-mono text-slate-300">{{ selectedBlock.styles.backgroundColor }}</span>
+              <input type="color" v-model="selectedBlock.props.backgroundColor" class="h-8 w-12 border border-slate-700 bg-transparent cursor-pointer rounded p-0"/>
+              <span class="text-xs font-mono text-slate-300">{{ selectedBlock.props.backgroundColor }}</span>
             </div>
           </div>
           
           <div v-if="selectedBlock.type === 'HeroBlock'">
             <label class="text-xs font-semibold text-slate-400 block mb-1">Headline Text</label>
-            <input type="text" v-model="selectedBlock.content.headline" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
+            <input type="text" v-model="selectedBlock.props.headline" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
           </div>
 
           <div v-if="selectedBlock.type === 'FeatureBlock'">
             <label class="text-xs font-semibold text-slate-400 block mb-1">Feature Title</label>
-            <input type="text" v-model="selectedBlock.content.title" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
+            <input type="text" v-model="selectedBlock.props.title" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
           </div>
 
           <div v-if="selectedBlock.type === 'AtomicText'">
