@@ -1,22 +1,22 @@
 @php
-    $paddingVal = $block['styles']['padding'] ?? 0;
+    $paddingVal = $block['props']['padding'] ?? 0;
     $padding = is_numeric($paddingVal) ? "{$paddingVal}px" : $paddingVal;
-    $bgColor = $block['styles']['backgroundColor'] ?? 'transparent';
+    $bgColor = $block['props']['backgroundColor'] ?? 'transparent';
 @endphp
 <div style="padding: {{ $padding }}; background-color: {{ $bgColor }};" class="transition-all relative my-2">
     @if($block['type'] === 'HeroBlock')
         <div class="text-center">
             <h1 class="text-4xl font-extrabold tracking-tight sm:text-6xl text-slate-900">
-                {{ $block['content']['headline'] ?? 'Default Headline' }}
+                {{ $block['props']['headline'] ?? 'Default Headline' }}
             </h1>
             <p class="mt-4 text-xl text-slate-500">
-                {{ $block['content']['subheadline'] ?? 'Default subheadline' }}
+                {{ $block['props']['subheadline'] ?? 'Default subheadline' }}
             </p>
         </div>
     @elseif($block['type'] === 'FeatureBlock')
         <div class="py-4 border-t border-slate-100">
-            <h3 class="text-lg font-bold text-slate-800">{{ $block['content']['title'] ?? 'Feature Item' }}</h3>
-            <p class="text-sm text-slate-600 mt-1">{{ $block['content']['body'] ?? 'Feature description details go here.' }}</p>
+            <h3 class="text-lg font-bold text-slate-800">{{ $block['props']['title'] ?? 'Feature Item' }}</h3>
+            <p class="text-sm text-slate-600 mt-1">{{ $block['props']['body'] ?? 'Feature description details go here.' }}</p>
         </div>
     @elseif($block['type'] === 'AtomicText')
         @php

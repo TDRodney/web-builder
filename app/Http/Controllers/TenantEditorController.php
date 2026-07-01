@@ -23,8 +23,8 @@ class TenantEditorController extends Controller
                     [
                         'id' => 'hero-1',
                         'type' => 'HeroBlock',
-                        'styles' => ['padding' => 40, 'backgroundColor' => '#ffffff'],
-                        'content' => ['headline' => 'Welcome to your Site', 'subheadline' => 'Built with our engine.'],
+                        'props' => ['padding' => 40, 'backgroundColor' => '#ffffff', 'headline' => 'Welcome to your Site', 'subheadline' => 'Built with our engine.'],
+                        'children' => [],
                     ],
                 ],
             ]
