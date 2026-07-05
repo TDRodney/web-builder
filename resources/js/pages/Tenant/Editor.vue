@@ -9,6 +9,7 @@ import HeroBlock from '@/components/BuilderBlocks/HeroBlock.vue';
 import LayoutColumn from '@/components/BuilderBlocks/LayoutColumn.vue';
 import LayoutGrid from '@/components/BuilderBlocks/LayoutGrid.vue';
 import RenderNode from '@/components/BuilderBlocks/RenderNode.vue';
+import { getBlockDefinition, blockDefinitions } from '@/lib/blockRegistry';
 
 const blockRegistry = {
   HeroBlock,
@@ -116,46 +117,44 @@ const redo = () => {
 };
 
 const addBlock = (type) => {
+  const definition = getBlockDefinition(type);
+  if (!definition) {
+    console.error(`Block type "${type}" is not registered in the block registry.`);
+    return;
+  }
+
+  const propsClone = JSON.parse(JSON.stringify(definition.defaultProps));
+
   const newBlock = {
     id: `${type.toLowerCase()}-${Date.now()}`,
     type: type,
-    props: { padding: 20, backgroundColor: '#ffffff' },
+    props: propsClone,
     children: []
   };
 
-  if (type === 'HeroBlock') {
-    Object.assign(newBlock.props, { headline: 'New Hero Heading', subheadline: 'Add your description here' });
-  } else if (type === 'FeatureBlock') {
-    Object.assign(newBlock.props, { title: 'New Feature Item', body: 'Feature description details go here.' });
-  } else if (type === 'AtomicText') {
-    Object.assign(newBlock.props, { content: 'Atomic Text Element', fontSize: '16px', color: '#0f172a' });
-  } else if (type === 'LayoutGrid') {
-    Object.assign(newBlock.props, { columns: 3, gap: '1rem', padding: '1rem' });
+  if (type === 'LayoutGrid') {
     newBlock.children = [
       {
         id: `layoutcolumn-${Date.now()}-1`,
         type: 'LayoutColumn',
-        props: { padding: 20, backgroundColor: '#ffffff', span: 1 },
+        props: { padding: 20, backgroundColor: 'transparent', span: 'auto', width: 'auto', height: 'auto', gap: '0px' },
         children: []
       },
       {
         id: `layoutcolumn-${Date.now()}-2`,
         type: 'LayoutColumn',
-        props: { padding: 20, backgroundColor: '#ffffff', span: 1 },
+        props: { padding: 20, backgroundColor: 'transparent', span: 'auto', width: 'auto', height: 'auto', gap: '0px' },
         children: []
       },
       {
         id: `layoutcolumn-${Date.now()}-3`,
         type: 'LayoutColumn',
-        props: { padding: 20, backgroundColor: '#ffffff', span: 1 },
+        props: { padding: 20, backgroundColor: 'transparent', span: 'auto', width: 'auto', height: 'auto', gap: '0px' },
         children: []
       }
     ];
-  } else if (type === 'LayoutColumn') {
-    Object.assign(newBlock.props, { span: 1 });
   }
 
-  // If a block with children is selected, add it as a child. Otherwise add to root blocks.
   if (selectedBlock.value && selectedBlock.value.children) {
     if (!Array.isArray(selectedBlock.value.children)) {
       selectedBlock.value.children = [];
@@ -166,6 +165,13 @@ const addBlock = (type) => {
     blocks.value.push(newBlock);
   }
 };
+
+const activeBlockDefinition = computed(() => {
+  if (!selectedBlock.value) {
+    return null;
+  }
+  return getBlockDefinition(selectedBlock.value.type);
+});
 
 const deleteSelectedBlock = () => {
   if (!selectedBlock.value) {
@@ -522,55 +528,51 @@ const handleSetHomepage = async (page) => {
           </button>
         </div>
         
-        <div v-if="selectedBlock" class="space-y-4">
-          <div>
-            <label class="text-xs font-semibold text-slate-400 block mb-1">Padding: {{ selectedBlock.props.padding }}px</label>
-            <input type="range" min="10" max="150" v-model.number="selectedBlock.props.padding" class="w-full accent-indigo-500"/>
-          </div>
+        <div v-if="selectedBlock" class="space-y-4 animate-fade-in">
+          <div v-if="activeBlockDefinition" class="space-y-4">
+            <div v-for="field in activeBlockDefinition.inspectorFields" :key="field.key" class="space-y-1">
+              <label class="text-xs font-semibold text-slate-400 block">
+                {{ field.label }}
+                <span v-if="field.type === 'range' && selectedBlock.props[field.key] !== undefined" class="text-slate-300">
+                  : {{ selectedBlock.props[field.key] }}px
+                </span>
+              </label>
 
-          <div>
-            <label class="text-xs font-semibold text-slate-400 block mb-1">Background Color</label>
-            <div class="flex items-center gap-2">
-              <input type="color" v-model="selectedBlock.props.backgroundColor" class="h-8 w-12 border border-slate-700 bg-transparent cursor-pointer rounded p-0"/>
-              <span class="text-xs font-mono text-slate-300">{{ selectedBlock.props.backgroundColor }}</span>
+              <input 
+                v-if="field.type === 'range'"
+                type="range" 
+                :min="field.min ?? 10" 
+                :max="field.max ?? 150" 
+                v-model.number="selectedBlock.props[field.key]" 
+                class="w-full accent-indigo-500"
+              />
+
+              <div v-else-if="field.type === 'color'" class="flex items-center gap-2">
+                <input 
+                  type="color" 
+                  v-model="selectedBlock.props[field.key]" 
+                  class="h-8 w-12 border border-slate-700 bg-transparent cursor-pointer rounded p-0"
+                />
+                <span class="text-xs font-mono text-slate-300">{{ selectedBlock.props[field.key] }}</span>
+              </div>
+
+              <input 
+                v-else-if="field.type === 'number'"
+                type="number" 
+                :min="field.min" 
+                :max="field.max" 
+                v-model.number="selectedBlock.props[field.key]" 
+                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+              />
+
+              <input 
+                v-else
+                type="text" 
+                v-model="selectedBlock.props[field.key]" 
+                :placeholder="field.placeholder"
+                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+              />
             </div>
-          </div>
-          
-          <div v-if="selectedBlock.type === 'HeroBlock'">
-            <label class="text-xs font-semibold text-slate-400 block mb-1">Headline Text</label>
-            <input type="text" v-model="selectedBlock.props.headline" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
-          </div>
-
-          <div v-if="selectedBlock.type === 'FeatureBlock'">
-            <label class="text-xs font-semibold text-slate-400 block mb-1">Feature Title</label>
-            <input type="text" v-model="selectedBlock.props.title" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
-          </div>
-
-          <div v-if="selectedBlock.type === 'AtomicText'">
-            <label class="text-xs font-semibold text-slate-400 block mb-1">Text Content</label>
-            <input type="text" v-model="selectedBlock.props.content" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
-            
-            <label class="text-xs font-semibold text-slate-400 block mt-3 mb-1">Font Size (e.g. 18px or 1.25rem)</label>
-            <input type="text" v-model="selectedBlock.props.fontSize" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
-            
-            <label class="text-xs font-semibold text-slate-400 block mt-3 mb-1">Color (Hex or CSS Var like --color-name)</label>
-            <input type="text" v-model="selectedBlock.props.color" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
-          </div>
-
-          <div v-if="selectedBlock.type === 'LayoutGrid'">
-            <label class="text-xs font-semibold text-slate-400 block mb-1">Columns Count</label>
-            <input type="number" min="1" max="12" v-model.number="selectedBlock.props.columns" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
-            
-            <label class="text-xs font-semibold text-slate-400 block mt-3 mb-1">Gap Size (e.g. 1rem or 16px)</label>
-            <input type="text" v-model="selectedBlock.props.gap" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
-            
-            <label class="text-xs font-semibold text-slate-400 block mt-3 mb-1">Padding (e.g. 1rem or 20px)</label>
-            <input type="text" v-model="selectedBlock.props.padding" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
-          </div>
-
-          <div v-if="selectedBlock.type === 'LayoutColumn'">
-            <label class="text-xs font-semibold text-slate-400 block mb-1">Grid Column Span (1-12) or Flex Basis (e.g. 50%)</label>
-            <input type="text" v-model="selectedBlock.props.span" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"/>
           </div>
 
           <button 
@@ -586,20 +588,14 @@ const handleSetHomepage = async (page) => {
         <div class="border-t border-slate-800 pt-4 mt-4">
           <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Add Block</h4>
           <div class="grid grid-cols-2 gap-2">
-            <button @click="addBlock('HeroBlock')" class="bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 text-xs py-2 px-2.5 rounded font-medium transition-colors cursor-pointer">
-              + Hero
-            </button>
-            <button @click="addBlock('FeatureBlock')" class="bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 text-xs py-2 px-2.5 rounded font-medium transition-colors cursor-pointer">
-              + Feature
-            </button>
-            <button @click="addBlock('LayoutGrid')" class="bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 text-xs py-2 px-2.5 rounded font-medium transition-colors cursor-pointer">
-              + Grid Layout
-            </button>
-            <button @click="addBlock('LayoutColumn')" class="bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 text-xs py-2 px-2.5 rounded font-medium transition-colors cursor-pointer">
-              + Column
-            </button>
-            <button @click="addBlock('AtomicText')" class="col-span-2 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 text-xs py-2 px-2.5 rounded font-medium transition-colors cursor-pointer">
-              + Atomic Text
+            <button 
+              v-for="def in blockDefinitions" 
+              :key="def.type"
+              @click="addBlock(def.type)" 
+              :class="def.type === 'AtomicText' ? 'col-span-2' : ''"
+              class="bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 text-xs py-2 px-2.5 rounded font-medium transition-colors cursor-pointer"
+            >
+              + {{ def.label }}
             </button>
           </div>
           <p class="text-[10px] text-slate-500 mt-2 italic">Tip: If a Layout container is selected, the new block is nested inside it.</p>

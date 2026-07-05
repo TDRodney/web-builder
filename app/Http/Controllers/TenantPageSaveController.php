@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Page;
+use App\Rules\ValidatesBlockSchema;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +22,7 @@ class TenantPageSaveController extends Controller
         // 2. Strict Input Validation
         $validated = $request->validate([
             'page_id' => 'required|integer',
-            'draft_config' => 'required|array',
+            'draft_config' => ['required', 'array', new ValidatesBlockSchema],
         ]);
 
         /**

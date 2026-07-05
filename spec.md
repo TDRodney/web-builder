@@ -287,7 +287,7 @@ Authorization is **controller-level, not policy-based**:
 | Endpoint | Validation Rules |
 |---|---|
 | `POST /register` | `name`: required string max:255; `email`: required unique email; `password`: required confirmed + defaults; `subdomain`: required 3-63 chars, unique, lowercase alphanumeric+hyphens, not in reserved list |
-| `POST /editor/save` | `page_id`: required integer; `draft_config`: required array |
+| `POST /editor/save` | `page_id`: required integer; `draft_config`: required array + validated recursively via `ValidatesBlockSchema` |
 | `POST /editor/publish` | `page_id`: required integer |
 | `POST /editor/pages` | `title`: required string max:255; `slug`: required lowercase alphanumeric+hyphens unique per tenant |
 | `PATCH /editor/pages/{page}` | `title`: sometimes required string max:255; `slug`: sometimes required lowercase alphanumeric+hyphens unique per tenant; `is_homepage`: sometimes required boolean; `sort_order`: sometimes required integer |
@@ -407,15 +407,18 @@ The block configuration is rendered in **two entirely separate rendering pipelin
 | **Editor (authed)** | Vue components via `RenderNode` + block registry | Vue 3 + vuedraggable | `draft_config` |
 | **Public Site (visitor)** | Blade partial with recursive `@include` | Blade + Tailwind | `published_config` |
 
+The [blockRegistry.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/lib/blockRegistry.ts) file acts as the single source-of-truth definition registry for all supported block types (e.g., `HeroBlock`, `FeatureBlock`, `AtomicText`, `LayoutGrid`, `LayoutColumn`). It governs default configurations, category tags, and editable inspector properties.
+
 The [RenderNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderNode.vue) component drives the editor canvas:
-- Uses Vue's `<component :is>` dynamic component resolution against a `blockRegistry` (injected via `provide/inject`)
+- Uses Vue's `<component :is>` dynamic component resolution against a `blockRegistry` map
 - Recursively renders `node.children` through nested `<draggable>` instances
-- The `canvas-tree` group name allows cross-level drag-and-drop between any containers
+- Employs a Vue `onErrorCaptured` error boundary that intercepts dynamic rendering crashes, logs diagnostics to the console, and displays a localized block-level placeholder box to ensure editor stability
+- Directs `Editor.vue` to render dynamic inspector controls (color, sliders, ranges, fields) dynamically based on the active block definition in the registry
 
 The [block.blade.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/views/partials/block.blade.php) partial drives public rendering:
-- Uses `@if/$block['type']` conditional branches for each block type
-- Recursively includes itself for `children` of container blocks
-- Translates the same CSS custom property patterns used by Vue into inline styles
+- Acts as a modular router, delegating rendering to individual block templates in `resources/views/partials/blocks/*.blade.php` (e.g. `hero.blade.php`, `layout-grid.blade.php`)
+- Validates block node schemas, gracefully logs discrepancies using `Log::warning()`, and prints developer-friendly fallback warning comments if invalid or unrecognized blocks are encountered in debug mode to prevent fatal template compilation failures
+- Translates the same CSS custom property patterns used by Vue into inline HTML styles
 
 ### 4.6 Shared State via Inertia
 
