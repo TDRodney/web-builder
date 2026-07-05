@@ -6,18 +6,18 @@ const props = defineProps({
     type: String,
     required: true
   },
-  props: {
+  blockProps: {
     type: Object,
     default: () => ({})
   }
 });
 
 const computedStyles = computed(() => {
-  const span = props.props?.span;
-  const paddingValue = props.props?.padding;
-  const widthValue = props.props?.width;
-  const heightValue = props.props?.height;
-  const gapValue = props.props?.gap;
+  const span = props.blockProps?.span;
+  const paddingValue = props.blockProps?.padding;
+  const widthValue = props.blockProps?.width;
+  const heightValue = props.blockProps?.height;
+  const gapValue = props.blockProps?.gap;
   const styles = {};
 
   if (span) {

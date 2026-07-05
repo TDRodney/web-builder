@@ -14,7 +14,7 @@ const props = defineProps({
     type: String,
     required: true
   },
-  props: {
+  blockProps: {
     type: Object,
     default: () => ({})
   }
@@ -23,14 +23,14 @@ const props = defineProps({
 const computedStyles = computed(() => {
   const styles = {};
   
-  if (props.props?.fontSize) {
-    styles.fontSize = typeof props.props.fontSize === 'number' 
-      ? `${props.props.fontSize}px` 
-      : props.props.fontSize;
+  if (props.blockProps?.fontSize) {
+    styles.fontSize = typeof props.blockProps.fontSize === 'number' 
+      ? `${props.blockProps.fontSize}px` 
+      : props.blockProps.fontSize;
   }
   
-  if (props.props?.color) {
-    const colorVal = props.props.color;
+  if (props.blockProps?.color) {
+    const colorVal = props.blockProps.color;
     styles.color = String(colorVal).startsWith('--') ? `var(${colorVal})` : colorVal;
   }
   
@@ -44,6 +44,6 @@ const computedStyles = computed(() => {
     :style="computedStyles"
     class="focus:ring-2 focus:ring-indigo-500 focus:outline-none hover:ring-1 hover:ring-indigo-300 rounded p-1 transition-all cursor-pointer"
   >
-    {{ props.props?.content ?? '' }}
+    {{ props.blockProps?.content ?? '' }}
   </div>
 </template>

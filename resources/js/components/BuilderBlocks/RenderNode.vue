@@ -56,7 +56,7 @@ const handleDragEnd = () => {
     <component 
       :is="blockRegistry[node.type]" 
       :node-id="node.id"
-      :props="node.props"
+      :block-props="node.props"
     >
       <draggable 
         v-if="node.children"
