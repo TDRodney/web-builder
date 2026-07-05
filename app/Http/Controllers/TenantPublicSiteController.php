@@ -6,11 +6,21 @@ use App\Models\Page;
 
 class TenantPublicSiteController extends Controller
 {
-    public function show(string $slug = 'home')
+    public function show(?string $slug = null)
     {
-        // Fetch the page (TenantScope automatically limits this to the active tenant)
-        // We look specifically at the read-only 'published_config'
-        $page = Page::where('slug', $slug)->firstOrFail();
+        if (empty($slug)) {
+            $page = Page::where('is_homepage', true)->first();
+
+            if (! $page) {
+                $page = Page::where('slug', 'home')->first();
+            }
+        } else {
+            $page = Page::where('slug', $slug)->first();
+        }
+
+        if (! $page) {
+            abort(404, 'Page not found.');
+        }
 
         if (! $page->published_config) {
             abort(404, 'This page has not been published yet.');

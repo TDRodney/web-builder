@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\CentralAuthenticatedSessionController;
 use App\Http\Controllers\Auth\CentralRegisteredUserController;
 use App\Http\Controllers\TenantEditorController;
+use App\Http\Controllers\TenantPageController;
 use App\Http\Controllers\TenantPageSaveController;
 use App\Http\Controllers\TenantPublicSiteController;
 use App\Http\Middleware\IdentifyTenant;
@@ -67,6 +68,11 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
                 Route::get('/', [TenantEditorController::class, 'edit'])->name('tenant.editor');
                 Route::post('/save', [TenantPageSaveController::class, 'store'])->name('tenant.page.save');
                 Route::post('/publish', [TenantPageSaveController::class, 'publish'])->name('tenant.page.publish');
+
+                Route::get('/pages', [TenantPageController::class, 'index'])->name('tenant.pages.index');
+                Route::post('/pages', [TenantPageController::class, 'store'])->name('tenant.pages.store');
+                Route::patch('/pages/{page}', [TenantPageController::class, 'update'])->name('tenant.pages.update');
+                Route::delete('/pages/{page}', [TenantPageController::class, 'destroy'])->name('tenant.pages.destroy');
             });
         });
 

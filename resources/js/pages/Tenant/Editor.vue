@@ -1,5 +1,5 @@
 <script setup>
-import { useHttp, Link } from '@inertiajs/vue3';
+import { useHttp, Link, router } from '@inertiajs/vue3';
 import { ref, computed, watch, provide, nextTick } from 'vue';
 import draggable from 'vuedraggable';
 
@@ -23,6 +23,7 @@ provide('blockRegistry', blockRegistry);
 const props = defineProps({
   tenant: Object,
   page: Object,
+  pages: Array,
   urls: Object
 });
 
@@ -295,6 +296,109 @@ const publishPage = async () => {
     isPublishing.value = false;
   }
 };
+
+// Page Management Functions
+const showCreateModal = ref(false);
+const showRenameModal = ref(false);
+const pageToRename = ref(null);
+
+const createForm = useHttp({
+  title: '',
+  slug: ''
+});
+
+const renameForm = useHttp({
+  title: '',
+  slug: ''
+});
+
+const deleteHttp = useHttp({});
+const setHomepageHttp = useHttp({});
+
+const autoGenerateSlug = () => {
+  createForm.slug = createForm.title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+};
+
+const switchPage = async (pageSlug) => {
+  if (pageSlug === props.page.slug) return;
+  await forceSave();
+  router.visit(`/editor?page=${pageSlug}`);
+};
+
+const submitCreatePage = async () => {
+  try {
+    const res = await createForm.post('/editor/pages');
+    if (res && res.status === 'success') {
+      showCreateModal.value = false;
+      createForm.reset();
+      router.visit(`/editor?page=${res.page.slug}`);
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const openRenameModal = (page) => {
+  pageToRename.value = page;
+  renameForm.title = page.title;
+  renameForm.slug = page.slug;
+  renameForm.clearErrors();
+  showRenameModal.value = true;
+};
+
+const submitRenamePage = async () => {
+  try {
+    const res = await renameForm.patch(`/editor/pages/${pageToRename.value.id}`);
+    if (res && res.status === 'success') {
+      showRenameModal.value = false;
+      if (pageToRename.value.slug === props.page.slug) {
+        router.visit(`/editor?page=${res.page.slug}`);
+      } else {
+        router.reload({ only: ['pages'] });
+      }
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const handleDeletePage = async (page) => {
+  if (page.is_homepage) return;
+  if (!confirm(`Are you sure you want to delete "${page.title}"? This will delete all of its draft and published configurations.`)) {
+    return;
+  }
+  
+  try {
+    const res = await deleteHttp.delete(`/editor/pages/${page.id}`);
+    if (res && res.status === 'success') {
+      if (page.slug === props.page.slug) {
+        router.visit('/editor');
+      } else {
+        router.reload({ only: ['pages'] });
+      }
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const handleSetHomepage = async (page) => {
+  try {
+    const res = await setHomepageHttp.patch(`/editor/pages/${page.id}`, {
+      is_homepage: true
+    });
+    if (res && res.status === 'success') {
+      router.reload({ only: ['pages', 'page'] });
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
 </script>
 
 <template>
@@ -323,6 +427,73 @@ const publishPage = async () => {
     <!-- Inspector Sidebar -->
     <div class="w-80 border-l border-slate-800 p-6 bg-slate-900 flex flex-col justify-between h-screen shrink-0">
       <div class="space-y-6">
+        <!-- Pages Management Panel -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Pages</h3>
+            <button @click="showCreateModal = true" class="bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 rounded p-1 transition-colors cursor-pointer border-0 flex items-center justify-center" title="Create Page">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="max-h-48 overflow-y-auto space-y-1 pr-1">
+            <div 
+              v-for="p in props.pages" 
+              :key="p.id" 
+              class="group flex items-center justify-between rounded-lg p-2 transition-all animate-fade-in"
+              :class="props.page.slug === p.slug ? 'bg-indigo-600/20 border border-indigo-500/20 text-white' : 'hover:bg-slate-800/60 text-slate-400 hover:text-slate-200'"
+            >
+              <button 
+                @click="switchPage(p.slug)"
+                class="flex-1 text-left text-xs font-medium truncate bg-transparent border-0 cursor-pointer p-0 text-inherit flex items-center gap-1.5 focus:outline-none"
+              >
+                <span class="truncate">{{ p.title }}</span>
+                <span class="text-[9px] font-mono opacity-50 font-normal">({{ p.slug }})</span>
+                <span v-if="p.is_homepage" class="text-[8px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-1 py-0.2 rounded-full scale-90 shrink-0">
+                  Home
+                </span>
+              </button>
+
+              <div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-opacity ml-2">
+                <!-- Set as homepage action -->
+                <button 
+                  v-if="!p.is_homepage" 
+                  @click="handleSetHomepage(p)"
+                  class="text-slate-400 hover:text-emerald-400 bg-transparent border-0 p-0.5 cursor-pointer focus:outline-none" 
+                  title="Set as Homepage"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                </button>
+                <!-- Rename action -->
+                <button 
+                  @click="openRenameModal(p)"
+                  class="text-slate-400 hover:text-indigo-400 bg-transparent border-0 p-0.5 cursor-pointer focus:outline-none" 
+                  title="Rename Page"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </button>
+                <!-- Delete action -->
+                <button 
+                  v-if="!p.is_homepage" 
+                  @click="handleDeletePage(p)"
+                  class="text-slate-400 hover:text-rose-450 bg-transparent border-0 p-0.5 cursor-pointer focus:outline-none" 
+                  title="Delete Page"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
           <h3 class="text-base font-bold text-white">Content Inspector</h3>
           <span class="text-indigo-400 text-[10px] font-semibold uppercase tracking-widest bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">Canvas</span>
@@ -469,6 +640,119 @@ const publishPage = async () => {
         </div>
       </div>
 
+    </div>
+
+    <!-- Create Page Modal -->
+    <div v-if="showCreateModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 class="text-base font-bold text-white">Create New Page</h3>
+          <button @click="showCreateModal = false" class="text-slate-400 hover:text-white bg-transparent border-0 cursor-pointer p-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form @submit.prevent="submitCreatePage" class="space-y-4">
+          <div>
+            <label class="text-xs font-semibold text-slate-400 block mb-1">Page Title</label>
+            <input 
+              type="text" 
+              v-model="createForm.title" 
+              @input="autoGenerateSlug"
+              required 
+              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 text-slate-100"
+              placeholder="e.g. About Us"
+            />
+            <p v-if="createForm.errors.title" class="text-rose-500 text-xs mt-1">{{ createForm.errors.title }}</p>
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold text-slate-400 block mb-1">URL Slug</label>
+            <input 
+              type="text" 
+              v-model="createForm.slug" 
+              required 
+              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 font-mono text-slate-100"
+              placeholder="e.g. about-us"
+            />
+            <p v-if="createForm.errors.slug" class="text-rose-500 text-xs mt-1">{{ createForm.errors.slug }}</p>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-2">
+            <button 
+              type="button" 
+              @click="showCreateModal = false" 
+              class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2 px-4 rounded-lg transition-all cursor-pointer border border-slate-700"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              :disabled="createForm.processing"
+              class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold py-2 px-4 rounded-lg transition-all cursor-pointer border-0"
+            >
+              {{ createForm.processing ? 'Creating...' : 'Create Page' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Rename Page Modal -->
+    <div v-if="showRenameModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 class="text-base font-bold text-white">Rename Page Settings</h3>
+          <button @click="showRenameModal = false" class="text-slate-400 hover:text-white bg-transparent border-0 cursor-pointer p-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form @submit.prevent="submitRenamePage" class="space-y-4">
+          <div>
+            <label class="text-xs font-semibold text-slate-400 block mb-1">Page Title</label>
+            <input 
+              type="text" 
+              v-model="renameForm.title" 
+              required 
+              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 text-slate-100"
+            />
+            <p v-if="renameForm.errors.title" class="text-rose-500 text-xs mt-1">{{ renameForm.errors.title }}</p>
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold text-slate-400 block mb-1">URL Slug</label>
+            <input 
+              type="text" 
+              v-model="renameForm.slug" 
+              required 
+              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 font-mono text-slate-100"
+            />
+            <p v-if="renameForm.errors.slug" class="text-rose-500 text-xs mt-1">{{ renameForm.errors.slug }}</p>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-2">
+            <button 
+              type="button" 
+              @click="showRenameModal = false" 
+              class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2 px-4 rounded-lg transition-all cursor-pointer border border-slate-700"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              :disabled="renameForm.processing"
+              class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold py-2 px-4 rounded-lg transition-all cursor-pointer border-0"
+            >
+              {{ renameForm.processing ? 'Saving...' : 'Save Settings' }}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
   </div>

@@ -139,7 +139,10 @@ erDiagram
     Page {
         bigint id PK
         bigint tenant_id FK "cascades on delete"
-        string slug "default: home"
+        string slug
+        string title "nullable"
+        boolean is_homepage "default: false"
+        integer sort_order "default: 0"
         json draft_config "nullable"
         json published_config "nullable"
         timestamps created_at
@@ -161,6 +164,7 @@ erDiagram
 
 #### [Tenant](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Models/Tenant.php)
 
+- Traits: `HasFactory`
 - Fillable: `user_id`, `subdomain`
 - Relationships: `belongsTo(User)`, `hasMany(Page)`
 - Accessor: `name` → derives display name from subdomain (e.g., `my-site` → `My Site`)
@@ -168,8 +172,9 @@ erDiagram
 
 #### [Page](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Models/Page.php)
 
-- Fillable: `tenant_id`, `slug`, `draft_config`, `published_config`
-- Casts: `draft_config` → array, `published_config` → array
+- Traits: `HasFactory`
+- Fillable: `tenant_id`, `slug`, `title`, `is_homepage`, `sort_order`, `draft_config`, `published_config`
+- Casts: `is_homepage` → boolean, `draft_config` → array, `published_config` → array
 - Relationship: `belongsTo(Tenant)`
 - **Global Scope**: [TenantScope](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Models/Scopes/TenantScope.php) auto-filters all queries by `tenant_id` when `app('currentTenant')` is bound
 
@@ -260,17 +265,21 @@ All routes protected by [IdentifyTenant](file:///c:/Users/Z.BOOK/Desktop/things/
 | Method | Path | Name | Controller / Handler | Auth | Description |
 |---|---|---|---|---|---|
 | `GET` | `/dashboard` | `dashboard` | Closure → Inertia `CentralDashboard` (with tenant prop) | auth | Tenant-scoped dashboard |
-| `GET` | `/editor` | `tenant.editor` | [TenantEditorController::edit](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantEditorController.php#L10) | auth | Canvas editor (creates default 'home' page on first visit) |
+| `GET` | `/editor` | `tenant.editor` | [TenantEditorController::edit](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantEditorController.php#L10) | auth | Canvas editor (accepts optional `?page={slug}`, resolves active or homepage, passes pages prop) |
 | `POST` | `/editor/save` | `tenant.page.save` | [TenantPageSaveController::store](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageSaveController.php#L12) | auth | Save draft_config (JSON endpoint) |
 | `POST` | `/editor/publish` | `tenant.page.publish` | [TenantPageSaveController::publish](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageSaveController.php#L43) | auth | Promote draft → published (DB transaction) |
-| `GET` | `/{slug?}` | `tenant.page.public` | [TenantPublicSiteController::show](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPublicSiteController.php#L9) | — | Public site rendering via Blade (defaults to `home`) |
+| `GET` | `/editor/pages` | `tenant.pages.index` | [TenantPageController::index](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageController.php#L10) | auth | List all tenant pages |
+| `POST` | `/editor/pages` | `tenant.pages.store` | [TenantPageController::store](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageController.php#L28) | auth | Create a new page |
+| `PATCH` | `/editor/pages/{page}` | `tenant.pages.update` | [TenantPageController::update](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageController.php#L62) | auth | Update page details (title, slug, homepage, sort) |
+| `DELETE` | `/editor/pages/{page}` | `tenant.pages.destroy` | [TenantPageController::destroy](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageController.php#L105) | auth | Delete a page (enforces homepage protection) |
+| `GET` | `/{slug?}` | `tenant.page.public` | [TenantPublicSiteController::show](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPublicSiteController.php#L9) | — | Public site rendering via Blade (defaults to designated homepage resolved by `is_homepage` flag) |
 
 ### 3.3 Authorization Model
 
 Authorization is **controller-level, not policy-based**:
 
-- **Editor Access**: `auth()->id() !== $tenant->user_id` → 403
-- **Save/Publish**: Same ownership check + `TenantScope` on `Page::findOrFail()` ensures cross-tenant isolation
+- **Editor Access & Page CRUD**: `auth()->id() !== $tenant->user_id` → 403
+- **Save/Publish/CRUD**: Same ownership check + `TenantScope` on `Page::findOrFail()` / routing constraints ensures cross-tenant isolation
 - **Public Site**: No auth required; only reads `published_config`
 
 ### 3.4 Request Validation
@@ -280,6 +289,8 @@ Authorization is **controller-level, not policy-based**:
 | `POST /register` | `name`: required string max:255; `email`: required unique email; `password`: required confirmed + defaults; `subdomain`: required 3-63 chars, unique, lowercase alphanumeric+hyphens, not in reserved list |
 | `POST /editor/save` | `page_id`: required integer; `draft_config`: required array |
 | `POST /editor/publish` | `page_id`: required integer |
+| `POST /editor/pages` | `title`: required string max:255; `slug`: required lowercase alphanumeric+hyphens unique per tenant |
+| `PATCH /editor/pages/{page}` | `title`: sometimes required string max:255; `slug`: sometimes required lowercase alphanumeric+hyphens unique per tenant; `is_homepage`: sometimes required boolean; `sort_order`: sometimes required integer |
 
 **Reserved Subdomains**: `www`, `admin`, `api`, `mail`, `blog`, `domain`, `central`, `app`, `webmaster`, `host`, `system`, `editor`
 
@@ -441,3 +452,38 @@ Configured in [FortifyServiceProvider](file:///c:/Users/Z.BOOK/Desktop/things/co
 | Immutable dates | `CarbonImmutable` globally |
 | CSRF | Standard Laravel CSRF via Inertia |
 | Reserved subdomains | Blocked at registration validation |
+
+### 4.9 Page Switching & Settings Flow
+
+The multi-page lifecycle manages dynamic canvas reloading and metadata updates:
+
+```mermaid
+sequenceDiagram
+    participant UI as Editor.vue (Sidebar)
+    participant Server as TenantPageController
+    participant DB as SQLite
+
+    Note over UI: User clicks a different page slug
+
+    UI->>UI: forceSave() — flushes current canvas draft config
+    UI->>UI: router.visit('/editor?page=new-slug')
+    Note over UI: Editor re-renders with new page data
+
+    Note over UI: User renames page / toggles homepage
+
+    UI->>Server: PATCH /editor/pages/{id} {title, slug, is_homepage}
+    Server->>Server: Auth Check & TenantScope Validation
+    alt If is_homepage = true
+        Server->>DB: UPDATE pages SET is_homepage = false WHERE tenant_id = ?
+    end
+    Server->>DB: UPDATE pages SET title = ?, slug = ?, is_homepage = ? WHERE id = ?
+    Server->>UI: JSON {status: 'success'}
+    UI->>UI: router.reload({ only: ['pages', 'page'] })
+```
+
+Key characteristics:
+- **Save Guard**: Active modifications are fully flushed and persisted to the current page via `forceSave()` before transition, preventing user edits from being discarded.
+- **Single Homepage Rule**: When setting a page as `is_homepage = true`, the backend automatically unsets `is_homepage` from any previously designated homepage in a query scoped to the active tenant.
+- **Homepage Deletion Guard**: Page deletion requires confirmation; if the page is the designated homepage, the deletion request is blocked on the backend with a `422 Unprocessable` response, preventing tenants from being orphaned without a landing page.
+- **Normalized Prop Format**: The block structures are strictly normalized to a flat `props` key format. The registration seeder follows this schema to ensure freshly created tenants load successfully in the editor without schema drift.
+

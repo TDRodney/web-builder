@@ -15,20 +15,32 @@ class TenantEditorController extends Controller
             abort(403, 'Unauthorized access to this tenant workspace.');
         }
 
-        // Because of our TenantScope, this only searches pages belonging to this tenant.
-        $homePage = $tenant->pages()->firstOrCreate(
-            ['slug' => 'home'],
-            [
-                'draft_config' => [
+        $slug = request()->query('page');
+        if ($slug) {
+            $currentPage = $tenant->pages()->where('slug', $slug)->firstOrFail();
+        } else {
+            $currentPage = $tenant->pages()->where('is_homepage', true)->first()
+                ?? $tenant->pages()->firstOrCreate(
+                    ['slug' => 'home'],
                     [
-                        'id' => 'hero-1',
-                        'type' => 'HeroBlock',
-                        'props' => ['padding' => 40, 'backgroundColor' => '#ffffff', 'headline' => 'Welcome to your Site', 'subheadline' => 'Built with our engine.'],
-                        'children' => [],
-                    ],
-                ],
-            ]
-        );
+                        'title' => 'Home',
+                        'is_homepage' => true,
+                        'draft_config' => [
+                            [
+                                'id' => 'hero-1',
+                                'type' => 'HeroBlock',
+                                'props' => ['padding' => 40, 'backgroundColor' => '#ffffff', 'headline' => 'Welcome to your Site', 'subheadline' => 'Built with our engine.'],
+                                'children' => [],
+                            ],
+                        ],
+                    ]
+                );
+        }
+
+        $pages = $tenant->pages()
+            ->select(['id', 'slug', 'title', 'is_homepage', 'sort_order'])
+            ->orderBy('sort_order')
+            ->get();
 
         $port = request()->getPort();
         $portSuffix = ($port && ! in_array($port, [80, 443])) ? ":{$port}" : '';
@@ -37,7 +49,8 @@ class TenantEditorController extends Controller
 
         return Inertia::render('Tenant/Editor', [
             'tenant' => $tenant->only(['id', 'subdomain']),
-            'page' => $homePage->only(['id', 'slug', 'draft_config']),
+            'page' => $currentPage->only(['id', 'slug', 'title', 'is_homepage', 'draft_config']),
+            'pages' => $pages,
             'urls' => [
                 'dashboard' => '/dashboard',
                 'logout' => "{$protocol}://{$centralHost}/logout",

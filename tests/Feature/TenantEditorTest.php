@@ -70,7 +70,7 @@ test('tenant owners can save page draft configuration', function () {
     $this->actingAs($user);
 
     $draftData = [
-        ['id' => 'hero-1', 'type' => 'HeroBlock', 'styles' => ['padding' => 50], 'content' => ['headline' => 'Updated']],
+        ['id' => 'hero-1', 'type' => 'HeroBlock', 'props' => ['padding' => 50, 'headline' => 'Updated']],
     ];
 
     // Post save request to tenant editor save
@@ -126,7 +126,7 @@ test('tenant owners can publish page draft configuration', function () {
     ]);
 
     $draftData = [
-        ['id' => 'hero-1', 'type' => 'HeroBlock', 'styles' => ['padding' => 60], 'content' => ['headline' => 'Published State']],
+        ['id' => 'hero-1', 'type' => 'HeroBlock', 'props' => ['padding' => 60, 'headline' => 'Published State']],
     ];
 
     $page = $tenant->pages()->create([
@@ -156,7 +156,7 @@ test('public pages are accessible and render published configuration', function 
     ]);
 
     $publishedData = [
-        ['id' => 'hero-1', 'type' => 'HeroBlock', 'styles' => ['padding' => 40, 'backgroundColor' => '#abcdef'], 'content' => ['headline' => 'Public Site View']],
+        ['id' => 'hero-1', 'type' => 'HeroBlock', 'props' => ['padding' => 40, 'backgroundColor' => '#abcdef', 'headline' => 'Public Site View']],
     ];
 
     $tenant->pages()->create([
@@ -180,7 +180,7 @@ test('sub-pages are accessible via public wildcard slug routing', function () {
     ]);
 
     $publishedData = [
-        ['id' => 'hero-1', 'type' => 'HeroBlock', 'styles' => ['padding' => 40, 'backgroundColor' => '#ffffff'], 'content' => ['headline' => 'About Us page content']],
+        ['id' => 'hero-1', 'type' => 'HeroBlock', 'props' => ['padding' => 40, 'backgroundColor' => '#ffffff', 'headline' => 'About Us page content']],
     ];
 
     $tenant->pages()->create([
