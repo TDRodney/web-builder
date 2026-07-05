@@ -1,3 +1,17 @@
+import HeroBlock from '@/components/BuilderBlocks/HeroBlock.vue';
+import FeatureBlock from '@/components/BuilderBlocks/FeatureBlock.vue';
+import LayoutGrid from '@/components/BuilderBlocks/LayoutGrid.vue';
+import LayoutColumn from '@/components/BuilderBlocks/LayoutColumn.vue';
+import AtomicText from '@/components/BuilderBlocks/AtomicText.vue';
+
+export const blockComponents: Record<string, any> = {
+  HeroBlock,
+  FeatureBlock,
+  LayoutGrid,
+  LayoutColumn,
+  AtomicText
+};
+
 export interface InspectorField {
   key: string;
   label: string;
@@ -14,6 +28,7 @@ export interface BlockDefinition {
   icon: string;
   defaultProps: Record<string, any>;
   inspectorFields: InspectorField[];
+  allowedChildren?: string[];
 }
 
 export const blockDefinitions: BlockDefinition[] = [
@@ -89,7 +104,8 @@ export const blockDefinitions: BlockDefinition[] = [
       { key: 'backgroundColor', label: 'Background Color', type: 'color' },
       { key: 'columns', label: 'Columns Count', type: 'number', min: 1, max: 12 },
       { key: 'gap', label: 'Gap Size (e.g. 1rem, 16px)', type: 'text' }
-    ]
+    ],
+    allowedChildren: ['LayoutColumn']
   },
   {
     type: 'LayoutColumn',
@@ -111,7 +127,8 @@ export const blockDefinitions: BlockDefinition[] = [
       { key: 'width', label: 'Width (e.g. auto, 100%)', type: 'text' },
       { key: 'height', label: 'Height (e.g. auto, 200px)', type: 'text' },
       { key: 'gap', label: 'Gap', type: 'text' }
-    ]
+    ],
+    allowedChildren: ['HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText']
   }
 ];
 

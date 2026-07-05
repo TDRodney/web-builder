@@ -130,3 +130,35 @@ test('saving blocks with malformed children array is rejected', function () {
     $response->assertRedirect();
     $response->assertSessionHasErrors(['draft_config']);
 });
+
+test('saving blocks violating parent nesting constraints is rejected', function () {
+    $user = User::factory()->create();
+    $tenant = Tenant::factory()->withHomePage()->create(['user_id' => $user->id]);
+    $page = $tenant->pages()->first();
+
+    $this->actingAs($user);
+
+    // LayoutGrid is configured to only allow LayoutColumn. Let's try placing HeroBlock directly.
+    $invalidData = [
+        [
+            'id' => 'grid-1',
+            'type' => 'LayoutGrid',
+            'props' => [],
+            'children' => [
+                [
+                    'id' => 'hero-inside-grid-error',
+                    'type' => 'HeroBlock',
+                    'props' => [],
+                ],
+            ],
+        ],
+    ];
+
+    $response = $this->postJson("http://{$tenant->subdomain}.domain.localhost/editor/save", [
+        'page_id' => $page->id,
+        'draft_config' => $invalidData,
+    ]);
+
+    $response->assertRedirect();
+    $response->assertSessionHasErrors(['draft_config']);
+});

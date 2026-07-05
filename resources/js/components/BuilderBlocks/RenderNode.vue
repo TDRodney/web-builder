@@ -2,6 +2,7 @@
 import { inject, ref, onErrorCaptured } from 'vue';
 import draggable from 'vuedraggable';
 import RenderNode from './RenderNode.vue';
+import { getBlockDefinition } from '@/lib/blockRegistry';
 
 const props = defineProps({
   node: {
@@ -15,6 +16,14 @@ const selectedBlock = inject('selectedBlock', null);
 const canvasSelection = inject('canvasSelection', null);
 const isDragging = inject('isDragging', null);
 const forceSave = inject('forceSave', null);
+
+const checkAllowedChild = (parentType, childType) => {
+  const def = getBlockDefinition(parentType);
+  if (!def || !def.allowedChildren) {
+    return true;
+  }
+  return def.allowedChildren.includes(childType);
+};
 
 const hasError = ref(false);
 const errorMessage = ref('');
@@ -52,6 +61,7 @@ const handleDragEnd = () => {
 
 <template>
   <div 
+    :data-type="node.type"
     @click.stop="selectBlock(node)"
     :style="{ 
       padding: (node.props?.padding ?? 0) + 'px',
@@ -85,7 +95,11 @@ const handleDragEnd = () => {
         item-key="id" 
         handle=".drag-handle" 
         ghost-class="drag-ghost"
-        :group="{ name: 'canvas-tree', pull: true, put: true }"
+        :group="{ 
+          name: 'canvas-tree', 
+          pull: true, 
+          put: (to, from, dragEl) => checkAllowedChild(node.type, dragEl.getAttribute('data-type')) 
+        }"
         @start="handleDragStart"
         @end="handleDragEnd"
         class="min-h-[50px] w-full"

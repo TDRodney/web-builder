@@ -47,7 +47,7 @@ class ValidatesBlockSchema implements ValidationRule
             return;
         }
 
-        $validTypes = ['HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText'];
+        $validTypes = config('blocks.types', []);
         if (! in_array($node['type'], $validTypes)) {
             $fail("The block at {$path} has an unrecognized type '{$node['type']}'.");
         }
@@ -63,7 +63,16 @@ class ValidatesBlockSchema implements ValidationRule
                 return;
             }
 
+            $nestingRules = config('blocks.nesting', []);
+            $parentType = $node['type'];
+            $allowedChildren = $nestingRules[$parentType] ?? null;
+
             foreach ($node['children'] as $index => $child) {
+                if (is_array($child) && isset($child['type']) && $allowedChildren !== null) {
+                    if (! in_array($child['type'], $allowedChildren)) {
+                        $fail("The block at {$path}.children.{$index} of type '{$child['type']}' is not allowed inside a parent '{$parentType}'.");
+                    }
+                }
                 $this->validateNode($child, "{$path}.children.{$index}", $fail);
             }
         }

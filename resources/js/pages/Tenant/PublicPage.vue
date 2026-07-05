@@ -1,21 +1,9 @@
 <script setup>
 import { provide } from 'vue';
-import AtomicText from '@/components/BuilderBlocks/AtomicText.vue';
-import FeatureBlock from '@/components/BuilderBlocks/FeatureBlock.vue';
-import HeroBlock from '@/components/BuilderBlocks/HeroBlock.vue';
-import LayoutColumn from '@/components/BuilderBlocks/LayoutColumn.vue';
-import LayoutGrid from '@/components/BuilderBlocks/LayoutGrid.vue';
 import RenderPublicNode from '@/components/BuilderBlocks/RenderPublicNode.vue';
+import { blockComponents } from '@/lib/blockRegistry';
 
-const blockRegistry = {
-  HeroBlock,
-  FeatureBlock,
-  LayoutGrid,
-  LayoutColumn,
-  AtomicText
-};
-
-provide('blockRegistry', blockRegistry);
+provide('blockRegistry', blockComponents);
 provide('isEditable', false);
 
 defineProps({

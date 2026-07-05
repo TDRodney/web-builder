@@ -3,23 +3,10 @@ import { useHttp, Link, router } from '@inertiajs/vue3';
 import { ref, computed, watch, provide, nextTick } from 'vue';
 import draggable from 'vuedraggable';
 
-import AtomicText from '@/components/BuilderBlocks/AtomicText.vue';
-import FeatureBlock from '@/components/BuilderBlocks/FeatureBlock.vue';
-import HeroBlock from '@/components/BuilderBlocks/HeroBlock.vue';
-import LayoutColumn from '@/components/BuilderBlocks/LayoutColumn.vue';
-import LayoutGrid from '@/components/BuilderBlocks/LayoutGrid.vue';
 import RenderNode from '@/components/BuilderBlocks/RenderNode.vue';
-import { getBlockDefinition, blockDefinitions } from '@/lib/blockRegistry';
+import { getBlockDefinition, blockDefinitions, blockComponents } from '@/lib/blockRegistry';
 
-const blockRegistry = {
-  HeroBlock,
-  FeatureBlock,
-  LayoutGrid,
-  LayoutColumn,
-  AtomicText
-};
-
-provide('blockRegistry', blockRegistry);
+provide('blockRegistry', blockComponents);
 
 const props = defineProps({
   tenant: Object,
@@ -161,7 +148,14 @@ const addBlock = (type) => {
       selectedBlock.value.children = [];
     }
 
-    selectedBlock.value.children.push(newBlock);
+    const parentDef = getBlockDefinition(selectedBlock.value.type);
+    const isAllowed = !parentDef || !parentDef.allowedChildren || parentDef.allowedChildren.includes(type);
+
+    if (isAllowed) {
+      selectedBlock.value.children.push(newBlock);
+    } else {
+      blocks.value.push(newBlock);
+    }
   } else {
     blocks.value.push(newBlock);
   }

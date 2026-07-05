@@ -27,7 +27,7 @@ graph LR
   subgraph Tenant["Tenant Subdomain ({slug}.domain.localhost)"]
     TenantDash["Tenant Dashboard"]
     Editor["Canvas Editor (authed)"]
-    Public["Public Site (Blade SSR)"]
+    Public["Public Site (Inertia SSR)"]
   end
 
   Auth -- "login/register redirect" --> Editor
@@ -97,6 +97,7 @@ Defined in [app.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/reso
 | Page Name Pattern | Layout(s) Applied |
 |---|---|
 | `Welcome` | None (standalone) |
+| `Tenant/*` | None (standalone layout: editor / public pages) |
 | `auth/*` | `AuthLayout` |
 | `settings/*` | `AppLayout` → `SettingsLayout` (nested) |
 | Everything else | `AppLayout` |
@@ -419,6 +420,14 @@ The [RenderPublicNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-build
 - Uses the same `<component :is>` mapping to resolve the exact same block component files.
 - Renders static, lightweight block layouts and children nodes recursively without drag-and-drop or select wrappers.
 - Employs a public Vue `onErrorCaptured` error boundary to catch dynamic rendering failures locally on live pages without crashing the entire page.
+
+#### Nesting Constraints & Block Validation Pipeline
+
+The block addition and validation pipeline enforces structural constraints and parent-child nesting rules:
+- **Central Registries**: Blocks are registered centrally on the frontend in [blockRegistry.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/lib/blockRegistry.ts) (including `allowedChildren` nesting rules) and on the backend in [blocks.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/config/blocks.php).
+- **Drag-and-Drop Constraints**: [RenderNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderNode.vue) tags nodes with dynamic `:data-type` attributes and passes a `put()` validation function to `vuedraggable` to physically prevent drop operations that violate nesting rules (e.g. dropping a `HeroBlock` inside a `LayoutGrid` instead of a `LayoutColumn`).
+- **Insertion Safeguards**: Clicking library block buttons inside `Editor.vue` checks constraints and falls back to root list insertion if nesting permissions are violated.
+- **Backend Security**: The recursive validator [ValidatesBlockSchema.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Rules/ValidatesBlockSchema.php) references `config('blocks.nesting')` to strictly validate nesting schemas on all save operations.
 
 ### 4.6 Shared State via Inertia
 
