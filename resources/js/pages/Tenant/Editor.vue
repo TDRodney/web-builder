@@ -60,6 +60,7 @@ provide('canvasSelection', {
 
 const isDragging = ref(false);
 provide('isDragging', isDragging);
+provide('isEditable', true);
 
 const viewMode = ref('desktop');
 

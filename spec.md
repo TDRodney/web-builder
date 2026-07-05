@@ -396,29 +396,29 @@ sequenceDiagram
 ```
 
 > [!IMPORTANT]
-> Public sites are rendered via **Blade server-side rendering**, not Inertia. This is a deliberate architectural choice — public traffic gets a lightweight, fast HTML response without JavaScript framework overhead.
+> Public sites are rendered via **Inertia Server-Side Rendering (SSR)** using the exact same Vue component definition tree as the editor. This ensures 100% template alignment between the editor canvas and the live site, eliminating the double-definition code drift vector while still delivering speed-optimized pre-rendered HTML layouts for SEO and visitors.
 
-### 4.5 Dual Rendering Architecture
+### 4.5 Unified Rendering Architecture
 
-The block configuration is rendered in **two entirely separate rendering pipelines** that must stay in sync:
+The block configuration is rendered in a unified rendering pipeline governed by context:
 
-| Context | Renderer | Technology | Source |
-|---|---|---|---|
-| **Editor (authed)** | Vue components via `RenderNode` + block registry | Vue 3 + vuedraggable | `draft_config` |
-| **Public Site (visitor)** | Blade partial with recursive `@include` | Blade + Tailwind | `published_config` |
+| Context | Renderer | Technology | Dispatcher Component | Source |
+|---|---|---|---|---|
+| **Editor (authed)** | Vue components via `RenderNode` | Vue 3 + vuedraggable | [RenderNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderNode.vue) | `draft_config` |
+| **Public Site (visitor)** | Vue components via Inertia SSR | Vue 3 Server Rendering | [RenderPublicNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderPublicNode.vue) | `published_config` |
 
 The [blockRegistry.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/lib/blockRegistry.ts) file acts as the single source-of-truth definition registry for all supported block types (e.g., `HeroBlock`, `FeatureBlock`, `AtomicText`, `LayoutGrid`, `LayoutColumn`). It governs default configurations, category tags, and editable inspector properties.
 
 The [RenderNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderNode.vue) component drives the editor canvas:
-- Uses Vue's `<component :is>` dynamic component resolution against a `blockRegistry` map
-- Recursively renders `node.children` through nested `<draggable>` instances
-- Employs a Vue `onErrorCaptured` error boundary that intercepts dynamic rendering crashes, logs diagnostics to the console, and displays a localized block-level placeholder box to ensure editor stability
-- Directs `Editor.vue` to render dynamic inspector controls (color, sliders, ranges, fields) dynamically based on the active block definition in the registry
+- Uses Vue's `<component :is>` dynamic component resolution against the component registry map.
+- Wraps block instances in interactive outlines, hover drag handles, and nests child structures in `vuedraggable` templates.
+- Employs a Vue `onErrorCaptured` error boundary that intercepts dynamic rendering crashes, logs diagnostics to the console, and displays a localized block-level placeholder box to ensure editor stability.
+- Directs `Editor.vue` to render dynamic inspector controls (color, sliders, ranges, fields) dynamically based on the active block definition in the registry.
 
-The [block.blade.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/views/partials/block.blade.php) partial drives public rendering:
-- Acts as a modular router, delegating rendering to individual block templates in `resources/views/partials/blocks/*.blade.php` (e.g. `hero.blade.php`, `layout-grid.blade.php`)
-- Validates block node schemas, gracefully logs discrepancies using `Log::warning()`, and prints developer-friendly fallback warning comments if invalid or unrecognized blocks are encountered in debug mode to prevent fatal template compilation failures
-- Translates the same CSS custom property patterns used by Vue into inline HTML styles
+The [RenderPublicNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderPublicNode.vue) component drives the public layout page:
+- Uses the same `<component :is>` mapping to resolve the exact same block component files.
+- Renders static, lightweight block layouts and children nodes recursively without drag-and-drop or select wrappers.
+- Employs a public Vue `onErrorCaptured` error boundary to catch dynamic rendering failures locally on live pages without crashing the entire page.
 
 ### 4.6 Shared State via Inertia
 

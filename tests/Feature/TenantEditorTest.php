@@ -3,6 +3,7 @@
 use App\Models\Page;
 use App\Models\Tenant;
 use App\Models\User;
+use Inertia\Testing\AssertableInertia as Assert;
 
 test('guests visiting editor are redirected to central login', function () {
     $user = User::factory()->create();
@@ -156,7 +157,7 @@ test('public pages are accessible and render published configuration', function 
     ]);
 
     $publishedData = [
-        ['id' => 'hero-1', 'type' => 'HeroBlock', 'props' => ['padding' => 40, 'backgroundColor' => '#abcdef', 'headline' => 'Public Site View']],
+        ['id' => 'hero-1', 'type' => 'HeroBlock', 'props' => ['padding' => 40, 'backgroundColor' => '#abcdef', 'headline' => 'Public Site View', 'subheadline' => 'Built with our engine.']],
     ];
 
     $tenant->pages()->create([
@@ -169,7 +170,10 @@ test('public pages are accessible and render published configuration', function 
     $response = $this->get('http://test-tenant.domain.localhost/');
 
     $response->assertOk();
-    $response->assertSee('Public Site View');
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Tenant/PublicPage')
+        ->where('page.published_config.0.props.headline', 'Public Site View')
+    );
 });
 
 test('sub-pages are accessible via public wildcard slug routing', function () {
@@ -180,7 +184,7 @@ test('sub-pages are accessible via public wildcard slug routing', function () {
     ]);
 
     $publishedData = [
-        ['id' => 'hero-1', 'type' => 'HeroBlock', 'props' => ['padding' => 40, 'backgroundColor' => '#ffffff', 'headline' => 'About Us page content']],
+        ['id' => 'hero-1', 'type' => 'HeroBlock', 'props' => ['padding' => 40, 'backgroundColor' => '#ffffff', 'headline' => 'About Us page content', 'subheadline' => 'Built with our engine.']],
     ];
 
     $tenant->pages()->create([
@@ -193,7 +197,10 @@ test('sub-pages are accessible via public wildcard slug routing', function () {
     $response = $this->get('http://test-tenant.domain.localhost/about');
 
     $response->assertOk();
-    $response->assertSee('About Us page content');
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Tenant/PublicPage')
+        ->where('page.published_config.0.props.headline', 'About Us page content')
+    );
 });
 
 test('tenant routes block invalid subdomain formats', function () {

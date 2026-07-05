@@ -11,7 +11,7 @@ const props = defineProps({
 });
 
 const blockRegistry = inject('blockRegistry');
-const selectedBlock = inject('selectedBlock');
+const selectedBlock = inject('selectedBlock', null);
 const canvasSelection = inject('canvasSelection', null);
 const isDragging = inject('isDragging', null);
 const forceSave = inject('forceSave', null);

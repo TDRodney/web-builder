@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, inject } from 'vue';
 
 const props = defineProps({
   nodeId: {
@@ -11,6 +11,8 @@ const props = defineProps({
     default: () => ({})
   }
 });
+
+const isEditable = inject('isEditable', false);
 
 const computedStyles = computed(() => {
   const span = props.blockProps?.span;
@@ -55,7 +57,11 @@ const computedStyles = computed(() => {
 
 <template>
   <div class="layout-column-wrapper">
-    <div :style="computedStyles" class="layout-column-container w-full min-h-[50px]">
+    <div 
+      :style="computedStyles" 
+      :class="isEditable ? 'min-h-[50px]' : ''"
+      class="layout-column-container w-full"
+    >
       <slot />
     </div>
   </div>

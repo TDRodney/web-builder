@@ -1,5 +1,5 @@
 <script setup>
-import { computed, useSlots } from 'vue';
+import { computed, useSlots, inject } from 'vue';
 
 const props = defineProps({
   nodeId: {
@@ -16,11 +16,13 @@ const props = defineProps({
   }
 });
 
+const isEditable = inject('isEditable', false);
 const slots = useSlots();
+
 const isEmpty = computed(() => {
   if (!slots.default) {
-return true;
-}
+    return true;
+  }
 
   const children = slots.default().filter(c => {
     return c.type && c.type.toString() !== 'Symbol(Comment)' && c.type.toString() !== 'Symbol(v-cmt)';
@@ -49,8 +51,11 @@ const computedStyles = computed(() => {
 <template>
   <div class="layout-grid-wrapper">
     <div 
-      class="layout-grid-container min-h-[50px] transition-all"
-      :class="{ 'border-2 border-dashed border-slate-300 rounded-lg p-6 bg-slate-50/50': isEmpty }"
+      class="layout-grid-container transition-all"
+      :class="{ 
+        'border-2 border-dashed border-slate-300 rounded-lg p-6 bg-slate-50/50 min-h-[50px]': isEditable && isEmpty,
+        'min-h-[50px]': isEditable && !isEmpty
+      }"
       :style="computedStyles"
     >
       <slot />

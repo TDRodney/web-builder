@@ -7,7 +7,7 @@ export default {
 </script>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, inject } from 'vue';
 
 const props = defineProps({
   nodeId: {
@@ -19,6 +19,8 @@ const props = defineProps({
     default: () => ({})
   }
 });
+
+const isEditable = inject('isEditable', false);
 
 const computedStyles = computed(() => {
   const styles = {};
@@ -40,9 +42,12 @@ const computedStyles = computed(() => {
 
 <template>
   <div 
-    tabindex="0"
+    :tabindex="isEditable ? 0 : undefined"
     :style="computedStyles"
-    class="focus:ring-2 focus:ring-indigo-500 focus:outline-none hover:ring-1 hover:ring-indigo-300 rounded p-1 transition-all cursor-pointer"
+    :class="isEditable 
+      ? 'focus:ring-2 focus:ring-indigo-500 focus:outline-none hover:ring-1 hover:ring-indigo-300 rounded p-1 transition-all cursor-pointer' 
+      : 'p-1 transition-all'
+    "
   >
     {{ props.blockProps?.content ?? '' }}
   </div>
