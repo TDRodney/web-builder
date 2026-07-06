@@ -18,6 +18,7 @@ onErrorCaptured((err) => {
   hasError.value = true;
   errorMessage.value = err.message || 'Rendering failed';
   console.error(`[Public Block Render Error] Node ID: ${props.node.id}, Type: ${props.node.type}`, err);
+
   return false;
 });
 </script>

@@ -106,8 +106,10 @@ const redo = () => {
 
 const addBlock = (type) => {
   const definition = getBlockDefinition(type);
+
   if (!definition) {
     console.error(`Block type "${type}" is not registered in the block registry.`);
+
     return;
   }
 
@@ -165,6 +167,7 @@ const activeBlockDefinition = computed(() => {
   if (!selectedBlock.value) {
     return null;
   }
+
   return getBlockDefinition(selectedBlock.value.type);
 });
 
@@ -326,7 +329,10 @@ const autoGenerateSlug = () => {
 };
 
 const switchPage = async (pageSlug) => {
-  if (pageSlug === props.page.slug) return;
+  if (pageSlug === props.page.slug) {
+return;
+}
+
   await forceSave();
   router.visit(`/editor?page=${pageSlug}`);
 };
@@ -334,6 +340,7 @@ const switchPage = async (pageSlug) => {
 const submitCreatePage = async () => {
   try {
     const res = await createForm.post('/editor/pages');
+
     if (res && res.status === 'success') {
       showCreateModal.value = false;
       createForm.reset();
@@ -355,8 +362,10 @@ const openRenameModal = (page) => {
 const submitRenamePage = async () => {
   try {
     const res = await renameForm.patch(`/editor/pages/${pageToRename.value.id}`);
+
     if (res && res.status === 'success') {
       showRenameModal.value = false;
+
       if (pageToRename.value.slug === props.page.slug) {
         router.visit(`/editor?page=${res.page.slug}`);
       } else {
@@ -369,13 +378,17 @@ const submitRenamePage = async () => {
 };
 
 const handleDeletePage = async (page) => {
-  if (page.is_homepage) return;
+  if (page.is_homepage) {
+return;
+}
+
   if (!confirm(`Are you sure you want to delete "${page.title}"? This will delete all of its draft and published configurations.`)) {
     return;
   }
   
   try {
     const res = await deleteHttp.delete(`/editor/pages/${page.id}`);
+
     if (res && res.status === 'success') {
       if (page.slug === props.page.slug) {
         router.visit('/editor');
@@ -393,6 +406,7 @@ const handleSetHomepage = async (page) => {
     const res = await setHomepageHttp.patch(`/editor/pages/${page.id}`, {
       is_homepage: true
     });
+
     if (res && res.status === 'success') {
       router.reload({ only: ['pages', 'page'] });
     }
@@ -426,8 +440,8 @@ const handleSetHomepage = async (page) => {
     </div>
 
     <!-- Inspector Sidebar -->
-    <div class="w-80 border-l border-slate-800 p-6 bg-slate-900 flex flex-col justify-between h-screen shrink-0">
-      <div class="space-y-6">
+    <div class="w-80 border-l border-slate-800 bg-slate-900 flex flex-col h-screen shrink-0">
+      <div class="flex-1 overflow-y-auto p-6 space-y-6 min-h-0">
         <!-- Pages Management Panel -->
         <div class="space-y-3">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
@@ -598,7 +612,7 @@ const handleSetHomepage = async (page) => {
       </div>
 
       <!-- Action Panel at the Bottom of Sidebar -->
-      <div class="border-t border-slate-800 pt-6 mt-6 space-y-4">
+      <div class="border-t border-slate-800 p-6 space-y-4 shrink-0 bg-slate-900">
         <!-- Publish Status Alert -->
         <div v-if="publishMessage" class="text-emerald-400 text-center text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 px-3 py-2.5 rounded-lg">
           {{ publishMessage }}

@@ -1,8 +1,8 @@
 <script setup>
 import { inject, ref, onErrorCaptured } from 'vue';
 import draggable from 'vuedraggable';
-import RenderNode from './RenderNode.vue';
 import { getBlockDefinition } from '@/lib/blockRegistry';
+import RenderNode from './RenderNode.vue';
 
 const props = defineProps({
   node: {
@@ -19,9 +19,11 @@ const forceSave = inject('forceSave', null);
 
 const checkAllowedChild = (parentType, childType) => {
   const def = getBlockDefinition(parentType);
+
   if (!def || !def.allowedChildren) {
     return true;
   }
+
   return def.allowedChildren.includes(childType);
 };
 
@@ -32,6 +34,7 @@ onErrorCaptured((err) => {
   hasError.value = true;
   errorMessage.value = err.message || 'Rendering failed';
   console.error(`[Block Render Error] Node ID: ${props.node.id}, Type: ${props.node.type}`, err);
+
   return false;
 });
 

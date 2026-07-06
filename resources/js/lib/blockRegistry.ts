@@ -1,8 +1,8 @@
-import HeroBlock from '@/components/BuilderBlocks/HeroBlock.vue';
-import FeatureBlock from '@/components/BuilderBlocks/FeatureBlock.vue';
-import LayoutGrid from '@/components/BuilderBlocks/LayoutGrid.vue';
-import LayoutColumn from '@/components/BuilderBlocks/LayoutColumn.vue';
 import AtomicText from '@/components/BuilderBlocks/AtomicText.vue';
+import FeatureBlock from '@/components/BuilderBlocks/FeatureBlock.vue';
+import HeroBlock from '@/components/BuilderBlocks/HeroBlock.vue';
+import LayoutColumn from '@/components/BuilderBlocks/LayoutColumn.vue';
+import LayoutGrid from '@/components/BuilderBlocks/LayoutGrid.vue';
 
 export const blockComponents: Record<string, any> = {
   HeroBlock,
