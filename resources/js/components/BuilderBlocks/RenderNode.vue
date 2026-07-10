@@ -3,6 +3,7 @@ import { inject, ref, onErrorCaptured } from 'vue';
 import draggable from 'vuedraggable';
 import { getBlockDefinition } from '@/lib/blockRegistry';
 import RenderNode from './RenderNode.vue';
+import BlockToolbar from './BlockToolbar.vue';
 
 const props = defineProps({
   node: {
@@ -38,6 +39,8 @@ onErrorCaptured((err) => {
   return false;
 });
 
+const isHovered = ref(false);
+
 const selectBlock = (node) => {
   if (canvasSelection) {
     canvasSelection.selectNode(node);
@@ -66,14 +69,17 @@ const handleDragEnd = () => {
   <div 
     :data-type="node.type"
     @click.stop="selectBlock(node)"
+    @mouseenter="isHovered = true"
+    @mouseleave="isHovered = false"
     :style="{ 
       padding: (node.props?.padding ?? 0) + 'px',
       backgroundColor: node.props?.backgroundColor ?? 'transparent'
     }"
-    class="border-2 border-transparent hover:border-indigo-500 rounded-lg relative group my-2 cursor-pointer transition-[border-color,background-color]"
+    class="border-2 border-transparent hover:border-indigo-500 rounded-lg relative my-2 cursor-pointer transition-[border-color,background-color]"
+    :class="isHovered ? 'border-indigo-500' : ''"
   >
-    <div class="drag-handle absolute top-2 left-2 opacity-0 group-hover:opacity-100 bg-indigo-600 text-white px-2 py-0.5 rounded text-xs cursor-move z-10">
-      ::: Move
+    <div class="drag-handle">
+      <BlockToolbar :node-id="node.id" :visible="isHovered" />
     </div>
     
     <div v-if="hasError" class="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-lg text-xs flex flex-col gap-1 my-2">

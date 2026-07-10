@@ -84,13 +84,19 @@ Allow any page to be designated as the homepage. The public site controller shou
 
 ### What's Implemented
 
-5 block types: `HeroBlock`, `FeatureBlock`, `AtomicText`, `LayoutGrid`, `LayoutColumn`.
+8 block types: `HeroBlock`, `FeatureBlock`, `AtomicText`, `LayoutGrid`, `LayoutColumn`, `ButtonBlock`, `DividerBlock`, `SpacerBlock`.
 
-### What's Missing
+### What's Still Missing (from original gap)
 
-A production website builder needs **15-25+ block types** to be useful. The current palette lacks images, buttons, videos, forms, dividers, embeds, lists, testimonials, pricing, FAQ, and more.
+A production website builder needs **15-25+ block types** to be useful. The current palette has 8 types (5 original + 3 P0: Button, Divider, Spacer) and still lacks images (blocked by Gap 3), videos, forms, embeds, lists, testimonials, pricing, FAQ, and more.
 
-Additionally, there is **no block schema registry** — block definitions are scattered between Vue components, the editor's `addBlock()` function, and the Blade partial. Adding a new block requires editing 3+ files.
+The centralized block schema registry (`blockRegistry.ts`) and data-driven inspector have been built (see Phase 1). Adding a new block now requires updating 4 files centrally, but the process is documented in `AGENTS.md`.
+
+### Newly Discovered Gap: Nesting Matrix Synchronization
+
+Adding a new block type requires updating **every existing parent's nesting list** in both `config/blocks.php` and `blockRegistry.ts`, not just adding the type to the `types` array. Missing a parent entry causes 422 validation failures on save for any page using that nesting combination. This was not anticipated in the original gap analysis.
+
+**Requirement**: The block installation checklist (now in `AGENTS.md`) must include a second pass over `blockRegistry.ts` `allowedChildren` arrays after updating `config/blocks.php` nesting rules. Both sides must remain in sync — the client enforces drag-and-drop restrictions while the server validates on save.
 
 ### What to Build
 
@@ -137,9 +143,9 @@ This eliminates the massive `if/else if` chains in both `addBlock()` and the ins
 | Priority | Block Type | Category | Key Props | Notes |
 |---|---|---|---|---|
 | **P0** | `ImageBlock` | media | `src`, `alt`, `width`, `height`, `objectFit`, `borderRadius` | Requires media pipeline (Gap 3) |
-| **P0** | `ButtonBlock` | interactive | `label`, `href`, `variant`, `size`, `target` | Link target, open in new tab |
-| **P0** | `DividerBlock` | layout | `thickness`, `color`, `style` (solid/dashed/dotted), `marginY` | Simple horizontal rule |
-| **P0** | `SpacerBlock` | layout | `height` | Vertical whitespace control |
+| **P0** | `ButtonBlock` | interactive | `label`, `href`, `variant`, `size`, `target` | ✅ Done — see `ButtonBlock.vue` |
+| **P0** | `DividerBlock` | layout | `thickness`, `color`, `style` (solid/dashed/dotted), `marginY` | ✅ Done — see `DividerBlock.vue` |
+| **P0** | `SpacerBlock` | layout | `height` | ✅ Done — see `SpacerBlock.vue` |
 | **P1** | `RichTextBlock` | content | `html` | Requires inline WYSIWYG (TipTap or similar) |
 | **P1** | `VideoEmbedBlock` | media | `url`, `provider` (YouTube/Vimeo), `aspectRatio` | Parse embed URLs, render iframe |
 | **P1** | `IconBlock` | media | `icon` (Lucide name), `size`, `color` | Pick from Lucide icon set |
@@ -153,17 +159,18 @@ This eliminates the massive `if/else if` chains in both `addBlock()` and the ins
 | **P3** | `CountdownBlock` | interactive | `targetDate`, `labelFormat` | JS-powered countdown timer |
 | **P3** | `SocialLinksBlock` | interactive | `links[]` with platform/url | Row of social media icons |
 
-#### 2.3 — Block Toolbar (In-Canvas Actions)
+#### 2.3 — Block Toolbar (In-Canvas Actions) ✅ Done
 
-Currently, blocks only have a `:::Move` drag handle. Add an in-canvas floating toolbar on hover/select:
+Blocks now have an in-canvas floating toolbar on hover/select rendered by `BlockToolbar.vue` inside `RenderNode.vue`:
 
-- **Duplicate** — clone the selected block (deep copy children)
-- **Delete** — remove with confirmation
-- **Move up / Move down** — reorder within parent
-- **Copy / Paste** — clipboard buffer for cross-page block copying
-- **Wrap in Container** — wrap a leaf block inside a new `LayoutColumn`
+- **Duplicate** — deep clones the block tree with new IDs, inserts after original
+- **Delete** — two-click confirmation (button turns red, click again to confirm, auto-resets after 3s)
+- **Move up / Move down** — reorder within parent array
+- **Copy / Paste** — clipboard buffer (`copiedBlock` ref) persists across blocks; paste button shows green when buffer is populated
+- **Wrap in Container** — wraps the block inside a new `LayoutColumn` container (preserves block as child)
+- **Drag handle** — the entire toolbar area doubles as the vuedraggable `.drag-handle` for reordering
 
-This should be a shared `<BlockToolbar>` component rendered by `RenderNode.vue`.
+All actions are provided via `provide('blockActions', ...)` from `Editor.vue` and consumed via `inject` in `RenderNode.vue` / `BlockToolbar.vue`. Tree manipulation helpers (`findParent`, `generateNewIds`, `deleteBlockById`, `duplicateBlock`, `moveBlock`, `copyBlock`, `pasteBlock`, `wrapInContainer`) are centralized in `Editor.vue`.
 
 #### 2.4 — Block Templates / Presets
 
@@ -680,12 +687,13 @@ erDiagram
 
 > Prerequisite fixes and structural improvements that unblock all later work.
 
-- [ ] **Normalize block prop schema** — Fix the `styles/content` vs `props` inconsistency between registration seeder and editor (Gap 8.4)
-- [ ] **Create `TenantFactory` and `PageFactory`** — Required for all future test development (Gap 8.1)
-- [ ] **Add `draft_config` structural validation** — Security hardening for the save endpoint (Gap 8.3)
-- [ ] **Add editor toast notifications** — Wire vue-sonner into Editor.vue for save/publish/error feedback (Gap 8.5)
-- [ ] **Build centralized block schema registry** (`blockRegistry.ts`) — Single source-of-truth for block definitions (Gap 2.1)
-- [ ] **Refactor inspector sidebar to be data-driven** — Eliminate per-block `v-if` branches, use registry metadata (Gap 2.1)
+- [x] **Normalize block prop schema** — Fixed `styles/content` vs `props` inconsistency across registration seeder, editor controller, and `blockRegistry.ts` (Gap 8.4)
+- [x] **Create `TenantFactory` and `PageFactory`** — `TenantFactory` with `withHomePage()` state, `PageFactory` with `published()` state (Gap 8.1)
+- [x] **Add `draft_config` structural validation** — `ValidatesBlockSchema` rule validates id, type, props, children, nesting recursively via `config('blocks.nesting')` (Gap 8.3)
+- [ ] **Add editor toast notifications** — Wire vue-sonner into Editor.vue for save/publish/error feedback (Gap 8.5) — still missing
+- [x] **Build centralized block schema registry** (`blockRegistry.ts`) — Single source-of-truth for block definitions (Gap 2.1)
+- [x] **Refactor inspector sidebar to be data-driven** — Eliminated per-block `v-if` branches, uses registry metadata (Gap 2.1)
+- [x] **Nesting matrix sync documentation** — Added to `AGENTS.md` Block Installation Checklist; existing nesting rules loosened to avoid 422 on legacy page data
 
 ### Phase 2 — Multi-Page & Core Blocks (Week 3-5)
 
@@ -694,8 +702,8 @@ erDiagram
 - [ ] **Multi-page CRUD API** — Page listing, creation, renaming, deletion endpoints (Gap 1.1)
 - [ ] **Page metadata migration** — title, is_homepage, sort_order (Gap 1.2)
 - [ ] **Editor page switcher UI** — Page selector, page switch with save-before-navigate (Gap 1.3)
-- [ ] **Block library expansion (P0)** — ImageBlock (placeholder), ButtonBlock, DividerBlock, SpacerBlock (Gap 2.2)
-- [ ] **Block toolbar** — Duplicate, delete, move up/down, wrap in container (Gap 2.3)
+- [~] **Block library expansion (P0)** — ButtonBlock ✅, DividerBlock ✅, SpacerBlock ✅; ImageBlock (placeholder) ⏳ blocked by Gap 3 media pipeline (Gap 2.2)
+- [x] **Block toolbar** — Duplicate, delete (with confirmation), move up/down, copy/paste, wrap in container (Gap 2.3)
 - [ ] **Public site responsive redesign** — Remove card wrapper, add full-bleed sections, responsive grids (Gap 6.5)
 
 ### Phase 3 — Media, Theming & Navigation (Week 6-9)

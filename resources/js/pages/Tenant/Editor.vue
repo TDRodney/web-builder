@@ -171,29 +171,120 @@ const activeBlockDefinition = computed(() => {
   return getBlockDefinition(selectedBlock.value.type);
 });
 
-const deleteSelectedBlock = () => {
-  if (!selectedBlock.value) {
-return;
-}
-
-  const removeNode = (nodes, id) => {
-    for (let i = 0; i < nodes.length; i++) {
-      if (nodes[i].id === id) {
-        nodes.splice(i, 1);
-
-        return true;
-      }
-
-      if (nodes[i].children && removeNode(nodes[i].children, id)) {
-        return true;
-      }
+const findParent = (nodes, targetId) => {
+  for (const node of nodes) {
+    if (node.children?.some(c => c.id === targetId)) {
+      return node;
     }
+    if (node.children) {
+      const result = findParent(node.children, targetId);
+      if (result) return result;
+    }
+  }
+  return null;
+};
 
+const findIndexInParent = (nodes, targetId) => {
+  for (let i = 0; i < nodes.length; i++) {
+    if (nodes[i].id === targetId) return i;
+    if (nodes[i].children) {
+      const idx = findIndexInParent(nodes[i].children, targetId);
+      if (idx !== -1) return idx;
+    }
+  }
+  return -1;
+};
+
+const generateNewIds = (node) => {
+  const copy = JSON.parse(JSON.stringify(node));
+  copy.id = `${copy.type.toLowerCase()}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  if (copy.children) {
+    copy.children = copy.children.map(generateNewIds);
+  }
+  return copy;
+};
+
+const removeNode = (nodes, id) => {
+  for (let i = 0; i < nodes.length; i++) {
+    if (nodes[i].id === id) {
+      nodes.splice(i, 1);
+      return true;
+    }
+    if (nodes[i].children && removeNode(nodes[i].children, id)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const deleteBlockById = (nodeId) => {
+  removeNode(blocks.value, nodeId);
+  if (selectedBlock.value?.id === nodeId) {
+    selectedBlock.value = null;
+  }
+};
+
+const deleteSelectedBlock = () => {
+  if (!selectedBlock.value) return;
+  deleteBlockById(selectedBlock.value.id);
+};
+
+const duplicateBlock = (nodeId) => {
+  const parent = findParent(blocks.value, nodeId);
+  const list = parent ? parent.children : blocks.value;
+  const idx = list.findIndex(n => n.id === nodeId);
+  if (idx === -1) return;
+  list.splice(idx + 1, 0, generateNewIds(list[idx]));
+};
+
+const moveBlock = (nodeId, direction) => {
+  const parent = findParent(blocks.value, nodeId);
+  const list = parent ? parent.children : blocks.value;
+  const idx = list.findIndex(n => n.id === nodeId);
+  if (idx === -1) return;
+  if (direction === 'up' && idx > 0) {
+    const [item] = list.splice(idx, 1);
+    list.splice(idx - 1, 0, item);
+  } else if (direction === 'down' && idx < list.length - 1) {
+    const [item] = list.splice(idx, 1);
+    list.splice(idx + 1, 0, item);
+  }
+};
+
+const copiedBlock = ref(null);
+
+const copyBlock = (nodeId) => {
+  const walk = (nodes) => {
+    for (const n of nodes) {
+      if (n.id === nodeId) { copiedBlock.value = JSON.parse(JSON.stringify(n)); return true; }
+      if (n.children && walk(n.children)) return true;
+    }
     return false;
   };
+  walk(blocks.value);
+};
 
-  removeNode(blocks.value, selectedBlock.value.id);
-  selectedBlock.value = null;
+const pasteBlock = (targetId) => {
+  if (!copiedBlock.value) return;
+  const parent = targetId ? findParent(blocks.value, targetId) : null;
+  const list = parent ? parent.children : blocks.value;
+  const idx = targetId ? list.findIndex(n => n.id === targetId) : list.length - 1;
+  list.splice(idx + 1, 0, generateNewIds(copiedBlock.value));
+};
+
+const wrapInContainer = (nodeId, containerType = 'LayoutColumn') => {
+  const parent = findParent(blocks.value, nodeId);
+  const list = parent ? parent.children : blocks.value;
+  const idx = list.findIndex(n => n.id === nodeId);
+  if (idx === -1) return;
+  const node = list[idx];
+  const container = {
+    id: `${containerType.toLowerCase()}-${Date.now()}`,
+    type: containerType,
+    props: { padding: 20, backgroundColor: 'transparent', span: 'auto', width: 'auto', height: 'auto', gap: '0px' },
+    children: [node]
+  };
+  list.splice(idx, 1, container);
 };
 
 // Initialize Inertia v3 stand-alone HTTP request hook
@@ -317,6 +408,15 @@ const forceSave = async () => {
   await saveCanvasState();
 };
 provide('forceSave', forceSave);
+provide('blockActions', {
+  duplicateBlock,
+  moveBlock,
+  copyBlock,
+  pasteBlock,
+  wrapInContainer,
+  copiedBlock,
+  deleteBlockById
+});
 
 // Deep watch the layout array. Any drag or slider change triggers a safe save.
 watch(blocks, (newBlocks) => {
