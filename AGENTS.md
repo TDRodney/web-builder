@@ -205,4 +205,49 @@ Use Wayfinder to generate TypeScript functions for Laravel routes. Import from `
 Vue components must have a single root element.
 - IMPORTANT: Activate `inertia-vue-development` when working with Inertia Vue client-side patterns.
 
+=== web-builder project rules ===
+
+# Block Installation Checklist
+
+When adding a new block type, ALL of these files must be updated. Missing any step will cause the block to fail silently on the public site (editor shows it locally, but saves fail and publish copies stale data).
+
+1. **`resources/js/components/BuilderBlocks/YourBlock.vue`** — Create the Vue component. Must accept `nodeId` and `blockProps` props. Use `blockProps` as the prop name (not `props`) to avoid SFC collision.
+
+2. **`resources/js/lib/blockRegistry.ts`** — Three changes:
+   - Add import at the top
+   - Add to `blockComponents` map (key = type string)
+   - Add a `BlockDefinition` entry to `blockDefinitions[]` with `type`, `label`, `category`, `icon`, `defaultProps`, `inspectorFields`, and optionally `allowedChildren`
+
+3. **`config/blocks.php`** — Four changes:
+   - Add type string to the `types` array
+   - Optionally add a `nesting` key for the new type if it can contain children
+   - If the new block can be a child of `LayoutColumn`, add it to `LayoutColumn`'s allowed children list
+   - If any existing parent type should accept the new block, add it there too
+   - **CRITICAL**: Check EVERY parent's nesting list (`LayoutGrid`, `LayoutColumn`, etc.) and add the new block type to each one that should allow it. Missing a parent entry = save fails with 422 for anyone using that nesting combination.
+
+4. **`resources/js/lib/blockRegistry.ts` (second pass)** — After updating `config/blocks.php` nesting, mirror the exact same changes in the `allowedChildren` arrays of existing parent `BlockDefinition` entries. Both sides must remain in sync; the client enforces drag-and-drop restrictions while the server validates on save.
+
+5. **`npm run build`** — Verify the Vite build succeeds
+
+6. **`php artisan test --compact`** — Verify all tests pass
+
+## Critical: Save/Publish Flow
+
+The editor has a two-step save model:
+- **Save** writes `draft_config` to the database (debounced 400ms, cancel-safe via `currentSaveVisit`)
+- **Publish** copies `draft_config` → `published_config` (inside a DB transaction)
+- The public site reads ONLY `published_config`
+
+**If save fails**: the editor's `saveError` ref goes to `true` for 10s (visible as a "Save failed" alert in the sidebar), and the Publish button is disabled until the next successful save. Previously, save errors were silently swallowed (the `onHttpException` handler returned `false`), which meant the user could click Publish and get stale data copied to the public site.
+
+## Undo/Redo
+
+- Undo/redo uses snapshot arrays (`undoStack` / `redoStack`) captured before each blocks mutation
+- `isTraveling` flag suppresses re-saving during history travel
+
+## Device Preview
+
+- Three modes: Desktop (full width), Tablet (768px), Mobile (375px)
+- Canvas `container-type: inline-size` lets blocks respond with `@container` queries
+
 </laravel-boost-guidelines>

@@ -78,16 +78,16 @@ test('slug validation rules are enforced', function () {
         'title' => 'Home Duplicate',
         'slug' => 'home',
     ]);
-    $response->assertRedirect();
-    $response->assertSessionHasErrors('slug');
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors('slug');
 
     // Rejects uppercase/spaces/special chars in slug
     $response = $this->postJson("http://{$tenant->subdomain}.domain.localhost/editor/pages", [
         'title' => 'Invalid Slug',
         'slug' => 'invalid slug!',
     ]);
-    $response->assertRedirect();
-    $response->assertSessionHasErrors('slug');
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors('slug');
 });
 
 test('different tenants can have the same slug', function () {

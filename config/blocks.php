@@ -7,9 +7,12 @@ return [
         'LayoutGrid',
         'LayoutColumn',
         'AtomicText',
+        'ButtonBlock',
+        'DividerBlock',
+        'SpacerBlock',
     ],
     'nesting' => [
-        'LayoutGrid' => ['LayoutColumn'],
-        'LayoutColumn' => ['HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText'],
+        'LayoutGrid' => ['HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock'],
+        'LayoutColumn' => ['HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock'],
     ],
 ];

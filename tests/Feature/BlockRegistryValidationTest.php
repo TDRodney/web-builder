@@ -55,8 +55,8 @@ test('saving blocks with missing id is rejected', function () {
         'draft_config' => $invalidData,
     ]);
 
-    $response->assertRedirect();
-    $response->assertSessionHasErrors(['draft_config']);
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors('draft_config');
 });
 
 test('saving blocks with unrecognized block types is rejected', function () {
@@ -79,8 +79,8 @@ test('saving blocks with unrecognized block types is rejected', function () {
         'draft_config' => $invalidData,
     ]);
 
-    $response->assertRedirect();
-    $response->assertSessionHasErrors(['draft_config']);
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors('draft_config');
 });
 
 test('saving blocks with missing props key is rejected', function () {
@@ -102,8 +102,8 @@ test('saving blocks with missing props key is rejected', function () {
         'draft_config' => $invalidData,
     ]);
 
-    $response->assertRedirect();
-    $response->assertSessionHasErrors(['draft_config']);
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors('draft_config');
 });
 
 test('saving blocks with malformed children array is rejected', function () {
@@ -127,28 +127,28 @@ test('saving blocks with malformed children array is rejected', function () {
         'draft_config' => $invalidData,
     ]);
 
-    $response->assertRedirect();
-    $response->assertSessionHasErrors(['draft_config']);
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors('draft_config');
 });
 
-test('saving blocks violating parent nesting constraints is rejected', function () {
+test('saving layouts with unrestricted block types succeeds', function () {
     $user = User::factory()->create();
     $tenant = Tenant::factory()->withHomePage()->create(['user_id' => $user->id]);
     $page = $tenant->pages()->first();
 
     $this->actingAs($user);
 
-    // LayoutGrid is configured to only allow LayoutColumn. Let's try placing HeroBlock directly.
-    $invalidData = [
+    // LayoutGrid now accepts all block types as direct children
+    $validData = [
         [
             'id' => 'grid-1',
             'type' => 'LayoutGrid',
-            'props' => [],
+            'props' => ['columns' => 2, 'padding' => 20, 'backgroundColor' => 'transparent', 'gap' => '1rem'],
             'children' => [
                 [
-                    'id' => 'hero-inside-grid-error',
+                    'id' => 'hero-inside-grid',
                     'type' => 'HeroBlock',
-                    'props' => [],
+                    'props' => ['padding' => 40, 'backgroundColor' => '#ffffff', 'headline' => 'Inside Grid', 'subheadline' => 'Works'],
                 ],
             ],
         ],
@@ -156,9 +156,12 @@ test('saving blocks violating parent nesting constraints is rejected', function 
 
     $response = $this->postJson("http://{$tenant->subdomain}.domain.localhost/editor/save", [
         'page_id' => $page->id,
-        'draft_config' => $invalidData,
+        'draft_config' => $validData,
     ]);
 
-    $response->assertRedirect();
-    $response->assertSessionHasErrors(['draft_config']);
+    $response->assertOk();
+    $response->assertJson(['status' => 'success']);
+
+    $page->refresh();
+    expect($page->draft_config)->toBe($validData);
 });

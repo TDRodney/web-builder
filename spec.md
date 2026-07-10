@@ -202,11 +202,11 @@ Pages store their layout as an **ordered tree of block nodes** in `draft_config`
 ```typescript
 interface BlockNode {
   id: string;        // e.g. "hero-1719832456789"
-  type: string;      // Registry key: "HeroBlock" | "FeatureBlock" | "AtomicText" | "LayoutGrid" | "LayoutColumn"
+  type: string;      // Registry key: "HeroBlock" | "FeatureBlock" | "AtomicText" | "LayoutGrid" | "LayoutColumn" | "ButtonBlock" | "DividerBlock" | "SpacerBlock"
   props: {           // Type-specific properties
     padding?: number;
     backgroundColor?: string;
-    // + type-specific props (headline, title, content, columns, span, etc.)
+    // + type-specific props (headline, title, content, columns, span, label, variant, thickness, height, etc.)
   };
   children?: BlockNode[];  // Recursive nesting (used by LayoutGrid, LayoutColumn)
 }
@@ -221,6 +221,9 @@ interface BlockNode {
 | `AtomicText` | Leaf | `content`, `fontSize`, `color`, `padding`, `backgroundColor` |
 | `LayoutGrid` | Container | `columns`, `gap`, `padding`, `width`, `height` + `children[]` |
 | `LayoutColumn` | Container | `span` (grid or flex-basis), `padding`, `width`, `height`, `gap` + `children[]` |
+| `ButtonBlock` | Leaf | `label`, `variant` (primary/secondary/outline), `url`, `size` (sm/md/lg) |
+| `DividerBlock` | Leaf | `thickness` (1-8), `color`, `margin` (0-60) |
+| `SpacerBlock` | Leaf | `height` (4-200) |
 
 ---
 
@@ -408,7 +411,7 @@ The block configuration is rendered in a unified rendering pipeline governed by 
 | **Editor (authed)** | Vue components via `RenderNode` | Vue 3 + vuedraggable | [RenderNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderNode.vue) | `draft_config` |
 | **Public Site (visitor)** | Vue components via Inertia SSR | Vue 3 Server Rendering | [RenderPublicNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderPublicNode.vue) | `published_config` |
 
-The [blockRegistry.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/lib/blockRegistry.ts) file acts as the single source-of-truth definition registry for all supported block types (e.g., `HeroBlock`, `FeatureBlock`, `AtomicText`, `LayoutGrid`, `LayoutColumn`). It governs default configurations, category tags, and editable inspector properties.
+The [blockRegistry.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/lib/blockRegistry.ts) file acts as the single source-of-truth definition registry for all supported block types (e.g., `HeroBlock`, `FeatureBlock`, `AtomicText`, `LayoutGrid`, `LayoutColumn`, `ButtonBlock`, `DividerBlock`, `SpacerBlock`). It governs default configurations, category tags, and editable inspector properties.
 
 The [RenderNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderNode.vue) component drives the editor canvas:
 - Uses Vue's `<component :is>` dynamic component resolution against the component registry map.
@@ -425,7 +428,7 @@ The [RenderPublicNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-build
 
 The block addition and validation pipeline enforces structural constraints and parent-child nesting rules:
 - **Central Registries**: Blocks are registered centrally on the frontend in [blockRegistry.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/lib/blockRegistry.ts) (including `allowedChildren` nesting rules) and on the backend in [blocks.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/config/blocks.php).
-- **Drag-and-Drop Constraints**: [RenderNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderNode.vue) tags nodes with dynamic `:data-type` attributes and passes a `put()` validation function to `vuedraggable` to physically prevent drop operations that violate nesting rules (e.g. dropping a `HeroBlock` inside a `LayoutGrid` instead of a `LayoutColumn`).
+- **Drag-and-Drop Constraints**: [RenderNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderNode.vue) tags nodes with dynamic `:data-type` attributes and passes a `put()` validation function to `vuedraggable` to physically prevent drop operations that violate nesting rules. Both `LayoutGrid` and `LayoutColumn` currently accept all block types; future nesting restrictions can be added to `allowedChildren` / `nesting` as needed.
 - **Insertion Safeguards**: Clicking library block buttons inside `Editor.vue` checks constraints and falls back to root list insertion if nesting permissions are violated.
 - **Backend Security**: The recursive validator [ValidatesBlockSchema.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Rules/ValidatesBlockSchema.php) references `config('blocks.nesting')` to strictly validate nesting schemas on all save operations.
 

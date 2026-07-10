@@ -122,7 +122,7 @@ const addBlock = (type) => {
     children: []
   };
 
-  if (type === 'LayoutGrid') {
+  if (type === 'LayoutGrid') { // TODO - Create Sections options and remove this hard coding
     newBlock.children = [
       {
         id: `layoutcolumn-${Date.now()}-1`,
@@ -205,6 +205,62 @@ const http = useHttp({
 // 2. Debounced, Race-Condition-Safe Auto-Save Engine
 let currentSaveVisit = null;
 
+const saveError = ref('');
+let saveErrorTimer = null;
+
+const extractHttpError = (error) => {
+  if (!error) {
+    return 'Unknown error';
+  }
+
+  if (error.name === 'HttpCancelledError' || error.message === 'canceled' || error.code === 'canceled') {
+    return null;
+  }
+
+  if (error.name === 'HttpNetworkError' || error.message === 'Network Error') {
+    return 'Cannot reach the server — check your connection';
+  }
+
+  const response = error.response;
+  if (!response) {
+    return error.message || 'Unknown error';
+  }
+
+  const status = response.status;
+  let body = null;
+
+  try {
+    body = response.data ? JSON.parse(response.data) : null;
+  } catch {
+    // Response is HTML, not JSON — likely a 419 CSRF page or 500 error page
+    if (status === 419) {
+      return 'Session expired — please reload the page';
+    }
+    if (status === 401 || status === 403) {
+      return 'Unauthorized — your session may have expired';
+    }
+    if (status >= 500) {
+      return `Server error (${status}) — please try again`;
+    }
+    return `Request failed (${status})`;
+  }
+
+  if (body?.errors) {
+    const messages = Object.values(body.errors).flat();
+    return messages.join('; ');
+  }
+
+  if (body?.error) {
+    return body.error;
+  }
+
+  if (body?.message) {
+    return body.message;
+  }
+
+  return `Request failed (${status})`;
+};
+
 const saveCanvasState = async () => {
   if (currentSaveVisit) {
     currentSaveVisit.cancel();
@@ -214,22 +270,29 @@ const saveCanvasState = async () => {
     currentSaveVisit = http.post(`/editor/save`, {
       onCancel: () => {
         console.log('Previous background save aborted cleanly.');
-      },
-      onHttpException(response) {
-        console.warn('Background auto-save failed silently:', response.status);
-
-        return false;
-      },
-      onNetworkError(error) {
-        console.warn('Network error during auto-save:', error.message);
-
-        return false;
       }
     });
 
     await currentSaveVisit;
-  } catch (_error) {
-    // Absorb native Inertia cancellation states
+    saveError.value = '';
+    if (saveErrorTimer) {
+      clearTimeout(saveErrorTimer);
+      saveErrorTimer = null;
+    }
+  } catch (error) {
+    const message = extractHttpError(error);
+
+    if (message === null) {
+      return;
+    }
+
+    console.warn('[Save Error]', { status: error?.response?.status, body: error?.response?.data });
+
+    saveError.value = message;
+    if (saveErrorTimer) {
+      clearTimeout(saveErrorTimer);
+    }
+    saveErrorTimer = setTimeout(() => { saveError.value = ''; }, 10000);
   } finally {
     currentSaveVisit = null;
   }
@@ -277,13 +340,21 @@ const publishHttp = useHttp({
   page_id: props.page.id
 });
 
+const publishError = ref('');
+
 const publishPage = async () => {
   isPublishing.value = true;
   publishMessage.value = '';
+  publishError.value = '';
 
   try {
     // 1. Flush any pending draft changes immediately before publishing
     await forceSave();
+
+    if (saveError.value) {
+      publishError.value = 'Cannot publish while save is failing: ' + saveError.value;
+      return;
+    }
 
     // 2. Perform the publish promotion
     const res = await publishHttp.post(`/editor/publish`);
@@ -293,9 +364,15 @@ const publishPage = async () => {
       setTimeout(() => {
         publishMessage.value = '';
       }, 3000);
+    } else {
+      publishError.value = 'Publish returned an unexpected response';
     }
   } catch (err) {
-    console.error('Publish failed:', err);
+    const message = extractHttpError(err);
+
+    if (message !== null) {
+      publishError.value = message;
+    }
   } finally {
     isPublishing.value = false;
   }
@@ -319,6 +396,8 @@ const renameForm = useHttp({
 const deleteHttp = useHttp({});
 const setHomepageHttp = useHttp({});
 
+const pageActionError = ref('');
+
 const autoGenerateSlug = () => {
   createForm.slug = createForm.title
     .toLowerCase()
@@ -338,6 +417,7 @@ return;
 };
 
 const submitCreatePage = async () => {
+  pageActionError.value = '';
   try {
     const res = await createForm.post('/editor/pages');
 
@@ -347,7 +427,10 @@ const submitCreatePage = async () => {
       router.visit(`/editor?page=${res.page.slug}`);
     }
   } catch (err) {
-    console.error(err);
+    const message = extractHttpError(err);
+    if (message !== null) {
+      pageActionError.value = message;
+    }
   }
 };
 
@@ -360,6 +443,7 @@ const openRenameModal = (page) => {
 };
 
 const submitRenamePage = async () => {
+  pageActionError.value = '';
   try {
     const res = await renameForm.patch(`/editor/pages/${pageToRename.value.id}`);
 
@@ -373,7 +457,10 @@ const submitRenamePage = async () => {
       }
     }
   } catch (err) {
-    console.error(err);
+    const message = extractHttpError(err);
+    if (message !== null) {
+      pageActionError.value = message;
+    }
   }
 };
 
@@ -386,6 +473,7 @@ return;
     return;
   }
   
+  pageActionError.value = '';
   try {
     const res = await deleteHttp.delete(`/editor/pages/${page.id}`);
 
@@ -397,11 +485,15 @@ return;
       }
     }
   } catch (err) {
-    console.error(err);
+    const message = extractHttpError(err);
+    if (message !== null) {
+      pageActionError.value = message;
+    }
   }
 };
 
 const handleSetHomepage = async (page) => {
+  pageActionError.value = '';
   try {
     const res = await setHomepageHttp.patch(`/editor/pages/${page.id}`, {
       is_homepage: true
@@ -411,7 +503,10 @@ const handleSetHomepage = async (page) => {
       router.reload({ only: ['pages', 'page'] });
     }
   } catch (err) {
-    console.error(err);
+    const message = extractHttpError(err);
+    if (message !== null) {
+      pageActionError.value = message;
+    }
   }
 };
 </script>
@@ -451,6 +546,10 @@ const handleSetHomepage = async (page) => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
               </svg>
             </button>
+          </div>
+
+          <div v-if="pageActionError" class="text-rose-400 text-[11px] font-medium bg-rose-500/10 border border-rose-500/20 px-2.5 py-2 rounded-lg">
+            {{ pageActionError }}
           </div>
 
           <div class="max-h-48 overflow-y-auto space-y-1 pr-1">
@@ -613,6 +712,11 @@ const handleSetHomepage = async (page) => {
 
       <!-- Action Panel at the Bottom of Sidebar -->
       <div class="border-t border-slate-800 p-6 space-y-4 shrink-0 bg-slate-900">
+        <!-- Error Alert -->
+        <div v-if="saveError || publishError" class="text-rose-400 text-center text-xs font-medium bg-rose-500/10 border border-rose-500/20 px-3 py-2.5 rounded-lg">
+          {{ saveError || publishError }}
+        </div>
+
         <!-- Publish Status Alert -->
         <div v-if="publishMessage" class="text-emerald-400 text-center text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 px-3 py-2.5 rounded-lg">
           {{ publishMessage }}
@@ -620,7 +724,7 @@ const handleSetHomepage = async (page) => {
 
         <button 
           @click="publishPage" 
-          :disabled="isPublishing || http.processing" 
+          :disabled="isPublishing || http.processing || !!saveError" 
           class="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold py-2.5 px-4 rounded-lg transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5 border-0"
         >
           {{ isPublishing ? 'Publishing...' : 'Publish Draft' }}

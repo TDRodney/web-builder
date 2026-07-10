@@ -1,15 +1,21 @@
 import AtomicText from '@/components/BuilderBlocks/AtomicText.vue';
+import ButtonBlock from '@/components/BuilderBlocks/ButtonBlock.vue';
+import DividerBlock from '@/components/BuilderBlocks/DividerBlock.vue';
 import FeatureBlock from '@/components/BuilderBlocks/FeatureBlock.vue';
 import HeroBlock from '@/components/BuilderBlocks/HeroBlock.vue';
 import LayoutColumn from '@/components/BuilderBlocks/LayoutColumn.vue';
 import LayoutGrid from '@/components/BuilderBlocks/LayoutGrid.vue';
+import SpacerBlock from '@/components/BuilderBlocks/SpacerBlock.vue';
 
 export const blockComponents: Record<string, any> = {
   HeroBlock,
   FeatureBlock,
   LayoutGrid,
   LayoutColumn,
-  AtomicText
+  AtomicText,
+  ButtonBlock,
+  DividerBlock,
+  SpacerBlock
 };
 
 export interface InspectorField {
@@ -105,7 +111,7 @@ export const blockDefinitions: BlockDefinition[] = [
       { key: 'columns', label: 'Columns Count', type: 'number', min: 1, max: 12 },
       { key: 'gap', label: 'Gap Size (e.g. 1rem, 16px)', type: 'text' }
     ],
-    allowedChildren: ['LayoutColumn']
+    allowedChildren: ['HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock']
   },
   {
     type: 'LayoutColumn',
@@ -128,7 +134,53 @@ export const blockDefinitions: BlockDefinition[] = [
       { key: 'height', label: 'Height (e.g. auto, 200px)', type: 'text' },
       { key: 'gap', label: 'Gap', type: 'text' }
     ],
-    allowedChildren: ['HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText']
+    allowedChildren: ['HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock']
+  },
+  {
+    type: 'ButtonBlock',
+    label: 'Button',
+    category: 'content',
+    icon: 'link',
+    defaultProps: {
+      label: 'Click Me',
+      variant: 'primary',
+      url: '',
+      size: 'md'
+    },
+    inspectorFields: [
+      { key: 'label', label: 'Button Text', type: 'text', placeholder: 'Enter button text' },
+      { key: 'variant', label: 'Variant', type: 'text' },
+      { key: 'url', label: 'Link URL', type: 'text', placeholder: 'https://...' },
+      { key: 'size', label: 'Size', type: 'text' }
+    ]
+  },
+  {
+    type: 'DividerBlock',
+    label: 'Divider',
+    category: 'content',
+    icon: 'minus',
+    defaultProps: {
+      thickness: 1,
+      color: '#cbd5e1',
+      margin: 16
+    },
+    inspectorFields: [
+      { key: 'thickness', label: 'Thickness (px)', type: 'range', min: 1, max: 8 },
+      { key: 'color', label: 'Color', type: 'color' },
+      { key: 'margin', label: 'Margin (px)', type: 'range', min: 0, max: 60 }
+    ]
+  },
+  {
+    type: 'SpacerBlock',
+    label: 'Spacer',
+    category: 'content',
+    icon: 'vertical',
+    defaultProps: {
+      height: 24
+    },
+    inspectorFields: [
+      { key: 'height', label: 'Height (px)', type: 'range', min: 4, max: 200 }
+    ]
   }
 ];
 
