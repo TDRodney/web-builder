@@ -5,6 +5,8 @@ import draggable from 'vuedraggable';
 
 import RenderNode from '@/components/BuilderBlocks/RenderNode.vue';
 import { getBlockDefinition, blockDefinitions, blockComponents } from '@/lib/blockRegistry';
+import { Toaster } from '@/components/ui/sonner';
+import { toast } from 'vue-sonner';
 
 provide('blockRegistry', blockComponents);
 
@@ -155,11 +157,13 @@ const addBlock = (type) => {
 
     if (isAllowed) {
       selectedBlock.value.children.push(newBlock);
+      toast.success(`Added ${definition.label} inside ${parentDef.label}`);
     } else {
-      blocks.value.push(newBlock);
+      toast.error(`Nesting Error: ${definition.label} is not allowed inside ${parentDef.label}`);
     }
   } else {
     blocks.value.push(newBlock);
+    toast.success(`Added ${definition.label}`);
   }
 };
 
@@ -365,6 +369,9 @@ const saveCanvasState = async () => {
     });
 
     await currentSaveVisit;
+    if (saveError.value) {
+      toast.success('Draft saved successfully', { id: 'save-error' });
+    }
     saveError.value = '';
     if (saveErrorTimer) {
       clearTimeout(saveErrorTimer);
@@ -380,6 +387,7 @@ const saveCanvasState = async () => {
     console.warn('[Save Error]', { status: error?.response?.status, body: error?.response?.data });
 
     saveError.value = message;
+    toast.error(`Auto-save failed: ${message}`, { id: 'save-error' });
     if (saveErrorTimer) {
       clearTimeout(saveErrorTimer);
     }
@@ -448,30 +456,37 @@ const publishPage = async () => {
   publishError.value = '';
 
   try {
+    toast.loading('Saving pending draft changes...', { id: 'publish-toast' });
     // 1. Flush any pending draft changes immediately before publishing
     await forceSave();
 
     if (saveError.value) {
       publishError.value = 'Cannot publish while save is failing: ' + saveError.value;
+      toast.error(publishError.value, { id: 'publish-toast' });
       return;
     }
+
+    toast.loading('Publishing site...', { id: 'publish-toast' });
 
     // 2. Perform the publish promotion
     const res = await publishHttp.post(`/editor/publish`);
 
     if (res && res.status === 'success') {
       publishMessage.value = res.message || 'Site published successfully!';
+      toast.success(publishMessage.value, { id: 'publish-toast' });
       setTimeout(() => {
         publishMessage.value = '';
       }, 3000);
     } else {
       publishError.value = 'Publish returned an unexpected response';
+      toast.error(publishError.value, { id: 'publish-toast' });
     }
   } catch (err) {
     const message = extractHttpError(err);
 
     if (message !== null) {
       publishError.value = message;
+      toast.error(publishError.value, { id: 'publish-toast' });
     }
   } finally {
     isPublishing.value = false;
@@ -509,19 +524,27 @@ const autoGenerateSlug = () => {
 
 const switchPage = async (pageSlug) => {
   if (pageSlug === props.page.slug) {
-return;
-}
+    return;
+  }
 
-  await forceSave();
-  router.visit(`/editor?page=${pageSlug}`);
+  const loadToast = toast.loading(`Saving draft and switching to page...`);
+  try {
+    await forceSave();
+    toast.success('Draft saved successfully', { id: loadToast });
+    router.visit(`/editor?page=${pageSlug}`);
+  } catch (err) {
+    toast.error('Failed to save draft before switching', { id: loadToast });
+  }
 };
 
 const submitCreatePage = async () => {
   pageActionError.value = '';
+  const loadingToast = toast.loading('Creating page...');
   try {
     const res = await createForm.post('/editor/pages');
 
     if (res && res.status === 'success') {
+      toast.success('Page created successfully', { id: loadingToast });
       showCreateModal.value = false;
       createForm.reset();
       router.visit(`/editor?page=${res.page.slug}`);
@@ -530,6 +553,9 @@ const submitCreatePage = async () => {
     const message = extractHttpError(err);
     if (message !== null) {
       pageActionError.value = message;
+      toast.error(`Failed to create page: ${message}`, { id: loadingToast });
+    } else {
+      toast.dismiss(loadingToast);
     }
   }
 };
@@ -544,10 +570,12 @@ const openRenameModal = (page) => {
 
 const submitRenamePage = async () => {
   pageActionError.value = '';
+  const loadingToast = toast.loading('Saving settings...');
   try {
     const res = await renameForm.patch(`/editor/pages/${pageToRename.value.id}`);
 
     if (res && res.status === 'success') {
+      toast.success('Page settings updated', { id: loadingToast });
       showRenameModal.value = false;
 
       if (pageToRename.value.slug === props.page.slug) {
@@ -560,24 +588,30 @@ const submitRenamePage = async () => {
     const message = extractHttpError(err);
     if (message !== null) {
       pageActionError.value = message;
+      toast.error(`Failed to update page: ${message}`, { id: loadingToast });
+    } else {
+      toast.dismiss(loadingToast);
     }
   }
 };
 
 const handleDeletePage = async (page) => {
   if (page.is_homepage) {
-return;
-}
+    toast.error('Cannot delete the homepage', { id: 'page-delete' });
+    return;
+  }
 
   if (!confirm(`Are you sure you want to delete "${page.title}"? This will delete all of its draft and published configurations.`)) {
     return;
   }
   
   pageActionError.value = '';
+  const loadingToast = toast.loading('Deleting page...');
   try {
     const res = await deleteHttp.delete(`/editor/pages/${page.id}`);
 
     if (res && res.status === 'success') {
+      toast.success('Page deleted successfully', { id: loadingToast });
       if (page.slug === props.page.slug) {
         router.visit('/editor');
       } else {
@@ -588,24 +622,32 @@ return;
     const message = extractHttpError(err);
     if (message !== null) {
       pageActionError.value = message;
+      toast.error(`Failed to delete page: ${message}`, { id: loadingToast });
+    } else {
+      toast.dismiss(loadingToast);
     }
   }
 };
 
 const handleSetHomepage = async (page) => {
   pageActionError.value = '';
+  const loadingToast = toast.loading('Setting homepage...');
   try {
     const res = await setHomepageHttp.patch(`/editor/pages/${page.id}`, {
       is_homepage: true
     });
 
     if (res && res.status === 'success') {
+      toast.success(`"${page.title}" is now the homepage`, { id: loadingToast });
       router.reload({ only: ['pages', 'page'] });
     }
   } catch (err) {
     const message = extractHttpError(err);
     if (message !== null) {
       pageActionError.value = message;
+      toast.error(`Failed to set homepage: ${message}`, { id: loadingToast });
+    } else {
+      toast.dismiss(loadingToast);
     }
   }
 };
@@ -646,10 +688,6 @@ const handleSetHomepage = async (page) => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
               </svg>
             </button>
-          </div>
-
-          <div v-if="pageActionError" class="text-rose-400 text-[11px] font-medium bg-rose-500/10 border border-rose-500/20 px-2.5 py-2 rounded-lg">
-            {{ pageActionError }}
           </div>
 
           <div class="max-h-48 overflow-y-auto space-y-1 pr-1">
@@ -812,15 +850,6 @@ const handleSetHomepage = async (page) => {
 
       <!-- Action Panel at the Bottom of Sidebar -->
       <div class="border-t border-slate-800 p-6 space-y-4 shrink-0 bg-slate-900">
-        <!-- Error Alert -->
-        <div v-if="saveError || publishError" class="text-rose-400 text-center text-xs font-medium bg-rose-500/10 border border-rose-500/20 px-3 py-2.5 rounded-lg">
-          {{ saveError || publishError }}
-        </div>
-
-        <!-- Publish Status Alert -->
-        <div v-if="publishMessage" class="text-emerald-400 text-center text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 px-3 py-2.5 rounded-lg">
-          {{ publishMessage }}
-        </div>
 
         <button 
           @click="publishPage" 
@@ -963,6 +992,9 @@ const handleSetHomepage = async (page) => {
         </form>
       </div>
     </div>
+
+    <!-- Toast Container -->
+    <Toaster position="top-right" closeButton richColors />
 
   </div>
 </template>

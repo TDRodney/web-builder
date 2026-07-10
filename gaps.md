@@ -690,7 +690,7 @@ erDiagram
 - [x] **Normalize block prop schema** — Fixed `styles/content` vs `props` inconsistency across registration seeder, editor controller, and `blockRegistry.ts` (Gap 8.4)
 - [x] **Create `TenantFactory` and `PageFactory`** — `TenantFactory` with `withHomePage()` state, `PageFactory` with `published()` state (Gap 8.1)
 - [x] **Add `draft_config` structural validation** — `ValidatesBlockSchema` rule validates id, type, props, children, nesting recursively via `config('blocks.nesting')` (Gap 8.3)
-- [ ] **Add editor toast notifications** — Wire vue-sonner into Editor.vue for save/publish/error feedback (Gap 8.5) — still missing
+- [x] **Add editor toast notifications** — Wire vue-sonner into Editor.vue for save/publish/error feedback (Gap 8.5) — Completed
 - [x] **Build centralized block schema registry** (`blockRegistry.ts`) — Single source-of-truth for block definitions (Gap 2.1)
 - [x] **Refactor inspector sidebar to be data-driven** — Eliminated per-block `v-if` branches, uses registry metadata (Gap 2.1)
 - [x] **Nesting matrix sync documentation** — Added to `AGENTS.md` Block Installation Checklist; existing nesting rules loosened to avoid 422 on legacy page data
@@ -699,12 +699,12 @@ erDiagram
 
 > The minimum feature set that makes this a "real" website builder.
 
-- [ ] **Multi-page CRUD API** — Page listing, creation, renaming, deletion endpoints (Gap 1.1)
-- [ ] **Page metadata migration** — title, is_homepage, sort_order (Gap 1.2)
-- [ ] **Editor page switcher UI** — Page selector, page switch with save-before-navigate (Gap 1.3)
+- [x] **Multi-page CRUD API** — Page listing, creation, renaming, deletion endpoints (Gap 1.1)
+- [x] **Page metadata migration** — title, is_homepage, sort_order (Gap 1.2)
+- [x] **Editor page switcher UI** — Page selector, page switch with save-before-navigate (Gap 1.3)
 - [~] **Block library expansion (P0)** — ButtonBlock ✅, DividerBlock ✅, SpacerBlock ✅; ImageBlock (placeholder) ⏳ blocked by Gap 3 media pipeline (Gap 2.2)
 - [x] **Block toolbar** — Duplicate, delete (with confirmation), move up/down, copy/paste, wrap in container (Gap 2.3)
-- [ ] **Public site responsive redesign** — Remove card wrapper, add full-bleed sections, responsive grids (Gap 6.5)
+- [x] **Public site responsive redesign** — Remove card wrapper, add full-bleed sections, responsive grids (Gap 6.5)
 
 ### Phase 3 — Media, Theming & Navigation (Week 6-9)
 
