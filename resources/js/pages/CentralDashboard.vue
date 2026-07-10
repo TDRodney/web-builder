@@ -13,19 +13,27 @@ const page = usePage();
 const user = computed(() => page.props.auth.user);
 
 const tenantEditorUrl = computed(() => {
-    if (!props.tenant) return '';
+    if (!props.tenant) {
+return '';
+}
+
     const protocol = window.location.protocol;
     const hostParts = window.location.host.split('.');
     // If running on domain.localhost:8000, we want to construct subdomain.domain.localhost:8000
     const baseHost = hostParts.length > 2 ? hostParts.slice(-2).join('.') : window.location.host;
+
     return `${protocol}//${props.tenant.subdomain}.${baseHost}/editor`;
 });
 
 const tenantPublicUrl = computed(() => {
-    if (!props.tenant) return '';
+    if (!props.tenant) {
+return '';
+}
+
     const protocol = window.location.protocol;
     const hostParts = window.location.host.split('.');
     const baseHost = hostParts.length > 2 ? hostParts.slice(-2).join('.') : window.location.host;
+
     return `${protocol}//${props.tenant.subdomain}.${baseHost}/`;
 });
 </script>

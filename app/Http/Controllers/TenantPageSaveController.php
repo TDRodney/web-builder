@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Page;
+use App\Rules\ValidatesBlockSchema;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TenantPageSaveController extends Controller
 {
@@ -20,7 +22,7 @@ class TenantPageSaveController extends Controller
         // 2. Strict Input Validation
         $validated = $request->validate([
             'page_id' => 'required|integer',
-            'draft_config' => 'required|array',
+            'draft_config' => ['required', 'array', new ValidatesBlockSchema],
         ]);
 
         /**
@@ -49,7 +51,12 @@ class TenantPageSaveController extends Controller
 
         // Auto-scoped via TenantScope
         $page = Page::findOrFail($validated['page_id']);
-        $page->update(['published_config' => $page->draft_config]);
+
+        DB::transaction(function () use ($page) {
+            $page->refresh(); // Lock to latest state snapshot
+            $page->published_config = $page->draft_config;
+            $page->save();
+        });
 
         return response()->json(['status' => 'success', 'message' => 'Site published successfully!']);
     }

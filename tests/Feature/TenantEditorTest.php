@@ -3,6 +3,7 @@
 use App\Models\Page;
 use App\Models\Tenant;
 use App\Models\User;
+use Inertia\Testing\AssertableInertia as Assert;
 
 test('guests visiting editor are redirected to central login', function () {
     $user = User::factory()->create();
@@ -70,7 +71,7 @@ test('tenant owners can save page draft configuration', function () {
     $this->actingAs($user);
 
     $draftData = [
-        ['id' => 'hero-1', 'type' => 'HeroBlock', 'styles' => ['padding' => 50], 'content' => ['headline' => 'Updated']],
+        ['id' => 'hero-1', 'type' => 'HeroBlock', 'props' => ['padding' => 50, 'headline' => 'Updated']],
     ];
 
     // Post save request to tenant editor save
@@ -126,7 +127,7 @@ test('tenant owners can publish page draft configuration', function () {
     ]);
 
     $draftData = [
-        ['id' => 'hero-1', 'type' => 'HeroBlock', 'styles' => ['padding' => 60], 'content' => ['headline' => 'Published State']],
+        ['id' => 'hero-1', 'type' => 'HeroBlock', 'props' => ['padding' => 60, 'headline' => 'Published State']],
     ];
 
     $page = $tenant->pages()->create([
@@ -156,7 +157,7 @@ test('public pages are accessible and render published configuration', function 
     ]);
 
     $publishedData = [
-        ['id' => 'hero-1', 'type' => 'HeroBlock', 'styles' => ['padding' => 40, 'backgroundColor' => '#abcdef'], 'content' => ['headline' => 'Public Site View']],
+        ['id' => 'hero-1', 'type' => 'HeroBlock', 'props' => ['padding' => 40, 'backgroundColor' => '#abcdef', 'headline' => 'Public Site View', 'subheadline' => 'Built with our engine.']],
     ];
 
     $tenant->pages()->create([
@@ -169,7 +170,10 @@ test('public pages are accessible and render published configuration', function 
     $response = $this->get('http://test-tenant.domain.localhost/');
 
     $response->assertOk();
-    $response->assertSee('Public Site View');
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Tenant/PublicPage')
+        ->where('page.published_config.0.props.headline', 'Public Site View')
+    );
 });
 
 test('sub-pages are accessible via public wildcard slug routing', function () {
@@ -180,7 +184,7 @@ test('sub-pages are accessible via public wildcard slug routing', function () {
     ]);
 
     $publishedData = [
-        ['id' => 'hero-1', 'type' => 'HeroBlock', 'styles' => ['padding' => 40, 'backgroundColor' => '#ffffff'], 'content' => ['headline' => 'About Us page content']],
+        ['id' => 'hero-1', 'type' => 'HeroBlock', 'props' => ['padding' => 40, 'backgroundColor' => '#ffffff', 'headline' => 'About Us page content', 'subheadline' => 'Built with our engine.']],
     ];
 
     $tenant->pages()->create([
@@ -193,5 +197,73 @@ test('sub-pages are accessible via public wildcard slug routing', function () {
     $response = $this->get('http://test-tenant.domain.localhost/about');
 
     $response->assertOk();
-    $response->assertSee('About Us page content');
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Tenant/PublicPage')
+        ->where('page.published_config.0.props.headline', 'About Us page content')
+    );
+});
+
+test('tenant routes block invalid subdomain formats', function () {
+    $user = User::factory()->create();
+    $tenant = Tenant::create([
+        'user_id' => $user->id,
+        'subdomain' => 'invalid_subdomain',
+    ]);
+
+    // Send request to invalid subdomain
+    $response = $this->get('http://invalid_subdomain.domain.localhost/');
+
+    // The route domain pattern constraint ->where(['tenant' => '^[a-z0-9-]+$']) should prevent it from routing, resulting in 404
+    $response->assertNotFound();
+});
+
+test('tenant owners can save and render recursive ast configuration', function () {
+    $user = User::factory()->create();
+    $tenant = Tenant::create([
+        'user_id' => $user->id,
+        'subdomain' => 'test-tenant',
+    ]);
+
+    $page = $tenant->pages()->create([
+        'slug' => 'home',
+        'draft_config' => [],
+        'published_config' => [],
+    ]);
+
+    $this->actingAs($user);
+
+    $recursiveData = [
+        [
+            'id' => 'grid-1',
+            'type' => 'LayoutGrid',
+            'props' => ['columns' => 3, 'gap' => '1rem', 'padding' => '1rem'],
+            'children' => [
+                [
+                    'id' => 'column-1',
+                    'type' => 'LayoutColumn',
+                    'props' => ['span' => 2],
+                    'children' => [
+                        [
+                            'id' => 'text-1',
+                            'type' => 'AtomicText',
+                            'props' => ['content' => 'Deeply nested text content', 'fontSize' => '18px', 'color' => '#ff0000'],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ];
+
+    // Post save request to tenant editor save
+    $response = $this->postJson('http://test-tenant.domain.localhost/editor/save', [
+        'page_id' => $page->id,
+        'draft_config' => $recursiveData,
+    ]);
+
+    $response->assertOk();
+    $response->assertJson(['status' => 'success']);
+
+    // Check database
+    $page->refresh();
+    expect($page->draft_config)->toBe($recursiveData);
 });

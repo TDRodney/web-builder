@@ -67,20 +67,32 @@ class CentralRegisteredUserController extends Controller
         // Create default home page for the tenant
         $tenant->pages()->create([
             'slug' => 'home',
+            'title' => 'Home',
+            'is_homepage' => true,
             'draft_config' => [
                 [
                     'id' => 'hero-1',
                     'type' => 'HeroBlock',
-                    'styles' => ['padding' => 40, 'backgroundColor' => '#ffffff'],
-                    'content' => ['headline' => 'Welcome to your Site', 'subheadline' => 'Built with our engine.'],
+                    'props' => [
+                        'padding' => 40,
+                        'backgroundColor' => '#ffffff',
+                        'headline' => 'Welcome to your Site',
+                        'subheadline' => 'Built with our engine.',
+                    ],
+                    'children' => [],
                 ],
             ],
             'published_config' => [
                 [
                     'id' => 'hero-1',
                     'type' => 'HeroBlock',
-                    'styles' => ['padding' => 40, 'backgroundColor' => '#ffffff'],
-                    'content' => ['headline' => 'Welcome to your Site', 'subheadline' => 'Built with our engine.'],
+                    'props' => [
+                        'padding' => 40,
+                        'backgroundColor' => '#ffffff',
+                        'headline' => 'Welcome to your Site',
+                        'subheadline' => 'Built with our engine.',
+                    ],
+                    'children' => [],
                 ],
             ],
         ]);

@@ -9,6 +9,7 @@ import { initializeFlashToast } from '@/lib/flashToast';
 if (typeof window !== 'undefined') {
     router.on('before', (event) => {
         const url = event.detail.visit.url;
+
         if (window.location.port && (url.hostname === 'domain.localhost' || url.hostname.endsWith('.domain.localhost')) && !url.port) {
             url.port = window.location.port;
         }
@@ -22,6 +23,7 @@ createInertiaApp({
     layout: (name) => {
         switch (true) {
             case name === 'Welcome':
+            case name.startsWith('Tenant/'):
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
