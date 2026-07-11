@@ -250,7 +250,8 @@ Integrate server-side image processing (e.g., via Intervention Image or Spatie M
 ### What's Implemented
 
 - **Database schema**: `theme_config` JSON column added to `tenants` table; `Tenant` model casts it to array and includes it in `$fillable`.
-- **Nothing else yet.** There are no tenant-level settings, no site title config, no global color palette, no font selection.
+- **Theme save API**: `TenantThemeController` with validated `PATCH /theme` endpoint (hex colors, curated fonts, radius presets), ownership-guarded.
+- **Dashboard theme UI**: CentralDashboard.vue has a Theme Settings panel with 4 preset palette buttons, individual color pickers + hex inputs, heading/body font dropdowns, and border radius selector.
 
 ### What to Build
 
@@ -717,7 +718,8 @@ erDiagram
 - [ ] **ImageBlock with real uploads** — Connect to media picker (Gap 2.2)
 - [ ] **Tenant settings schema** — site_name, tagline, theme_config, social_links, favicon, logo (Gap 4.1)
 - [x] **Theme database schema** — `theme_config` JSON column added to `tenants` table, `Tenant` model casts + fillable updated (Gap 4.2)
-- [~] **Theme configuration system** — dashboard UI, save API, canvas variable binding, fonts injection, leaf block styling (Gap 4.2, 4.3)
+- [x] **Theme save API + dashboard UI** — `TenantThemeController::update` with validation, `PATCH /theme` route, CentralDashboard.vue theme panel with presets/color pickers/font selectors/radius presets (Gap 4.2, 4.3)
+- [~] **Theme configuration system** — canvas variable binding, fonts injection, leaf block styling (Gap 4.2, 4.3)
 - [ ] **Navigation system** — Navigation JSON config, editor UI, Blade header/footer partials (Gap 5)
 - [ ] **Per-page SEO metadata** — meta_title, meta_description, og:image in editor and Blade (Gap 6.1, 6.2)
 - [ ] **Sitemap + robots.txt** — Auto-generated per tenant (Gap 6.3, 6.4)

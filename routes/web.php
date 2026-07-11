@@ -6,6 +6,7 @@ use App\Http\Controllers\TenantEditorController;
 use App\Http\Controllers\TenantPageController;
 use App\Http\Controllers\TenantPageSaveController;
 use App\Http\Controllers\TenantPublicSiteController;
+use App\Http\Controllers\TenantThemeController;
 use App\Http\Middleware\IdentifyTenant;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -60,8 +61,12 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
 
                 return Inertia::render('CentralDashboard', [
                     'tenant' => $tenant->only(['id', 'subdomain']),
+                    'theme_config' => $tenant->theme_config,
                 ]);
             })->name('dashboard');
+
+            // Theme Settings
+            Route::patch('/theme', [TenantThemeController::class, 'update'])->name('tenant.theme.update');
 
             // State 1: Authed Tenant Owner modifying their workspace canvas
             Route::prefix('editor')->group(function () {
