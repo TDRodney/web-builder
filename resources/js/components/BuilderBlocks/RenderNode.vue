@@ -1,6 +1,7 @@
 <script setup>
 import { inject, ref, onErrorCaptured } from 'vue';
 import draggable from 'vuedraggable';
+import { usePage } from '@inertiajs/vue3';
 import { getBlockDefinition } from '@/lib/blockRegistry';
 import RenderNode from './RenderNode.vue';
 import BlockToolbar from './BlockToolbar.vue';
@@ -19,6 +20,14 @@ const isDragging = inject('isDragging', null);
 const forceSave = inject('forceSave', null);
 
 const checkAllowedChild = (parentType, childType) => {
+  const page = usePage();
+  const nestingRules = page.props.blocksConfig?.nesting;
+
+  if (nestingRules && typeof nestingRules === 'object') {
+    const allowed = nestingRules[parentType];
+    return Array.isArray(allowed) ? allowed.includes(childType) : true;
+  }
+
   const def = getBlockDefinition(parentType);
 
   if (!def || !def.allowedChildren) {
