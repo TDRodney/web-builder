@@ -450,7 +450,51 @@ The block addition and validation pipeline enforces structural constraints and p
 ]
 ```
 
-### 4.7 Rate Limiting
+### 4.7 Site-Wide Theming Pipeline
+
+Tenant-level theme configuration (`theme_config` JSON column on `tenants` table, cast to `array` via the `Tenant` model) cascades design tokens to all pages through CSS custom properties.
+
+**Theme shape (JSON)**:
+
+```json
+{
+  "colors": {
+    "primary": "#4f46e5",
+    "secondary": "#0ea5e9",
+    "background": "#ffffff",
+    "text": "#0f172a"
+  },
+  "typography": {
+    "headingFont": "Instrument Sans",
+    "bodyFont": "Instrument Sans"
+  },
+  "borderRadius": "8px"
+}
+```
+
+**Defaults**: "Modern Indigo" palette, `Instrument Sans` for both headings/body, `8px` corner roundness.
+
+**Pipeline**:
+
+1. **Persistence** — `PATCH /theme` (`TenantThemeController`) validates hex colors, curated Google Fonts list, and radius presets, merges with existing settings, and persists to `tenants.theme_config`.
+2. **Propagation (Editor)** — `TenantEditorController::edit` includes `theme_config` in the `tenant` prop. `Editor.vue` passes the getter to the `useTheme()` composable from [theme.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/lib/theme.ts), which binds the resulting `cssVars` computed onto `.canvas-runtime`.
+3. **Propagation (Public)** — `TenantPublicSiteController::show` includes `theme_config` in the `tenant` prop. `PublicPage.vue` binds `cssVars` to its root `<div>`.
+4. **Google Fonts injection** — `useTheme()` watches the heading/body font names, deduplicates them, constructs a Google Fonts CSS2 URL (wght@400;500;600;700), and injects/updates a single `<link rel="stylesheet" id="theme-google-fonts">` element in `document.head` reactively.
+5. **CSS custom properties emitted**:
+
+| Token | Maps to |
+|---|---|
+| `--theme-primary` | `theme_config.colors.primary` |
+| `--theme-secondary` | `theme_config.colors.secondary` |
+| `--theme-bg` | `theme_config.colors.background` |
+| `--theme-text` | `theme_config.colors.text` |
+| `--theme-border-radius` | `theme_config.borderRadius` |
+| `--theme-font-heading` | `theme_config.typography.headingFont` |
+| `--theme-font-body` | `theme_config.typography.bodyFont` |
+
+Block components opt into the theme by referencing these tokens (e.g., `var(--theme-primary)`) instead of hardcoded hex values. Stage 4 routes leaf blocks (`ButtonBlock`, `HeroBlock`, `FeatureBlock`, `AtomicText`) through these tokens.
+
+### 4.8 Rate Limiting
 
 Configured in [FortifyServiceProvider](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Providers/FortifyServiceProvider.php):
 

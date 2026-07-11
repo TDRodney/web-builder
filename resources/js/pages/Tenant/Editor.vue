@@ -5,6 +5,7 @@ import draggable from 'vuedraggable';
 
 import RenderNode from '@/components/BuilderBlocks/RenderNode.vue';
 import { getBlockDefinition, blockComponents } from '@/lib/blockRegistry';
+import { useTheme } from '@/lib/theme';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'vue-sonner';
 
@@ -16,6 +17,8 @@ const props = defineProps({
   pages: Array,
   urls: Object
 });
+
+const { cssVars: themeVars } = useTheme(() => props.tenant?.theme_config);
 
 const page = usePage();
 const blockDefinitions = computed(() => {
@@ -671,7 +674,7 @@ const handleSetHomepage = async (page) => {
   <div class="flex h-screen bg-slate-900 text-slate-100 font-sans overflow-hidden">
     
     <div class="flex-1 overflow-y-auto p-8 bg-slate-950 h-screen">
-      <div class="mx-auto bg-white text-slate-900 rounded-xl shadow-2xl min-h-[600px] p-6 canvas-runtime" :style="{ maxWidth: canvasMaxWidth }">
+      <div class="mx-auto text-slate-900 rounded-xl shadow-2xl min-h-[600px] p-6 canvas-runtime" :style="[themeVars, { maxWidth: canvasMaxWidth, backgroundColor: themeVars['--theme-bg'] }]">
         
         <draggable 
           v-model="blocks" 

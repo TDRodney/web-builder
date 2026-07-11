@@ -252,6 +252,7 @@ Integrate server-side image processing (e.g., via Intervention Image or Spatie M
 - **Database schema**: `theme_config` JSON column added to `tenants` table; `Tenant` model casts it to array and includes it in `$fillable`.
 - **Theme save API**: `TenantThemeController` with validated `PATCH /theme` endpoint (hex colors, curated fonts, radius presets), ownership-guarded.
 - **Dashboard theme UI**: CentralDashboard.vue has a Theme Settings panel with 4 preset palette buttons, individual color pickers + hex inputs, heading/body font dropdowns, and border radius selector.
+- **CSS variable injection**: `useTheme()` composable in `resources/js/lib/theme.ts` watches heading/body fonts, injects a Google Font `<link>` tag, and exposes a `cssVars` computed with `--theme-primary`, `--theme-secondary`, `--theme-bg`, `--theme-text`, `--theme-border-radius`, `--theme-font-heading`, `--theme-font-body`. Applied to `.canvas-runtime` in Editor.vue and root wrapper in PublicPage.vue.
 
 ### What to Build
 
@@ -719,7 +720,8 @@ erDiagram
 - [ ] **Tenant settings schema** — site_name, tagline, theme_config, social_links, favicon, logo (Gap 4.1)
 - [x] **Theme database schema** — `theme_config` JSON column added to `tenants` table, `Tenant` model casts + fillable updated (Gap 4.2)
 - [x] **Theme save API + dashboard UI** — `TenantThemeController::update` with validation, `PATCH /theme` route, CentralDashboard.vue theme panel with presets/color pickers/font selectors/radius presets (Gap 4.2, 4.3)
-- [~] **Theme configuration system** — canvas variable binding, fonts injection, leaf block styling (Gap 4.2, 4.3)
+- [x] **Theme canvas variables + fonts injection** — `useTheme()` composable injects Google Font `<link>` and CSS custom properties (`--theme-primary`, `--theme-font-*`, `--theme-border-radius`) on editor canvas and public site (Gap 4.2, 4.3)
+- [ ] **Theme leaf block styling** — adapt ButtonBlock, HeroBlock, FeatureBlock, AtomicText to use CSS variables (Gap 4.2, 4.3)
 - [ ] **Navigation system** — Navigation JSON config, editor UI, Blade header/footer partials (Gap 5)
 - [ ] **Per-page SEO metadata** — meta_title, meta_description, og:image in editor and Blade (Gap 6.1, 6.2)
 - [ ] **Sitemap + robots.txt** — Auto-generated per tenant (Gap 6.3, 6.4)
