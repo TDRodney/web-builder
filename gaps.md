@@ -249,7 +249,8 @@ Integrate server-side image processing (e.g., via Intervention Image or Spatie M
 
 ### What's Implemented
 
-**Nothing.** The `Tenant` model has only `user_id` and `subdomain`. There are no tenant-level settings, no site title config, no global color palette, no font selection.
+- **Database schema**: `theme_config` JSON column added to `tenants` table; `Tenant` model casts it to array and includes it in `$fillable`.
+- **Nothing else yet.** There are no tenant-level settings, no site title config, no global color palette, no font selection.
 
 ### What to Build
 
@@ -715,7 +716,8 @@ erDiagram
 - [ ] **Image optimization pipeline** — Thumbnails, WebP conversion, srcset (Gap 3.4)
 - [ ] **ImageBlock with real uploads** — Connect to media picker (Gap 2.2)
 - [ ] **Tenant settings schema** — site_name, tagline, theme_config, social_links, favicon, logo (Gap 4.1)
-- [~] **Theme configuration system** — server-side unified definitions registry built, dynamic nesting rules shared via Inertia ⏳ (Gap 4.2, 4.3)
+- [x] **Theme database schema** — `theme_config` JSON column added to `tenants` table, `Tenant` model casts + fillable updated (Gap 4.2)
+- [~] **Theme configuration system** — dashboard UI, save API, canvas variable binding, fonts injection, leaf block styling (Gap 4.2, 4.3)
 - [ ] **Navigation system** — Navigation JSON config, editor UI, Blade header/footer partials (Gap 5)
 - [ ] **Per-page SEO metadata** — meta_title, meta_description, og:image in editor and Blade (Gap 6.1, 6.2)
 - [ ] **Sitemap + robots.txt** — Auto-generated per tenant (Gap 6.3, 6.4)

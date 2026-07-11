@@ -12,7 +12,11 @@ class Tenant extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'subdomain'];
+    protected $fillable = ['user_id', 'subdomain', 'theme_config'];
+
+    protected $casts = [
+        'theme_config' => 'array',
+    ];
 
     public function user(): BelongsTo
     {

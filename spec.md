@@ -133,6 +133,7 @@ erDiagram
         bigint id PK
         bigint user_id FK_UK "unique, cascades on delete"
         string subdomain UK "indexed"
+        json theme_config "nullable"
         timestamps created_at
         timestamps updated_at
     }
@@ -166,7 +167,8 @@ erDiagram
 #### [Tenant](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Models/Tenant.php)
 
 - Traits: `HasFactory`
-- Fillable: `user_id`, `subdomain`
+- Fillable: `user_id`, `subdomain`, `theme_config`
+- Casts: `theme_config` → array
 - Relationships: `belongsTo(User)`, `hasMany(Page)`
 - Accessor: `name` → derives display name from subdomain (e.g., `my-site` → `My Site`)
 - **Strict 1:1 with User** enforced at the database level via `unique` constraint on `user_id`
