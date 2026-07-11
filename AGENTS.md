@@ -225,7 +225,7 @@ When adding a new block type, ALL of these files must be updated. Missing any st
    - If any existing parent type should accept the new block, add it there too
    - **CRITICAL**: Check EVERY parent's nesting list (`LayoutGrid`, `LayoutColumn`, etc.) and add the new block type to each one that should allow it. Missing a parent entry = save fails with 422 for anyone using that nesting combination.
 
-4. **`resources/js/lib/blockRegistry.ts` (second pass)** — After updating `config/blocks.php` nesting, mirror the exact same changes in the `allowedChildren` arrays of existing parent `BlockDefinition` entries. Both sides must remain in sync; the client enforces drag-and-drop restrictions while the server validates on save.
+4. **`resources/js/lib/blockRegistry.ts` (second pass)** — The frontend dynamically resolves both definitions and allowedChildren rules from the backend config shared via Inertia's `blocksConfig` prop. You do not need to manually synchronize properties in TypeScript anymore. Vue components only mapping is required inside the `blockComponents` dictionary.
 
 5. **`npm run build`** — Verify the Vite build succeeds
 

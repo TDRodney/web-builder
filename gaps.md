@@ -92,11 +92,11 @@ A production website builder needs **15-25+ block types** to be useful. The curr
 
 The centralized block schema registry (`blockRegistry.ts`) and data-driven inspector have been built (see Phase 1). Adding a new block now requires updating 4 files centrally, but the process is documented in `AGENTS.md`.
 
-### Newly Discovered Gap: Nesting Matrix Synchronization
+### Newly Discovered Gap: Nesting Matrix Synchronization [RESOLVED]
 
-Adding a new block type requires updating **every existing parent's nesting list** in both `config/blocks.php` and `blockRegistry.ts`, not just adding the type to the `types` array. Missing a parent entry causes 422 validation failures on save for any page using that nesting combination. This was not anticipated in the original gap analysis.
+Previously, adding a new block type required updating every parent's nesting list in both `config/blocks.php` and `blockRegistry.ts` manually, which could lead to sync failures and 422 errors on save.
 
-**Requirement**: The block installation checklist (now in `AGENTS.md`) must include a second pass over `blockRegistry.ts` `allowedChildren` arrays after updating `config/blocks.php` nesting rules. Both sides must remain in sync — the client enforces drag-and-drop restrictions while the server validates on save.
+**Resolution**: The frontend has been refactored (`RenderNode.vue` and `Editor.vue`) to dynamically load and enforce nesting rules from the backend shared via Inertia's `blocksConfig` prop (originating from `config/blocks.php`). The client and server validation are now automatically unified under a single source of truth.
 
 ### What to Build
 
@@ -715,7 +715,7 @@ erDiagram
 - [ ] **Image optimization pipeline** — Thumbnails, WebP conversion, srcset (Gap 3.4)
 - [ ] **ImageBlock with real uploads** — Connect to media picker (Gap 2.2)
 - [ ] **Tenant settings schema** — site_name, tagline, theme_config, social_links, favicon, logo (Gap 4.1)
-- [ ] **Theme configuration system** — CSS custom properties, color palette picker, font selector (Gap 4.2, 4.3)
+- [~] **Theme configuration system** — server-side unified definitions registry built, dynamic nesting rules shared via Inertia ⏳ (Gap 4.2, 4.3)
 - [ ] **Navigation system** — Navigation JSON config, editor UI, Blade header/footer partials (Gap 5)
 - [ ] **Per-page SEO metadata** — meta_title, meta_description, og:image in editor and Blade (Gap 6.1, 6.2)
 - [ ] **Sitemap + robots.txt** — Auto-generated per tenant (Gap 6.3, 6.4)
