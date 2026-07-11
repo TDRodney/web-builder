@@ -1,7 +1,7 @@
 <script>
 export default {
   blueprint: {
-    props: { content: 'Atomic Text Element', fontSize: '16px', color: '#0f172a' }
+    props: { content: 'Atomic Text Element', fontSize: '16px', color: '--theme-text' }
   }
 }
 </script>

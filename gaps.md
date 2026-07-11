@@ -253,6 +253,7 @@ Integrate server-side image processing (e.g., via Intervention Image or Spatie M
 - **Theme save API**: `TenantThemeController` with validated `PATCH /theme` endpoint (hex colors, curated fonts, radius presets), ownership-guarded.
 - **Dashboard theme UI**: CentralDashboard.vue has a Theme Settings panel with 4 preset palette buttons, individual color pickers + hex inputs, heading/body font dropdowns, and border radius selector.
 - **CSS variable injection**: `useTheme()` composable in `resources/js/lib/theme.ts` watches heading/body fonts, injects a Google Font `<link>` tag, and exposes a `cssVars` computed with `--theme-primary`, `--theme-secondary`, `--theme-bg`, `--theme-text`, `--theme-border-radius`, `--theme-font-heading`, `--theme-font-body`. Applied to `.canvas-runtime` in Editor.vue and root wrapper in PublicPage.vue.
+- **Leaf block theme integration**: ButtonBlock uses `var(--theme-primary)` / `var(--theme-secondary)` for variant colors and `var(--theme-border-radius)` for corner rounding. HeroBlock and FeatureBlock use `var(--theme-text)` for text colors and `var(--theme-font-heading)` for heading font. AtomicText default color changed to `--theme-text` so new blocks inherit the theme text color.
 
 ### What to Build
 

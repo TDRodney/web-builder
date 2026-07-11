@@ -479,7 +479,7 @@ Tenant-level theme configuration (`theme_config` JSON column on `tenants` table,
 1. **Persistence** — `PATCH /theme` (`TenantThemeController`) validates hex colors, curated Google Fonts list, and radius presets, merges with existing settings, and persists to `tenants.theme_config`.
 2. **Propagation (Editor)** — `TenantEditorController::edit` includes `theme_config` in the `tenant` prop. `Editor.vue` passes the getter to the `useTheme()` composable from [theme.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/lib/theme.ts), which binds the resulting `cssVars` computed onto `.canvas-runtime`.
 3. **Propagation (Public)** — `TenantPublicSiteController::show` includes `theme_config` in the `tenant` prop. `PublicPage.vue` binds `cssVars` to its root `<div>`.
-4. **Google Fonts injection** — `useTheme()` watches the heading/body font names, deduplicates them, constructs a Google Fonts CSS2 URL (wght@400;500;600;700), and injects/updates a single `<link rel="stylesheet" id="theme-google-fonts">` element in `document.head` reactively.
+4. **Google Fonts injection** — `useTheme()` watches the heading/body font names, deduplicates them, constructs a Google Fonts CSS2 URL (wght@400;500;600;700), and returns `fontUrl`. To prevent Flash of Unstyled Text (FOUT), this URL is rendered server-side inside Inertia’s `<Head>` component in [PublicPage.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/pages/Tenant/PublicPage.vue) and [Editor.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/pages/Tenant/Editor.vue). In the browser context, it reactively injects and updates a single `<link rel="stylesheet" id="theme-google-fonts">` element in `document.head`.
 5. **CSS custom properties emitted**:
 
 | Token | Maps to |
@@ -492,7 +492,7 @@ Tenant-level theme configuration (`theme_config` JSON column on `tenants` table,
 | `--theme-font-heading` | `theme_config.typography.headingFont` |
 | `--theme-font-body` | `theme_config.typography.bodyFont` |
 
-Block components opt into the theme by referencing these tokens (e.g., `var(--theme-primary)`) instead of hardcoded hex values. Stage 4 routes leaf blocks (`ButtonBlock`, `HeroBlock`, `FeatureBlock`, `AtomicText`) through these tokens.
+Block components opt into the theme by referencing these tokens (e.g., `var(--theme-primary)`) instead of hardcoded hex values. Stage 4 routed leaf blocks (`ButtonBlock`, `HeroBlock`, `FeatureBlock`, `AtomicText`) through these tokens — ButtonBlock uses `var(--theme-primary/secondary)` for variant backgrounds and `var(--theme-border-radius)` for corners; HeroBlock and FeatureBlock use `var(--theme-text)` and `var(--theme-font-heading)` for typography; AtomicText defaults to `--theme-text` so new blocks inherit the theme text color.
 
 ### 4.8 Rate Limiting
 

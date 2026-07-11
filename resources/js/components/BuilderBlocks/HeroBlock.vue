@@ -13,13 +13,13 @@ const isEditable = inject('isEditable', false);
   <div class="text-center">
     <h1
       class="text-4xl font-extrabold tracking-tight @md:text-6xl"
-      :style="{ fontFamily: 'var(--theme-font-heading)', color: 'var(--theme-text)' }"
+      :style="{ color: 'var(--theme-text)', fontFamily: 'var(--theme-font-heading)' }"
     >
       {{ blockProps.headline || (isEditable ? 'Click to Edit Headline' : '') }}
     </h1>
     <p
-      class="mt-4 text-xl opacity-85"
-      :style="{ fontFamily: 'var(--theme-font-body)', color: 'var(--theme-text)' }"
+      class="mt-4 text-xl"
+      :style="{ color: 'color-mix(in srgb, var(--theme-text) 60%, transparent)' }"
     >
       {{ blockProps.subheadline || (isEditable ? 'Click to edit your subheadline description.' : '') }}
     </p>
