@@ -1,5 +1,5 @@
 <script setup>
-import { inject, ref, onErrorCaptured } from 'vue';
+import { inject, ref, onErrorCaptured, computed } from 'vue';
 import draggable from 'vuedraggable';
 import { usePage } from '@inertiajs/vue3';
 import { getBlockDefinition } from '@/lib/blockRegistry';
@@ -72,6 +72,14 @@ const handleDragEnd = () => {
     forceSave();
   }
 };
+
+const resolvedBgColor = computed(() => {
+  const bg = props.node.props?.backgroundColor;
+  if (!bg || bg === '#ffffff' || bg === '#f8fafc' || bg === 'transparent') {
+    return 'transparent';
+  }
+  return bg;
+});
 </script>
 
 <template>
@@ -82,7 +90,7 @@ const handleDragEnd = () => {
     @mouseleave="isHovered = false"
     :style="{ 
       padding: (node.props?.padding ?? 0) + 'px',
-      backgroundColor: node.props?.backgroundColor ?? 'transparent'
+      backgroundColor: resolvedBgColor
     }"
     class="border-2 border-transparent hover:border-indigo-500 rounded-lg relative my-2 cursor-pointer transition-[border-color,background-color]"
     :class="isHovered ? 'border-indigo-500' : ''"

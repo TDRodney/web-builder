@@ -18,7 +18,7 @@ const props = defineProps({
   urls: Object
 });
 
-const { cssVars: themeVars } = useTheme(() => props.tenant?.theme_config);
+const { cssVars: themeVars, fontUrl } = useTheme(() => props.tenant?.theme_config);
 
 const page = usePage();
 const blockDefinitions = computed(() => {
@@ -671,6 +671,9 @@ const handleSetHomepage = async (page) => {
 </script>
 
 <template>
+  <Head>
+    <link v-if="fontUrl" rel="stylesheet" :href="fontUrl" />
+  </Head>
   <div class="flex h-screen bg-slate-900 text-slate-100 font-sans overflow-hidden">
     
     <div class="flex-1 overflow-y-auto p-8 bg-slate-950 h-screen">

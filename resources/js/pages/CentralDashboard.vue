@@ -48,13 +48,11 @@ const defaultTheme: ThemeConfig = {
 
 const initial = props.theme_config ?? defaultTheme;
 
-const themeColors = reactive({ ...initial.colors });
-const themeTypography = reactive({ ...initial.typography });
-const themeBorderRadius = ref(initial.borderRadius);
-
-const http = useHttp({});
-
-const isSaving = ref(false);
+const http = useHttp({
+    colors: { ...initial.colors },
+    typography: { ...initial.typography },
+    borderRadius: initial.borderRadius,
+});
 
 const headingFonts = [
     'Instrument Sans', 'Inter', 'Outfit', 'Poppins', 'Roboto', 'Plus Jakarta Sans',
@@ -82,15 +80,11 @@ const colorPalettes = [
 ];
 
 function applyPalette(palette: typeof colorPalettes[number]) {
-    Object.assign(themeColors, palette.colors);
+    Object.assign(http.colors, palette.colors);
 }
 
 async function saveTheme() {
-    isSaving.value = true;
     try {
-        http.colors = { ...themeColors };
-        http.typography = { ...themeTypography };
-        http.borderRadius = themeBorderRadius.value;
         const res = await http.patch('/theme');
         if (res?.status === 'success') {
             toast.success('Theme settings saved!');
@@ -100,8 +94,6 @@ async function saveTheme() {
     } catch (err) {
         const message = err?.response?.data?.message || err?.response?.data?.error || 'Failed to save theme settings';
         toast.error(message);
-    } finally {
-        isSaving.value = false;
     }
 }
 
@@ -249,19 +241,19 @@ const tenantPublicUrl = computed(() => {
                 <div class="mb-8">
                     <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">Custom Colors</h3>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div v-for="(value, key) in themeColors" :key="key">
+                        <div v-for="(value, key) in http.colors" :key="key">
                             <label class="block text-xs text-slate-400 mb-1.5 capitalize">{{ key }}</label>
                             <div class="flex items-center gap-2">
                                 <input
                                     type="color"
                                     :value="value"
-                                    @input="themeColors[key] = ($event.target as HTMLInputElement).value"
+                                    @input="(http.colors as Record<string, string>)[key] = ($event.target as HTMLInputElement).value"
                                     class="w-10 h-10 rounded-lg cursor-pointer border border-slate-700 bg-transparent p-0.5"
                                 />
                                 <input
                                     type="text"
                                     :value="value"
-                                    @input="themeColors[key] = ($event.target as HTMLInputElement).value"
+                                    @input="(http.colors as Record<string, string>)[key] = ($event.target as HTMLInputElement).value"
                                     class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500"
                                 />
                             </div>
@@ -276,8 +268,8 @@ const tenantPublicUrl = computed(() => {
                         <div>
                             <label class="block text-xs text-slate-400 mb-1.5">Heading Font</label>
                             <select
-                                :value="themeTypography.headingFont"
-                                @change="themeTypography.headingFont = ($event.target as HTMLSelectElement).value"
+                                :value="http.typography.headingFont"
+                                @change="(http.typography as Record<string, string>).headingFont = ($event.target as HTMLSelectElement).value"
                                 class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500"
                             >
                                 <option v-for="font in headingFonts" :key="font" :value="font">{{ font }}</option>
@@ -286,8 +278,8 @@ const tenantPublicUrl = computed(() => {
                         <div>
                             <label class="block text-xs text-slate-400 mb-1.5">Body Font</label>
                             <select
-                                :value="themeTypography.bodyFont"
-                                @change="themeTypography.bodyFont = ($event.target as HTMLSelectElement).value"
+                                :value="http.typography.bodyFont"
+                                @change="(http.typography as Record<string, string>).bodyFont = ($event.target as HTMLSelectElement).value"
                                 class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500"
                             >
                                 <option v-for="font in bodyFonts" :key="font" :value="font">{{ font }}</option>
@@ -304,10 +296,10 @@ const tenantPublicUrl = computed(() => {
                             v-for="r in radiusPresets"
                             :key="r.value"
                             type="button"
-                            @click="themeBorderRadius = r.value"
+                            @click="http.borderRadius = r.value"
                             :class="[
                                 'px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border focus:outline-none',
-                                themeBorderRadius === r.value
+                                http.borderRadius === r.value
                                     ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/25'
                                     : 'bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-600'
                             ]"
@@ -321,10 +313,10 @@ const tenantPublicUrl = computed(() => {
                 <button
                     type="button"
                     @click="saveTheme"
-                    :disabled="isSaving"
+                    :disabled="http.processing"
                     class="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-indigo-500/25 focus:outline-none"
                 >
-                    {{ isSaving ? 'Saving...' : 'Save Theme Settings' }}
+                    {{ http.processing ? 'Saving...' : 'Save Theme Settings' }}
                 </button>
             </div>
         </div>

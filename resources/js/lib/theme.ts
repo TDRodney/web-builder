@@ -63,22 +63,24 @@ export function useTheme(themeGetter: () => ThemeConfig | null | undefined) {
         return buildFontUrl(fonts);
     });
 
-    watch(
-        fontUrl,
-        (url) => {
-            let link = document.getElementById(FONT_LINK_ID) as HTMLLinkElement | null;
-            if (!link) {
-                link = document.createElement('link');
-                link.id = FONT_LINK_ID;
-                link.rel = 'stylesheet';
-                document.head.appendChild(link);
-            }
-            if (link.href !== url) {
-                link.href = url;
-            }
-        },
-        { immediate: true }
-    );
+    if (typeof window !== 'undefined') {
+        watch(
+            fontUrl,
+            (url) => {
+                let link = document.getElementById(FONT_LINK_ID) as HTMLLinkElement | null;
+                if (!link) {
+                    link = document.createElement('link');
+                    link.id = FONT_LINK_ID;
+                    link.rel = 'stylesheet';
+                    document.head.appendChild(link);
+                }
+                if (link.href !== url) {
+                    link.href = url;
+                }
+            },
+            { immediate: true }
+        );
+    }
 
     return { theme, cssVars, fontUrl };
 }

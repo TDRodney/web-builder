@@ -9,7 +9,7 @@ return [
             'icon' => 'layout',
             'defaultProps' => [
                 'padding' => 40,
-                'backgroundColor' => '#ffffff',
+                'backgroundColor' => 'transparent',
                 'headline' => 'Welcome to your Site',
                 'subheadline' => 'Built with our engine.',
             ],
@@ -27,7 +27,7 @@ return [
             'icon' => 'star',
             'defaultProps' => [
                 'padding' => 20,
-                'backgroundColor' => '#f8fafc',
+                'backgroundColor' => 'transparent',
                 'title' => 'Feature Item',
                 'body' => 'Feature description details go here.',
             ],
@@ -45,7 +45,7 @@ return [
             'icon' => 'type',
             'defaultProps' => [
                 'padding' => 20,
-                'backgroundColor' => '#ffffff',
+                'backgroundColor' => 'transparent',
                 'content' => 'Atomic Text Element',
                 'fontSize' => '16px',
                 'color' => '#0f172a',
