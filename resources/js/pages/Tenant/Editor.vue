@@ -1,10 +1,10 @@
 <script setup>
-import { useHttp, Link, router } from '@inertiajs/vue3';
+import { useHttp, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, computed, watch, provide, nextTick } from 'vue';
 import draggable from 'vuedraggable';
 
 import RenderNode from '@/components/BuilderBlocks/RenderNode.vue';
-import { getBlockDefinition, blockDefinitions, blockComponents } from '@/lib/blockRegistry';
+import { getBlockDefinition, blockComponents } from '@/lib/blockRegistry';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'vue-sonner';
 
@@ -15,6 +15,12 @@ const props = defineProps({
   page: Object,
   pages: Array,
   urls: Object
+});
+
+const page = usePage();
+const blockDefinitions = computed(() => {
+  const definitions = page.props.blocksConfig?.definitions || {};
+  return Array.isArray(definitions) ? definitions : Object.values(definitions);
 });
 
 // Seed some initial demo data if the draft is empty so you have blocks to see instantly
@@ -152,8 +158,16 @@ const addBlock = (type) => {
       selectedBlock.value.children = [];
     }
 
-    const parentDef = getBlockDefinition(selectedBlock.value.type);
-    const isAllowed = !parentDef || !parentDef.allowedChildren || parentDef.allowedChildren.includes(type);
+    const parentType = selectedBlock.value.type;
+    const parentDef = getBlockDefinition(parentType);
+    let isAllowed = true;
+    const nestingRules = page.props.blocksConfig?.nesting;
+    if (nestingRules && typeof nestingRules === 'object') {
+      const allowed = nestingRules[parentType];
+      isAllowed = Array.isArray(allowed) ? allowed.includes(type) : true;
+    } else {
+      isAllowed = !parentDef || !parentDef.allowedChildren || parentDef.allowedChildren.includes(type);
+    }
 
     if (isAllowed) {
       selectedBlock.value.children.push(newBlock);

@@ -47,7 +47,7 @@ class ValidatesBlockSchema implements ValidationRule
             return;
         }
 
-        $validTypes = config('blocks.types', []);
+        $validTypes = array_keys(config('blocks.definitions', []));
         if (! in_array($node['type'], $validTypes)) {
             $fail("The block at {$path} has an unrecognized type '{$node['type']}'.");
         }

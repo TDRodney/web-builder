@@ -428,10 +428,10 @@ The [RenderPublicNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-build
 #### Nesting Constraints & Block Validation Pipeline
 
 The block addition and validation pipeline enforces structural constraints and parent-child nesting rules:
-- **Central Registries**: Blocks are registered centrally on the frontend in [blockRegistry.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/lib/blockRegistry.ts) (including `allowedChildren` nesting rules) and on the backend in [blocks.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/config/blocks.php).
-- **Drag-and-Drop Constraints**: [RenderNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderNode.vue) tags nodes with dynamic `:data-type` attributes and passes a `put()` validation function to `vuedraggable` to physically prevent drop operations that violate nesting rules. Both `LayoutGrid` and `LayoutColumn` currently accept all block types; future nesting restrictions can be added to `allowedChildren` / `nesting` as needed.
-- **Insertion Safeguards**: Clicking library block buttons inside `Editor.vue` checks constraints and falls back to root list insertion if nesting permissions are violated.
-- **Backend Security**: The recursive validator [ValidatesBlockSchema.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Rules/ValidatesBlockSchema.php) references `config('blocks.nesting')` to strictly validate nesting schemas on all save operations.
+- **Central Registries**: Blocks are registered centrally on the backend in [blocks.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/config/blocks.php) (including default starting seeder layouts under `default_layout` and form fields under `definitions`).
+- **Drag-and-Drop Constraints**: [RenderNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderNode.vue) tags nodes with dynamic `:data-type` attributes and passes a `put()` validation function to `vuedraggable` which checks dynamic parent-child whitelists resolved from the backend configuration shared via Inertia's `blocksConfig` prop.
+- **Insertion Safeguards**: Clicking library block buttons inside `Editor.vue` checks constraints resolved from the backend configuration shared via Inertia's `blocksConfig` prop and falls back to root list insertion if nesting permissions are violated.
+- **Backend Security**: The recursive validator [ValidatesBlockSchema.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Rules/ValidatesBlockSchema.php) references `config('blocks.nesting')` and definitions to strictly validate block types and nesting schemas on all save operations.
 
 ### 4.6 Shared State via Inertia
 
@@ -439,9 +439,10 @@ The block addition and validation pipeline enforces structural constraints and p
 
 ```php
 [
-    'name'        => config('app.name'),
-    'auth.user'   => $request->user(),
-    'sidebarOpen' => // cookie-based boolean
+    'name'         => config('app.name'),
+    'auth.user'    => $request->user(),
+    'sidebarOpen'  => // cookie-based boolean
+    'blocksConfig' => // config('blocks') array
 ]
 ```
 
