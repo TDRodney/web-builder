@@ -4,6 +4,7 @@ import { ref, computed, watch, provide, nextTick } from 'vue';
 import draggable from 'vuedraggable';
 
 import RenderNode from '@/components/BuilderBlocks/RenderNode.vue';
+import MediaPicker from '@/components/MediaPicker.vue';
 import { getBlockDefinition, blockComponents } from '@/lib/blockRegistry';
 import { useTheme } from '@/lib/theme';
 import { Toaster } from '@/components/ui/sonner';
@@ -668,6 +669,21 @@ const handleSetHomepage = async (page) => {
     }
   }
 };
+// Media picker state
+const showMediaPicker = ref(false);
+const mediaPickerFieldKey = ref('');
+
+const openMediaPicker = (fieldKey) => {
+  mediaPickerFieldKey.value = fieldKey;
+  showMediaPicker.value = true;
+};
+
+const onMediaSelected = (item) => {
+  if (selectedBlock.value && mediaPickerFieldKey.value) {
+    selectedBlock.value.props[mediaPickerFieldKey.value] = item.url;
+  }
+  showMediaPicker.value = false;
+};
 </script>
 
 <template>
@@ -804,37 +820,78 @@ const handleSetHomepage = async (page) => {
                 </span>
               </label>
 
-              <input 
+              <!-- Range slider -->
+              <input
                 v-if="field.type === 'range'"
-                type="range" 
-                :min="field.min ?? 10" 
-                :max="field.max ?? 150" 
-                v-model.number="selectedBlock.props[field.key]" 
+                type="range"
+                :min="field.min ?? 10"
+                :max="field.max ?? 150"
+                v-model.number="selectedBlock.props[field.key]"
                 class="w-full accent-indigo-500"
               />
 
+              <!-- Color picker -->
               <div v-else-if="field.type === 'color'" class="flex items-center gap-2">
-                <input 
-                  type="color" 
-                  v-model="selectedBlock.props[field.key]" 
+                <input
+                  type="color"
+                  v-model="selectedBlock.props[field.key]"
                   class="h-8 w-12 border border-slate-700 bg-transparent cursor-pointer rounded p-0"
                 />
                 <span class="text-xs font-mono text-slate-300">{{ selectedBlock.props[field.key] }}</span>
               </div>
 
-              <input 
+              <!-- Number input -->
+              <input
                 v-else-if="field.type === 'number'"
-                type="number" 
-                :min="field.min" 
-                :max="field.max" 
-                v-model.number="selectedBlock.props[field.key]" 
+                type="number"
+                :min="field.min"
+                :max="field.max"
+                v-model.number="selectedBlock.props[field.key]"
                 class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
               />
 
-              <input 
+              <!-- Select dropdown -->
+              <select
+                v-else-if="field.type === 'select'"
+                v-model="selectedBlock.props[field.key]"
+                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 cursor-pointer"
+              >
+                <option v-for="opt in field.options" :key="opt.value" :value="opt.value">
+                  {{ opt.label }}
+                </option>
+              </select>
+
+              <!-- Media picker -->
+              <div v-else-if="field.type === 'media'" class="space-y-2">
+                <div v-if="selectedBlock.props[field.key]" class="relative rounded overflow-hidden">
+                  <img
+                    :src="selectedBlock.props[field.key]"
+                    alt=""
+                    class="w-full h-24 object-cover rounded"
+                  />
+                  <button
+                    @click="selectedBlock.props[field.key] = ''"
+                    class="absolute top-1 right-1 bg-slate-900/80 text-rose-400 border-0 rounded p-0.5 cursor-pointer"
+                    title="Remove image"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <button
+                  @click="openMediaPicker(field.key)"
+                  class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold py-2 px-3 rounded-lg transition-all cursor-pointer"
+                >
+                  {{ selectedBlock.props[field.key] ? 'Change Image' : 'Choose Image' }}
+                </button>
+              </div>
+
+              <!-- Text fallback -->
+              <input
                 v-else
-                type="text" 
-                v-model="selectedBlock.props[field.key]" 
+                type="text"
+                v-model="selectedBlock.props[field.key]"
                 :placeholder="field.placeholder"
                 class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
               />
@@ -1016,8 +1073,16 @@ const handleSetHomepage = async (page) => {
     <!-- Toast Container -->
     <Toaster position="top-right" closeButton richColors />
 
+    <!-- Media Picker Modal -->
+    <MediaPicker
+      v-if="showMediaPicker"
+      @select="onMediaSelected"
+      @close="showMediaPicker = false"
+    />
+
   </div>
 </template>
+
 
 <style scoped>
 .canvas-runtime {

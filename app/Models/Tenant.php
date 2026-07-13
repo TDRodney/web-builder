@@ -28,6 +28,11 @@ class Tenant extends Model
         return $this->hasMany(Page::class);
     }
 
+    public function media(): HasMany
+    {
+        return $this->hasMany(Media::class);
+    }
+
     /**
      * Get the name of the tenant (defaults to owner user's workspace name).
      */

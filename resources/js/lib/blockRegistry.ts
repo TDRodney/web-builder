@@ -4,6 +4,7 @@ import ButtonBlock from '@/components/BuilderBlocks/ButtonBlock.vue';
 import DividerBlock from '@/components/BuilderBlocks/DividerBlock.vue';
 import FeatureBlock from '@/components/BuilderBlocks/FeatureBlock.vue';
 import HeroBlock from '@/components/BuilderBlocks/HeroBlock.vue';
+import ImageBlock from '@/components/BuilderBlocks/ImageBlock.vue';
 import LayoutColumn from '@/components/BuilderBlocks/LayoutColumn.vue';
 import LayoutGrid from '@/components/BuilderBlocks/LayoutGrid.vue';
 import SpacerBlock from '@/components/BuilderBlocks/SpacerBlock.vue';
@@ -16,16 +17,18 @@ export const blockComponents: Record<string, any> = {
   AtomicText,
   ButtonBlock,
   DividerBlock,
-  SpacerBlock
+  SpacerBlock,
+  ImageBlock
 };
 
 export interface InspectorField {
   key: string;
   label: string;
-  type: 'text' | 'number' | 'color' | 'range';
+  type: 'text' | 'number' | 'color' | 'range' | 'select' | 'media';
   min?: number;
   max?: number;
   placeholder?: string;
+  options?: Array<{ label: string; value: string }>;
 }
 
 export interface BlockDefinition {
