@@ -2,6 +2,86 @@
 
 use App\Models\Tenant;
 use App\Models\User;
+use Inertia\Testing\AssertableInertia as Assert;
+
+test('editor receives the saved navigation configuration', function () {
+    $user = User::factory()->create();
+    $navigationConfig = [
+        'header' => [
+            'showLogo' => true,
+            'items' => [
+                ['label' => 'Home', 'slug' => 'home', 'type' => 'internal'],
+            ],
+            'ctaButton' => ['show' => false, 'label' => 'Contact', 'slug' => 'home'],
+        ],
+        'footer' => [
+            'copyright' => '© 2026 My Brand',
+        ],
+    ];
+    $tenant = Tenant::factory()->create([
+        'user_id' => $user->id,
+        'navigation_config' => $navigationConfig,
+    ]);
+    $tenant->pages()->create([
+        'slug' => 'home',
+        'title' => 'Home',
+        'is_homepage' => true,
+        'draft_config' => [],
+    ]);
+
+    $this->actingAs($user)
+        ->get("http://{$tenant->subdomain}.domain.localhost/editor")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Tenant/Editor')
+            ->where('tenant.navigation_config', $navigationConfig)
+        );
+});
+
+test('public page receives the saved navigation configuration', function () {
+    $navigationConfig = [
+        'header' => [
+            'showLogo' => true,
+            'items' => [
+                ['label' => 'Home', 'slug' => 'home', 'type' => 'internal'],
+                ['label' => 'External', 'href' => 'https://example.com', 'type' => 'external'],
+            ],
+            'ctaButton' => ['show' => true, 'label' => 'Contact', 'slug' => 'home'],
+        ],
+        'footer' => [
+            'copyright' => '© 2026 My Brand',
+        ],
+    ];
+    $tenant = Tenant::factory()->create([
+        'navigation_config' => $navigationConfig,
+    ]);
+    $tenant->pages()->create([
+        'slug' => 'home',
+        'title' => 'Home',
+        'is_homepage' => true,
+        'draft_config' => [],
+        'published_config' => [
+            [
+                'id' => 'hero-1',
+                'type' => 'HeroBlock',
+                'props' => [
+                    'padding' => 40,
+                    'backgroundColor' => 'transparent',
+                    'headline' => 'Public Site',
+                    'subheadline' => 'Published content.',
+                ],
+                'children' => [],
+            ],
+        ],
+    ]);
+
+    $this->get("http://{$tenant->subdomain}.domain.localhost/")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Tenant/PublicPage')
+            ->where('tenant.navigation_config', $navigationConfig)
+        );
+});
 
 test('authenticated tenant owner can save navigation configuration', function () {
     $user = User::factory()->create();

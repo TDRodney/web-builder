@@ -24,7 +24,7 @@ The project has a working multi-tenant website-builder core:
 
 The original roadmap is approximately **70% complete**. The largest remaining product areas are SEO, server-side revision history, general site settings, production media hardening, custom domains, and production database/deployment work.
 
-There is also one immediate correctness issue: navigation can be saved, but existing navigation is not passed to either the editor or public page by the controllers. The UI and storage exist, but the end-to-end feature is currently incomplete.
+The previously identified navigation propagation regression is resolved: saved navigation is now included in both editor and public Inertia props, with regression coverage for each response.
 
 ### Status Overview
 
@@ -35,35 +35,33 @@ There is also one immediate correctness issue: navigation can be saved, but exis
 | Media pipeline | Core complete | Upload, tenant isolation, thumbnails, picker, and deletion work; production optimization features remain |
 | Theming | Core complete | Theme persistence, dashboard controls, CSS variables, and curated Google Fonts work |
 | General site settings | Mostly missing | Site identity, social, analytics, SEO defaults, and custom domains are not modeled |
-| Navigation | Partial / regression | API, editor UI, and external links exist; controller props currently prevent saved config from loading/rendering |
+| Navigation | Core complete | API, editor UI, external links, editor propagation, and public propagation are implemented |
 | SEO | Mostly missing | Responsive public rendering and `<html lang>` exist; page metadata, sitemap, robots, canonical, and OG data do not |
 | History/collaboration | Missing | Client undo/redo exists, but no persistent revisions, audit trail, or publish diff |
-| Testing/infrastructure | Good foundation | 91 tests pass; production database and several integration/SEO tests remain |
+| Testing/infrastructure | Good foundation | 93 tests pass; production database and several integration/SEO tests remain |
 
 ---
 
-## Immediate Correctness Gaps
+## Correctness Follow-Up
 
 These are defects in features currently described as implemented, rather than new product capabilities.
 
-### P0 — Navigation Configuration Is Not Propagated
+### P0 — Navigation Configuration Propagation [Resolved]
 
-`TenantEditorController` and `TenantPublicSiteController` pass only `id`, `subdomain`, and `theme_config` in the tenant prop. Both `Editor.vue` and `PublicPage.vue` expect `tenant.navigation_config`.
+`TenantEditorController` and `TenantPublicSiteController` now include `navigation_config` in the tenant prop expected by `Editor.vue` and `PublicPage.vue`.
 
-Current effect:
+Verified behavior:
 
-- saved navigation does not load when reopening the editor;
-- the editor initializes a default empty navigation configuration;
-- saving that default can overwrite previously stored navigation;
-- public header links and the configured footer do not render;
-- existing navigation tests still pass because they only verify API persistence.
+- saved navigation loads when reopening the editor;
+- public pages receive the saved header/footer configuration;
+- API persistence, editor propagation, and public propagation are covered by feature tests.
 
 Required work:
 
-- [ ] Include `navigation_config` in the editor tenant prop.
-- [ ] Include `navigation_config` in the public-page tenant prop.
-- [ ] Add an editor Inertia-prop test for existing navigation.
-- [ ] Add a public-page Inertia-prop/rendering test for navigation.
+- [x] Include `navigation_config` in the editor tenant prop.
+- [x] Include `navigation_config` in the public-page tenant prop.
+- [x] Add an editor Inertia-prop test for existing navigation.
+- [x] Add a public-page Inertia-prop test for existing navigation.
 
 ### P1 — Block Theme Defaults Are Not Fully Normalized
 
@@ -248,7 +246,7 @@ Remaining:
 
 ## Gap 5 — Navigation System
 
-### Status: Partial; Storage and UI Exist, End-to-End Propagation Is Broken
+### Status: Core Complete; Enhancements Remain
 
 Implemented:
 
@@ -259,12 +257,14 @@ Implemented:
 - external URL editing and public `<a>` rendering;
 - shared `SiteHeader.vue` and `SiteFooter.vue` components;
 - single-line footer copyright configuration.
+- saved navigation propagated to editor and public Inertia responses;
+- integration tests for editor and public navigation props.
 
 External URL support is no longer a gap. It is present in the editor, renderer, and API test fixture.
 
 Remaining and corrective work:
 
-- [ ] Fix navigation prop propagation as described in the P0 section.
+- [x] Fix navigation prop propagation as described in the P0 section.
 - [ ] Add active/current-page styling for internal navigation links.
 - [ ] Add a responsive mobile navigation menu; the current mobile breakpoint hides the link list.
 - [ ] Add a multi-column footer structure.
@@ -354,9 +354,9 @@ page_revisions
 
 Current verified baseline on 2026-07-14:
 
-- **91 tests passed**;
+- **93 tests passed**;
 - **1 test skipped**;
-- **293 assertions**;
+- **313 assertions**;
 - production Vite build completed successfully;
 - the build emitted only third-party Rolldown annotation warnings from a nested VueUse dependency.
 
@@ -378,7 +378,7 @@ Implemented test coverage includes:
 
 ### Important Missing Tests
 
-- [ ] Navigation config appears in editor props and public props/rendering.
+- [x] Navigation config appears in editor and public Inertia props.
 - [ ] Public SEO metadata, sitemap, and robots behavior.
 - [ ] Active navigation state and mobile navigation behavior.
 - [ ] Rich-text public rendering and sanitization policy.
@@ -402,8 +402,8 @@ Implemented test coverage includes:
 
 ### Phase A — Correctness and Integration
 
-- [ ] Fix navigation propagation to editor and public pages.
-- [ ] Add navigation integration tests.
+- [x] Fix navigation propagation to editor and public pages.
+- [x] Add navigation integration tests.
 - [ ] Normalize remaining block theme defaults.
 - [ ] Complete `ContactSubmissionFactory` and add `MediaFactory::withThumbnail()`.
 
@@ -456,7 +456,7 @@ Implemented test coverage includes:
 
 | Risk | Current mitigation | Remaining action |
 |---|---|---|
-| Navigation config silently absent from rendering props | None; defaults hide the problem | Fix controller props and add integration tests |
+| Navigation payload accepts malformed nested data | Only top-level arrays are currently validated | Add nested item, CTA, footer, and external-URL validation |
 | Large JSON page configurations | Recursive validation | Measure payload size and set practical limits |
 | Unsafe or malformed rich-text HTML | TipTap constrains normal editor input | Define sanitization/trust policy before broader HTML features |
 | Unbounded tenant media | Per-file 5 MB limit | Add total tenant quotas and usage reporting |

@@ -31,7 +31,7 @@ class TenantPublicSiteController extends Controller
         }
 
         return Inertia::render('Tenant/PublicPage', [
-            'tenant' => $tenant->only(['id', 'subdomain', 'theme_config']),
+            'tenant' => $tenant->only(['id', 'subdomain', 'theme_config', 'navigation_config']),
             'page' => $page,
         ]);
     }

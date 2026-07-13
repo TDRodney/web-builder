@@ -646,10 +646,8 @@ The editor includes a navigation editor for site-wide header/footer chrome outsi
 1. **Storage**: Stored as `navigation_config` JSON on the `Tenant` model with two top-level keys: `header` (logo visibility, nav items, CTA button) and `footer` (copyright text).
 2. **Save API**: `PATCH /editor/navigation` validates and persists via `TenantNavigationController`.
 3. **Editor UI**: `NavigationSettings.vue` panel in the editor sidebar provides controls for managing the navigation structure.
-4. **Rendering components**: `SiteHeader.vue` and `SiteFooter.vue` are present in both the editor canvas and public page and expect the same `navigation_config` prop.
-
-> [!WARNING]
-> Navigation persistence is implemented, but end-to-end propagation is currently broken: `TenantEditorController` and `TenantPublicSiteController` omit `navigation_config` from the tenant props they return. Saved navigation therefore does not load in the editor or render on the public site until those props and their integration tests are corrected.
+4. **Rendering**: `TenantEditorController` and `TenantPublicSiteController` include `navigation_config` in their tenant props. `SiteHeader.vue` and `SiteFooter.vue` consume that configuration in both the editor canvas and public page.
+5. **Regression coverage**: `TenantNavigationTest` verifies API persistence and confirms that saved navigation is present in both editor and public Inertia responses.
 
 ### 4.13 Contact Form Submissions
 
