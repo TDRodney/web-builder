@@ -213,23 +213,113 @@ When adding a new block type, ALL of these files must be updated. Missing any st
 
 1. **`resources/js/components/BuilderBlocks/YourBlock.vue`** — Create the Vue component. Must accept `nodeId` and `blockProps` props. Use `blockProps` as the prop name (not `props`) to avoid SFC collision.
 
-2. **`resources/js/lib/blockRegistry.ts`** — Three changes:
+2. **`resources/js/lib/blockRegistry.ts`** — Two changes:
    - Add import at the top
    - Add to `blockComponents` map (key = type string)
-   - Add a `BlockDefinition` entry to `blockDefinitions[]` with `type`, `label`, `category`, `icon`, `defaultProps`, `inspectorFields`, and optionally `allowedChildren`
 
-3. **`config/blocks.php`** — Four changes:
-   - Add type string to the `types` array
-   - Optionally add a `nesting` key for the new type if it can contain children
-   - If the new block can be a child of `LayoutColumn`, add it to `LayoutColumn`'s allowed children list
-   - If any existing parent type should accept the new block, add it there too
-   - **CRITICAL**: Check EVERY parent's nesting list (`LayoutGrid`, `LayoutColumn`, etc.) and add the new block type to each one that should allow it. Missing a parent entry = save fails with 422 for anyone using that nesting combination.
+3. **`config/blocks.php`** — Add the block's keyed entry under `definitions` with `type`, `label`, `category`, `icon`, `defaultProps`, `inspectorFields`, and optionally `allowedChildren` if the new block is a container.
+   - If an existing parent should accept the new block, add it to that parent's inline `allowedChildren` list.
+   - Add the same parent-child permission to the top-level `nesting` map used by backend validation.
+   - **CRITICAL**: Check EVERY applicable parent (`LayoutGrid`, `LayoutColumn`, etc.) in both locations. Missing a parent entry can make the editor reject insertion or make save fail with a 422 response.
 
-4. **`resources/js/lib/blockRegistry.ts` (second pass)** — The frontend dynamically resolves both definitions and allowedChildren rules from the backend config shared via Inertia's `blocksConfig` prop. You do not need to manually synchronize properties in TypeScript anymore. Vue components only mapping is required inside the `blockComponents` dictionary.
+4. **Frontend definition resolution** — The frontend dynamically resolves definitions and allowed-children rules from `config/blocks.php` through the Inertia `blocksConfig` prop. Do not create or maintain a separate `blockDefinitions[]` array in TypeScript.
 
 5. **`npm run build`** — Verify the Vite build succeeds
 
 6. **`php artisan test --compact`** — Verify all tests pass
+
+## Block Component Authoring Guide
+
+### Default Props Rules
+
+- **`backgroundColor` must default to `'transparent'`** — hardcoded white/light defaults (e.g. `#ffffff`, `#f8fafc`) will mask the canvas theme background color. `RenderNode.vue` maps the known legacy white defaults to `transparent`, but new block defaults must use `transparent` in `config/blocks.php` from the start.
+- **`padding` defaults to `20`** — measured in pixels, applied by `RenderNode.vue` to the wrapper div.
+- Leaf blocks with text content should default their color prop to `'--theme-text'` (the CSS variable name string), not a raw hex. `AtomicText.vue` demonstrates this pattern.
+
+### Connecting to the Global Theme (CSS Variables)
+
+The theme is injected as CSS custom properties on the canvas root `.canvas-runtime` (Editor) and the public page root div (PublicPage). All child blocks inherit these automatically via CSS cascade.
+
+**Available CSS tokens**:
+
+| Token | Maps to |
+|---|---|
+| `--theme-primary` | Primary brand color (use for CTAs, highlights) |
+| `--theme-secondary` | Secondary accent color |
+| `--theme-bg` | Page background color |
+| `--theme-text` | Default text color |
+| `--theme-border-radius` | Corner roundness (e.g. `8px`, `9999px`) |
+| `--theme-font-heading` | Heading font family (Google Font name) |
+| `--theme-font-body` | Body / UI font family (Google Font name) |
+
+**How to use in a block component**:
+
+```vue
+<template>
+  <div
+    :style="{
+      fontFamily: 'var(--theme-font-body)',
+      color: 'var(--theme-text)',
+      borderRadius: 'var(--theme-border-radius)',
+      backgroundColor: blockProps.variant === 'primary' ? 'var(--theme-primary)' : 'transparent',
+    }"
+  >
+    {{ blockProps.content }}
+  </div>
+</template>
+```
+
+- **Never hardcode hex colors** like `#4f46e5` or `#0f172a` in block `.vue` files. Always use the CSS variable fallback pattern: `var(--theme-primary, #4f46e5)`.
+- For headings use `var(--theme-font-heading)`, for body text and labels use `var(--theme-font-body)`.
+- For hover/active states, use CSS `filter: brightness(0.9)` rather than a separate hardcoded darker hex, so the effect works on all theme colors.
+
+### Inspector Fields (Editor Sidebar Controls)
+
+The inspector sidebar renders controls dynamically from the `inspectorFields` array in `config/blocks.php`. Supported field types:
+
+| `type` | Renders As | Notes |
+|---|---|---|---|
+| `'text'` | Single-line text input | Use for labels, URLs, titles |
+| `'color'` | Native `<input type="color">` + hex text input | Returns 6-digit hex string |
+| `'range'` | Slider | Requires `min` and `max` |
+| `'number'` | Numeric input | Requires `min` and `max` |
+| `'select'` | Dropdown | Requires an `options: [{label, value}]` array |
+| `'media'` | Image preview + "Choose Image" button | Opens `MediaPicker` modal; stores the selected image URL |
+| `'repeater'` | Dynamic list of grouped subfields | Requires `subFields: InspectorField[]`; supports add/delete/reorder |
+
+Example `inspectorFields` definition in `config/blocks.php`:
+
+```php
+'inspectorFields' => [
+    ['key' => 'padding',         'label' => 'Padding (px)',   'type' => 'range',  'min' => 0, 'max' => 150],
+    ['key' => 'backgroundColor', 'label' => 'Background',     'type' => 'color'],
+    ['key' => 'label',           'label' => 'Button Text',    'type' => 'text',   'placeholder' => 'Click me'],
+    ['key' => 'variant',         'label' => 'Variant',        'type' => 'select', 'options' => [
+        ['label' => 'Primary',   'value' => 'primary'],
+        ['label' => 'Secondary', 'value' => 'secondary'],
+        ['label' => 'Outline',   'value' => 'outline'],
+    ]],
+],
+```
+
+### RenderNode Background Resolution
+
+`RenderNode.vue` wraps every block in a `<div>` that applies `padding` and `backgroundColor` from `node.props`. The resolved background uses `resolvedBgColor` computed:
+- If `backgroundColor` is empty, `'transparent'`, `'#ffffff'`, or `'#f8fafc'` → resolves to `transparent` (lets the canvas theme background show through).
+- Any other explicit value is applied as-is, enabling per-block custom backgrounds from the inspector.
+
+### isEditable Injection
+
+Blocks can detect if they are running inside the editor or on the public site:
+
+```vue
+<script setup>
+import { inject } from 'vue';
+const isEditable = inject('isEditable', false);
+</script>
+```
+
+Use `isEditable` to conditionally show placeholder text when `blockProps` fields are empty (e.g., `blockProps.headline || (isEditable ? 'Click to edit' : '')`).
 
 ## Critical: Save/Publish Flow
 
@@ -249,5 +339,6 @@ The editor has a two-step save model:
 
 - Three modes: Desktop (full width), Tablet (768px), Mobile (375px)
 - Canvas `container-type: inline-size` lets blocks respond with `@container` queries
+
 
 </laravel-boost-guidelines>

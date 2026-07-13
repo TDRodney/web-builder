@@ -29,7 +29,7 @@ class TenantEditorController extends Controller
                             [
                                 'id' => 'hero-1',
                                 'type' => 'HeroBlock',
-                                'props' => ['padding' => 40, 'backgroundColor' => '#ffffff', 'headline' => 'Welcome to your Site', 'subheadline' => 'Built with our engine.'],
+                                'props' => ['padding' => 40, 'backgroundColor' => 'transparent', 'headline' => 'Welcome to your Site', 'subheadline' => 'Built with our engine.'],
                                 'children' => [],
                             ],
                         ],
@@ -48,7 +48,7 @@ class TenantEditorController extends Controller
         $protocol = request()->getScheme();
 
         return Inertia::render('Tenant/Editor', [
-            'tenant' => $tenant->only(['id', 'subdomain']),
+            'tenant' => $tenant->only(['id', 'subdomain', 'theme_config', 'navigation_config']),
             'page' => $currentPage->only(['id', 'slug', 'title', 'is_homepage', 'draft_config']),
             'pages' => $pages,
             'urls' => [

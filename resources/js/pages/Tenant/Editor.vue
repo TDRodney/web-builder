@@ -1,10 +1,20 @@
 <script setup>
-import { useHttp, Link, router, usePage } from '@inertiajs/vue3';
+import { useHttp, Link, Head, router, usePage } from '@inertiajs/vue3';
 import { ref, computed, watch, provide, nextTick } from 'vue';
 import draggable from 'vuedraggable';
 
 import RenderNode from '@/components/BuilderBlocks/RenderNode.vue';
+import MediaPicker from '@/components/MediaPicker.vue';
+import SiteHeader from '@/components/SiteHeader.vue';
+import SiteFooter from '@/components/SiteFooter.vue';
+import CreatePageModal from '@/components/Editor/CreatePageModal.vue';
+import RenamePageModal from '@/components/Editor/RenamePageModal.vue';
+import NavigationSettings from '@/components/Editor/NavigationSettings.vue';
+import ContentInspector from '@/components/Editor/ContentInspector.vue';
+import BlockLibrary from '@/components/Editor/BlockLibrary.vue';
 import { getBlockDefinition, blockComponents } from '@/lib/blockRegistry';
+import { blockPresets } from '@/lib/blockPresets';
+import { useTheme } from '@/lib/theme';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'vue-sonner';
 
@@ -17,11 +27,41 @@ const props = defineProps({
   urls: Object
 });
 
+const { cssVars: themeVars, fontUrl } = useTheme(() => props.tenant?.theme_config);
+
 const page = usePage();
 const blockDefinitions = computed(() => {
   const definitions = page.props.blocksConfig?.definitions || {};
   return Array.isArray(definitions) ? definitions : Object.values(definitions);
 });
+
+// Library and presets tab state
+const activeLibraryTab = ref('blocks');
+
+const addPreset = (preset) => {
+  const clonedBlocks = preset.blocks.map(generateNewIds);
+  clonedBlocks.forEach((block) => {
+    blocks.value.push(block);
+  });
+  saveCanvasState();
+  toast.success(`Preset "${preset.label}" added to page`);
+};
+
+// Navigation config state
+const navigationConfig = ref(props.tenant?.navigation_config || {
+  header: {
+    showLogo: true,
+    items: [],
+    ctaButton: { show: false, label: 'Contact', slug: 'home' }
+  },
+  footer: {
+    copyright: '© 2026 ' + (props.tenant?.subdomain || 'My Workspace')
+  }
+});
+
+
+
+
 
 // Seed some initial demo data if the draft is empty so you have blocks to see instantly
 const blocks = ref(props.page.draft_config || [
@@ -42,6 +82,8 @@ const blocks = ref(props.page.draft_config || [
 const selectedNode = ref(null);
 const selectedBlock = selectedNode;
 provide('selectedBlock', selectedBlock);
+const showNavigationSettings = ref(false);
+
 provide('canvasSelection', {
   selectedNode,
   selectNode: (node) => {
@@ -512,29 +554,10 @@ const showCreateModal = ref(false);
 const showRenameModal = ref(false);
 const pageToRename = ref(null);
 
-const createForm = useHttp({
-  title: '',
-  slug: ''
-});
-
-const renameForm = useHttp({
-  title: '',
-  slug: ''
-});
-
 const deleteHttp = useHttp({});
 const setHomepageHttp = useHttp({});
 
 const pageActionError = ref('');
-
-const autoGenerateSlug = () => {
-  createForm.slug = createForm.title
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .trim();
-};
 
 const switchPage = async (pageSlug) => {
   if (pageSlug === props.page.slug) {
@@ -551,62 +574,9 @@ const switchPage = async (pageSlug) => {
   }
 };
 
-const submitCreatePage = async () => {
-  pageActionError.value = '';
-  const loadingToast = toast.loading('Creating page...');
-  try {
-    const res = await createForm.post('/editor/pages');
-
-    if (res && res.status === 'success') {
-      toast.success('Page created successfully', { id: loadingToast });
-      showCreateModal.value = false;
-      createForm.reset();
-      router.visit(`/editor?page=${res.page.slug}`);
-    }
-  } catch (err) {
-    const message = extractHttpError(err);
-    if (message !== null) {
-      pageActionError.value = message;
-      toast.error(`Failed to create page: ${message}`, { id: loadingToast });
-    } else {
-      toast.dismiss(loadingToast);
-    }
-  }
-};
-
 const openRenameModal = (page) => {
   pageToRename.value = page;
-  renameForm.title = page.title;
-  renameForm.slug = page.slug;
-  renameForm.clearErrors();
   showRenameModal.value = true;
-};
-
-const submitRenamePage = async () => {
-  pageActionError.value = '';
-  const loadingToast = toast.loading('Saving settings...');
-  try {
-    const res = await renameForm.patch(`/editor/pages/${pageToRename.value.id}`);
-
-    if (res && res.status === 'success') {
-      toast.success('Page settings updated', { id: loadingToast });
-      showRenameModal.value = false;
-
-      if (pageToRename.value.slug === props.page.slug) {
-        router.visit(`/editor?page=${res.page.slug}`);
-      } else {
-        router.reload({ only: ['pages'] });
-      }
-    }
-  } catch (err) {
-    const message = extractHttpError(err);
-    if (message !== null) {
-      pageActionError.value = message;
-      toast.error(`Failed to update page: ${message}`, { id: loadingToast });
-    } else {
-      toast.dismiss(loadingToast);
-    }
-  }
 };
 
 const handleDeletePage = async (page) => {
@@ -665,14 +635,42 @@ const handleSetHomepage = async (page) => {
     }
   }
 };
+// Media picker state
+const showMediaPicker = ref(false);
+const mediaPickerFieldKey = ref('');
+
+const openMediaPicker = (fieldKey) => {
+  mediaPickerFieldKey.value = fieldKey;
+  showMediaPicker.value = true;
+};
+
+const onMediaSelected = (item) => {
+  if (selectedBlock.value && mediaPickerFieldKey.value) {
+    selectedBlock.value.props[mediaPickerFieldKey.value] = item.url;
+  }
+  showMediaPicker.value = false;
+};
+
+
 </script>
 
 <template>
+  <Head>
+    <link v-if="fontUrl" rel="stylesheet" :href="fontUrl" />
+  </Head>
   <div class="flex h-screen bg-slate-900 text-slate-100 font-sans overflow-hidden">
     
     <div class="flex-1 overflow-y-auto p-8 bg-slate-950 h-screen">
-      <div class="mx-auto bg-white text-slate-900 rounded-xl shadow-2xl min-h-[600px] p-6 canvas-runtime" :style="{ maxWidth: canvasMaxWidth }">
+      <div class="mx-auto text-slate-900 rounded-xl shadow-2xl min-h-[600px] p-6 canvas-runtime" :style="[themeVars, { maxWidth: canvasMaxWidth, backgroundColor: themeVars['--theme-bg'] }]">
         
+        <SiteHeader 
+          :navigation-config="navigationConfig" 
+          :pages="props.pages" 
+          :tenant-name="props.tenant?.subdomain"
+          :is-editable="true"
+          class="mb-6"
+        />
+
         <draggable 
           v-model="blocks" 
           item-key="id" 
@@ -686,6 +684,12 @@ const handleSetHomepage = async (page) => {
             <RenderNode :node="element" />
           </template>
         </draggable>
+
+        <SiteFooter 
+          :navigation-config="navigationConfig"
+          :tenant-name="props.tenant?.subdomain"
+          class="mt-8 border-t pt-4"
+        />
 
       </div>
     </div>
@@ -760,6 +764,13 @@ const handleSetHomepage = async (page) => {
           </div>
         </div>
 
+        <!-- Navigation Settings Panel -->
+        <NavigationSettings
+          :navigation-config="navigationConfig"
+          :pages="props.pages"
+          :tenant="props.tenant"
+        />
+
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
           <h3 class="text-base font-bold text-white">Content Inspector</h3>
           <span class="text-indigo-400 text-[10px] font-semibold uppercase tracking-widest bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">Canvas</span>
@@ -787,79 +798,18 @@ const handleSetHomepage = async (page) => {
             Redo
           </button>
         </div>
-        
-        <div v-if="selectedBlock" class="space-y-4 animate-fade-in">
-          <div v-if="activeBlockDefinition" class="space-y-4">
-            <div v-for="field in activeBlockDefinition.inspectorFields" :key="field.key" class="space-y-1">
-              <label class="text-xs font-semibold text-slate-400 block">
-                {{ field.label }}
-                <span v-if="field.type === 'range' && selectedBlock.props[field.key] !== undefined" class="text-slate-300">
-                  : {{ selectedBlock.props[field.key] }}px
-                </span>
-              </label>
+        <ContentInspector
+          :selected-block="selectedBlock"
+          :active-block-definition="activeBlockDefinition"
+          @open-media-picker="openMediaPicker"
+        />
 
-              <input 
-                v-if="field.type === 'range'"
-                type="range" 
-                :min="field.min ?? 10" 
-                :max="field.max ?? 150" 
-                v-model.number="selectedBlock.props[field.key]" 
-                class="w-full accent-indigo-500"
-              />
-
-              <div v-else-if="field.type === 'color'" class="flex items-center gap-2">
-                <input 
-                  type="color" 
-                  v-model="selectedBlock.props[field.key]" 
-                  class="h-8 w-12 border border-slate-700 bg-transparent cursor-pointer rounded p-0"
-                />
-                <span class="text-xs font-mono text-slate-300">{{ selectedBlock.props[field.key] }}</span>
-              </div>
-
-              <input 
-                v-else-if="field.type === 'number'"
-                type="number" 
-                :min="field.min" 
-                :max="field.max" 
-                v-model.number="selectedBlock.props[field.key]" 
-                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
-              />
-
-              <input 
-                v-else
-                type="text" 
-                v-model="selectedBlock.props[field.key]" 
-                :placeholder="field.placeholder"
-                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
-              />
-            </div>
-          </div>
-
-          <button 
-            @click="deleteSelectedBlock" 
-            class="w-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold py-2 px-3 rounded-lg transition-all cursor-pointer border-0 mt-4"
-          >
-            Delete Block
-          </button>
-        </div>
-        <p v-else class="text-sm text-slate-500 mt-4 italic">Click a block on the canvas to inspect it.</p>
-
-        <!-- Block Library -->
-        <div class="border-t border-slate-800 pt-4 mt-4">
-          <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Add Block</h4>
-          <div class="grid grid-cols-2 gap-2">
-            <button 
-              v-for="def in blockDefinitions" 
-              :key="def.type"
-              @click="addBlock(def.type)" 
-              :class="def.type === 'AtomicText' ? 'col-span-2' : ''"
-              class="bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 text-xs py-2 px-2.5 rounded font-medium transition-colors cursor-pointer"
-            >
-              + {{ def.label }}
-            </button>
-          </div>
-          <p class="text-[10px] text-slate-500 mt-2 italic">Tip: If a Layout container is selected, the new block is nested inside it.</p>
-        </div>
+        <BlockLibrary
+          :block-definitions="blockDefinitions"
+          :block-presets="blockPresets"
+          @add-block="addBlock"
+          @add-preset="addPreset"
+        />
       </div>
 
       <!-- Action Panel at the Bottom of Sidebar -->
@@ -895,123 +845,32 @@ const handleSetHomepage = async (page) => {
     </div>
 
     <!-- Create Page Modal -->
-    <div v-if="showCreateModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <h3 class="text-base font-bold text-white">Create New Page</h3>
-          <button @click="showCreateModal = false" class="text-slate-400 hover:text-white bg-transparent border-0 cursor-pointer p-1">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <form @submit.prevent="submitCreatePage" class="space-y-4">
-          <div>
-            <label class="text-xs font-semibold text-slate-400 block mb-1">Page Title</label>
-            <input 
-              type="text" 
-              v-model="createForm.title" 
-              @input="autoGenerateSlug"
-              required 
-              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 text-slate-100"
-              placeholder="e.g. About Us"
-            />
-            <p v-if="createForm.errors.title" class="text-rose-500 text-xs mt-1">{{ createForm.errors.title }}</p>
-          </div>
-
-          <div>
-            <label class="text-xs font-semibold text-slate-400 block mb-1">URL Slug</label>
-            <input 
-              type="text" 
-              v-model="createForm.slug" 
-              required 
-              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 font-mono text-slate-100"
-              placeholder="e.g. about-us"
-            />
-            <p v-if="createForm.errors.slug" class="text-rose-500 text-xs mt-1">{{ createForm.errors.slug }}</p>
-          </div>
-
-          <div class="flex items-center justify-end gap-3 pt-2">
-            <button 
-              type="button" 
-              @click="showCreateModal = false" 
-              class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2 px-4 rounded-lg transition-all cursor-pointer border border-slate-700"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              :disabled="createForm.processing"
-              class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold py-2 px-4 rounded-lg transition-all cursor-pointer border-0"
-            >
-              {{ createForm.processing ? 'Creating...' : 'Create Page' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <CreatePageModal
+      :show="showCreateModal"
+      @close="showCreateModal = false"
+    />
 
     <!-- Rename Page Modal -->
-    <div v-if="showRenameModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <h3 class="text-base font-bold text-white">Rename Page Settings</h3>
-          <button @click="showRenameModal = false" class="text-slate-400 hover:text-white bg-transparent border-0 cursor-pointer p-1">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <form @submit.prevent="submitRenamePage" class="space-y-4">
-          <div>
-            <label class="text-xs font-semibold text-slate-400 block mb-1">Page Title</label>
-            <input 
-              type="text" 
-              v-model="renameForm.title" 
-              required 
-              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 text-slate-100"
-            />
-            <p v-if="renameForm.errors.title" class="text-rose-500 text-xs mt-1">{{ renameForm.errors.title }}</p>
-          </div>
-
-          <div>
-            <label class="text-xs font-semibold text-slate-400 block mb-1">URL Slug</label>
-            <input 
-              type="text" 
-              v-model="renameForm.slug" 
-              required 
-              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 font-mono text-slate-100"
-            />
-            <p v-if="renameForm.errors.slug" class="text-rose-500 text-xs mt-1">{{ renameForm.errors.slug }}</p>
-          </div>
-
-          <div class="flex items-center justify-end gap-3 pt-2">
-            <button 
-              type="button" 
-              @click="showRenameModal = false" 
-              class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2 px-4 rounded-lg transition-all cursor-pointer border border-slate-700"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              :disabled="renameForm.processing"
-              class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold py-2 px-4 rounded-lg transition-all cursor-pointer border-0"
-            >
-              {{ renameForm.processing ? 'Saving...' : 'Save Settings' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <RenamePageModal
+      :show="showRenameModal"
+      :page="pageToRename"
+      :current-page-slug="props.page.slug"
+      @close="showRenameModal = false"
+    />
 
     <!-- Toast Container -->
     <Toaster position="top-right" closeButton richColors />
 
+    <!-- Media Picker Modal -->
+    <MediaPicker
+      v-if="showMediaPicker"
+      @select="onMediaSelected"
+      @close="showMediaPicker = false"
+    />
+
   </div>
 </template>
+
 
 <style scoped>
 .canvas-runtime {

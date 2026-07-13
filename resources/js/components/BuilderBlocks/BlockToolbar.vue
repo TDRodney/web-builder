@@ -39,7 +39,7 @@ const handleWrap = () => blockActions?.wrapInContainer(props.nodeId);
 <template>
   <div
     class="absolute top-2 right-2 flex items-center gap-0.5 z-20 bg-slate-900/90 backdrop-blur-sm rounded-lg border border-slate-700/50 shadow-lg p-0.5 transition-opacity"
-    :class="visible ? 'opacity-100' : 'opacity-0'"
+    :class="visible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
     @click.stop
   >
     <button

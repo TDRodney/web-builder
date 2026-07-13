@@ -2,10 +2,14 @@
 
 use App\Http\Controllers\Auth\CentralAuthenticatedSessionController;
 use App\Http\Controllers\Auth\CentralRegisteredUserController;
+use App\Http\Controllers\TenantContactController;
 use App\Http\Controllers\TenantEditorController;
+use App\Http\Controllers\TenantMediaController;
+use App\Http\Controllers\TenantNavigationController;
 use App\Http\Controllers\TenantPageController;
 use App\Http\Controllers\TenantPageSaveController;
 use App\Http\Controllers\TenantPublicSiteController;
+use App\Http\Controllers\TenantThemeController;
 use App\Http\Middleware\IdentifyTenant;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -60,8 +64,12 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
 
                 return Inertia::render('CentralDashboard', [
                     'tenant' => $tenant->only(['id', 'subdomain']),
+                    'theme_config' => $tenant->theme_config,
                 ]);
             })->name('dashboard');
+
+            // Theme Settings
+            Route::patch('/theme', [TenantThemeController::class, 'update'])->name('tenant.theme.update');
 
             // State 1: Authed Tenant Owner modifying their workspace canvas
             Route::prefix('editor')->group(function () {
@@ -73,8 +81,17 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
                 Route::post('/pages', [TenantPageController::class, 'store'])->name('tenant.pages.store');
                 Route::patch('/pages/{page}', [TenantPageController::class, 'update'])->name('tenant.pages.update');
                 Route::delete('/pages/{page}', [TenantPageController::class, 'destroy'])->name('tenant.pages.destroy');
+
+                Route::get('/media', [TenantMediaController::class, 'index'])->name('tenant.media.index');
+                Route::post('/media', [TenantMediaController::class, 'store'])->name('tenant.media.store');
+                Route::delete('/media/{media}', [TenantMediaController::class, 'destroy'])->name('tenant.media.destroy');
+
+                Route::patch('/navigation', [TenantNavigationController::class, 'update'])->name('tenant.navigation.update');
             });
         });
+
+        // Contact Form Submission
+        Route::post('/contact', [TenantContactController::class, 'store'])->name('tenant.contact.store');
 
         // State 2: Public User visiting the live published site
         Route::get('/{slug?}', [TenantPublicSiteController::class, 'show'])

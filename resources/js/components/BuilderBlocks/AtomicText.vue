@@ -1,7 +1,7 @@
 <script>
 export default {
   blueprint: {
-    props: { content: 'Atomic Text Element', fontSize: '16px', color: '#0f172a' }
+    props: { content: 'Atomic Text Element', fontSize: '16px', color: '--theme-text' }
   }
 }
 </script>
@@ -23,7 +23,9 @@ const props = defineProps({
 const isEditable = inject('isEditable', false);
 
 const computedStyles = computed(() => {
-  const styles = {};
+  const styles = {
+    fontFamily: 'var(--theme-font-body)',
+  };
   
   if (props.blockProps?.fontSize) {
     styles.fontSize = typeof props.blockProps.fontSize === 'number' 
@@ -33,7 +35,11 @@ const computedStyles = computed(() => {
   
   if (props.blockProps?.color) {
     const colorVal = props.blockProps.color;
-    styles.color = String(colorVal).startsWith('--') ? `var(${colorVal})` : colorVal;
+    styles.color = (colorVal === '#0f172a') 
+      ? 'var(--theme-text)' 
+      : (String(colorVal).startsWith('--') ? `var(${colorVal})` : colorVal);
+  } else {
+    styles.color = 'var(--theme-text)';
   }
   
   return styles;
