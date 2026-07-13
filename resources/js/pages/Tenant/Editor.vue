@@ -7,6 +7,11 @@ import RenderNode from '@/components/BuilderBlocks/RenderNode.vue';
 import MediaPicker from '@/components/MediaPicker.vue';
 import SiteHeader from '@/components/SiteHeader.vue';
 import SiteFooter from '@/components/SiteFooter.vue';
+import CreatePageModal from '@/components/Editor/CreatePageModal.vue';
+import RenamePageModal from '@/components/Editor/RenamePageModal.vue';
+import NavigationSettings from '@/components/Editor/NavigationSettings.vue';
+import ContentInspector from '@/components/Editor/ContentInspector.vue';
+import BlockLibrary from '@/components/Editor/BlockLibrary.vue';
 import { getBlockDefinition, blockComponents } from '@/lib/blockRegistry';
 import { blockPresets } from '@/lib/blockPresets';
 import { useTheme } from '@/lib/theme';
@@ -54,50 +59,7 @@ const navigationConfig = ref(props.tenant?.navigation_config || {
   }
 });
 
-const isSavingNav = ref(false);
 
-const addNavLink = () => {
-  if (!navigationConfig.value.header.items) {
-    navigationConfig.value.header.items = [];
-  }
-  navigationConfig.value.header.items.push({
-    label: 'New Link',
-    type: 'internal',
-    slug: 'home',
-    href: 'https://'
-  });
-};
-
-const deleteNavLink = (index) => {
-  navigationConfig.value.header.items.splice(index, 1);
-};
-
-const saveNavigation = async () => {
-  isSavingNav.value = true;
-  try {
-    const res = await fetch('/editor/navigation', {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-        'Accept': 'application/json',
-        'X-XSRF-TOKEN': getCsrfToken(),
-      },
-      body: JSON.stringify({
-        navigation_config: navigationConfig.value,
-      }),
-    });
-    if (res.ok) {
-      toast.success('Navigation settings saved successfully');
-    } else {
-      toast.error('Failed to save navigation settings');
-    }
-  } catch (e) {
-    toast.error('Error saving navigation settings');
-  } finally {
-    isSavingNav.value = false;
-  }
-};
 
 
 
@@ -592,29 +554,10 @@ const showCreateModal = ref(false);
 const showRenameModal = ref(false);
 const pageToRename = ref(null);
 
-const createForm = useHttp({
-  title: '',
-  slug: ''
-});
-
-const renameForm = useHttp({
-  title: '',
-  slug: ''
-});
-
 const deleteHttp = useHttp({});
 const setHomepageHttp = useHttp({});
 
 const pageActionError = ref('');
-
-const autoGenerateSlug = () => {
-  createForm.slug = createForm.title
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .trim();
-};
 
 const switchPage = async (pageSlug) => {
   if (pageSlug === props.page.slug) {
@@ -631,62 +574,9 @@ const switchPage = async (pageSlug) => {
   }
 };
 
-const submitCreatePage = async () => {
-  pageActionError.value = '';
-  const loadingToast = toast.loading('Creating page...');
-  try {
-    const res = await createForm.post('/editor/pages');
-
-    if (res && res.status === 'success') {
-      toast.success('Page created successfully', { id: loadingToast });
-      showCreateModal.value = false;
-      createForm.reset();
-      router.visit(`/editor?page=${res.page.slug}`);
-    }
-  } catch (err) {
-    const message = extractHttpError(err);
-    if (message !== null) {
-      pageActionError.value = message;
-      toast.error(`Failed to create page: ${message}`, { id: loadingToast });
-    } else {
-      toast.dismiss(loadingToast);
-    }
-  }
-};
-
 const openRenameModal = (page) => {
   pageToRename.value = page;
-  renameForm.title = page.title;
-  renameForm.slug = page.slug;
-  renameForm.clearErrors();
   showRenameModal.value = true;
-};
-
-const submitRenamePage = async () => {
-  pageActionError.value = '';
-  const loadingToast = toast.loading('Saving settings...');
-  try {
-    const res = await renameForm.patch(`/editor/pages/${pageToRename.value.id}`);
-
-    if (res && res.status === 'success') {
-      toast.success('Page settings updated', { id: loadingToast });
-      showRenameModal.value = false;
-
-      if (pageToRename.value.slug === props.page.slug) {
-        router.visit(`/editor?page=${res.page.slug}`);
-      } else {
-        router.reload({ only: ['pages'] });
-      }
-    }
-  } catch (err) {
-    const message = extractHttpError(err);
-    if (message !== null) {
-      pageActionError.value = message;
-      toast.error(`Failed to update page: ${message}`, { id: loadingToast });
-    } else {
-      toast.dismiss(loadingToast);
-    }
-  }
 };
 
 const handleDeletePage = async (page) => {
@@ -761,36 +651,7 @@ const onMediaSelected = (item) => {
   showMediaPicker.value = false;
 };
 
-// Repeater helpers
-const addRepeaterItem = (fieldKey, subFields) => {
-  if (!selectedBlock.value) return;
-  if (!selectedBlock.value.props[fieldKey] || !Array.isArray(selectedBlock.value.props[fieldKey])) {
-    selectedBlock.value.props[fieldKey] = [];
-  }
-  const newItem = {};
-  subFields.forEach((sub) => {
-    newItem[sub.key] = sub.type === 'select' ? (sub.options?.[0]?.value || '') : '';
-  });
-  selectedBlock.value.props[fieldKey].push(newItem);
-  saveCanvasState();
-};
 
-const deleteRepeaterItem = (fieldKey, index) => {
-  if (!selectedBlock.value || !selectedBlock.value.props[fieldKey]) return;
-  selectedBlock.value.props[fieldKey].splice(index, 1);
-  saveCanvasState();
-};
-
-const moveRepeaterItem = (fieldKey, index, direction) => {
-  if (!selectedBlock.value || !selectedBlock.value.props[fieldKey]) return;
-  const list = selectedBlock.value.props[fieldKey];
-  const targetIndex = index + direction;
-  if (targetIndex < 0 || targetIndex >= list.length) return;
-  const temp = list[index];
-  list[index] = list[targetIndex];
-  list[targetIndex] = temp;
-  saveCanvasState();
-};
 </script>
 
 <template>
@@ -904,150 +765,11 @@ const moveRepeaterItem = (fieldKey, index, direction) => {
         </div>
 
         <!-- Navigation Settings Panel -->
-        <div class="border-t border-slate-800 pt-4 space-y-3">
-          <button
-            type="button"
-            @click="showNavigationSettings = !showNavigationSettings"
-            class="w-full flex items-center justify-between text-left text-xs font-bold text-slate-400 uppercase tracking-widest bg-transparent border-0 cursor-pointer p-0"
-          >
-            <span>Navigation Settings</span>
-            <span class="text-slate-500">{{ showNavigationSettings ? '▼' : '►' }}</span>
-          </button>
-
-          <div v-if="showNavigationSettings" class="space-y-4 animate-fade-in bg-slate-900/40 p-3 rounded-lg border border-slate-800/80">
-            <!-- Logo Toggle -->
-            <label class="flex items-center gap-2 text-xs text-slate-300 font-semibold cursor-pointer">
-              <input 
-                type="checkbox" 
-                v-model="navigationConfig.header.showLogo" 
-                class="rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-indigo-500 animate-none w-auto h-auto" 
-              />
-              Show Site Logo Text
-            </label>
-
-            <!-- Nav Links List -->
-            <div class="space-y-2">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Header Links</span>
-              <div v-if="!navigationConfig.header.items || !navigationConfig.header.items.length" class="text-xs text-slate-500 italic">
-                No navigation links added.
-              </div>
-              <draggable
-                v-model="navigationConfig.header.items"
-                item-key="label"
-                handle=".nav-drag-handle"
-                class="space-y-2"
-              >
-                <template #item="{ element, index }">
-                  <div class="bg-slate-850 border border-slate-700/50 rounded p-2 space-y-2 relative">
-                    <div class="flex items-center justify-between">
-                      <span class="nav-drag-handle text-slate-500 hover:text-slate-300 cursor-move text-xs">☰ Drag</span>
-                      <button
-                        type="button"
-                        @click="deleteNavLink(index)"
-                        class="text-rose-450 hover:text-rose-300 bg-transparent border-0 cursor-pointer"
-                        title="Delete Link"
-                      >
-                        ✕
-                      </button>
-                    </div>
-
-                    <div class="space-y-1.5">
-                      <input
-                        type="text"
-                        v-model="element.label"
-                        placeholder="Link Label"
-                        class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs focus:outline-none focus:border-indigo-500"
-                      />
-                      <div class="grid grid-cols-2 gap-1.5">
-                        <select
-                          v-model="element.type"
-                          class="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-white text-[10px] focus:outline-none focus:border-indigo-500 cursor-pointer"
-                        >
-                          <option value="internal">Internal</option>
-                          <option value="external">External</option>
-                        </select>
-                        <select
-                          v-if="element.type === 'internal'"
-                          v-model="element.slug"
-                          class="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-white text-[10px] focus:outline-none focus:border-indigo-500 cursor-pointer"
-                        >
-                          <option v-for="p in props.pages" :key="p.id" :value="p.slug">
-                            {{ p.title }}
-                          </option>
-                        </select>
-                        <input
-                          v-else
-                          type="text"
-                          v-model="element.href"
-                          placeholder="https://..."
-                          class="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-white text-[10px] focus:outline-none focus:border-indigo-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </template>
-              </draggable>
-
-              <button
-                type="button"
-                @click="addNavLink"
-                class="w-full bg-slate-800 hover:bg-slate-700/60 border border-slate-700 text-slate-300 text-xs font-semibold py-1.5 px-3 rounded transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-transparent"
-              >
-                + Add Link
-              </button>
-            </div>
-
-            <!-- CTA Button -->
-            <div class="border-t border-slate-800/80 pt-3 space-y-2">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">CTA Button</span>
-              <label class="flex items-center gap-2 text-xs text-slate-300 font-semibold cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  v-model="navigationConfig.header.ctaButton.show" 
-                  class="rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-indigo-500 animate-none w-auto h-auto" 
-                />
-                Show CTA Button
-              </label>
-
-              <div v-if="navigationConfig.header.ctaButton.show" class="space-y-2 pl-4 border-l-2 border-indigo-600/30">
-                <input
-                  type="text"
-                  v-model="navigationConfig.header.ctaButton.label"
-                  placeholder="Button Label"
-                  class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs focus:outline-none focus:border-indigo-500"
-                />
-                <select
-                  v-model="navigationConfig.header.ctaButton.slug"
-                  class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs focus:outline-none focus:border-indigo-500 cursor-pointer"
-                >
-                  <option v-for="p in props.pages" :key="p.id" :value="p.slug">
-                    {{ p.title }}
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            <!-- FooterCopyright -->
-            <div class="border-t border-slate-800/80 pt-3 space-y-2">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Footer Copyright</span>
-              <input
-                type="text"
-                v-model="navigationConfig.footer.copyright"
-                placeholder="© 2026 Brand Name"
-                class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs focus:outline-none focus:border-indigo-500"
-              />
-            </div>
-
-            <button
-              type="button"
-              @click="saveNavigation"
-              :disabled="isSavingNav"
-              class="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold py-2 px-3 rounded-lg transition-all cursor-pointer border-0 mt-2 shadow-sm"
-            >
-              {{ isSavingNav ? 'Saving...' : 'Save Navigation' }}
-            </button>
-          </div>
-        </div>
+        <NavigationSettings
+          :navigation-config="navigationConfig"
+          :pages="props.pages"
+          :tenant="props.tenant"
+        />
 
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
           <h3 class="text-base font-bold text-white">Content Inspector</h3>
@@ -1076,231 +798,18 @@ const moveRepeaterItem = (fieldKey, index, direction) => {
             Redo
           </button>
         </div>
-        
-        <div v-if="selectedBlock" class="space-y-4 animate-fade-in">
-          <div v-if="activeBlockDefinition" class="space-y-4">
-            <div v-for="field in activeBlockDefinition.inspectorFields" :key="field.key" class="space-y-1">
-              <label class="text-xs font-semibold text-slate-400 block">
-                {{ field.label }}
-                <span v-if="field.type === 'range' && selectedBlock.props[field.key] !== undefined" class="text-slate-300">
-                  : {{ selectedBlock.props[field.key] }}px
-                </span>
-              </label>
+        <ContentInspector
+          :selected-block="selectedBlock"
+          :active-block-definition="activeBlockDefinition"
+          @open-media-picker="openMediaPicker"
+        />
 
-              <!-- Range slider -->
-              <input
-                v-if="field.type === 'range'"
-                type="range"
-                :min="field.min ?? 10"
-                :max="field.max ?? 150"
-                v-model.number="selectedBlock.props[field.key]"
-                class="w-full accent-indigo-500"
-              />
-
-              <!-- Color picker -->
-              <div v-else-if="field.type === 'color'" class="flex items-center gap-2">
-                <input
-                  type="color"
-                  v-model="selectedBlock.props[field.key]"
-                  class="h-8 w-12 border border-slate-700 bg-transparent cursor-pointer rounded p-0"
-                />
-                <span class="text-xs font-mono text-slate-300">{{ selectedBlock.props[field.key] }}</span>
-              </div>
-
-              <!-- Number input -->
-              <input
-                v-else-if="field.type === 'number'"
-                type="number"
-                :min="field.min"
-                :max="field.max"
-                v-model.number="selectedBlock.props[field.key]"
-                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
-              />
-
-              <!-- Select dropdown -->
-              <select
-                v-else-if="field.type === 'select'"
-                v-model="selectedBlock.props[field.key]"
-                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 cursor-pointer"
-              >
-                <option v-for="opt in field.options" :key="opt.value" :value="opt.value">
-                  {{ opt.label }}
-                </option>
-              </select>
-
-              <!-- Media picker -->
-              <div v-else-if="field.type === 'media'" class="space-y-2">
-                <div v-if="selectedBlock.props[field.key]" class="relative rounded overflow-hidden">
-                  <img
-                    :src="selectedBlock.props[field.key]"
-                    alt=""
-                    class="w-full h-24 object-cover rounded"
-                  />
-                  <button
-                    @click="selectedBlock.props[field.key] = ''"
-                    class="absolute top-1 right-1 bg-slate-900/80 text-rose-400 border-0 rounded p-0.5 cursor-pointer"
-                    title="Remove image"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <button
-                  @click="openMediaPicker(field.key)"
-                  class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold py-2 px-3 rounded-lg transition-all cursor-pointer"
-                >
-                  {{ selectedBlock.props[field.key] ? 'Change Image' : 'Choose Image' }}
-                </button>
-              </div>
-
-              <!-- Repeater Field -->
-              <div v-else-if="field.type === 'repeater'" class="space-y-3">
-                <div 
-                  v-for="(item, index) in (selectedBlock.props[field.key] || [])" 
-                  :key="index" 
-                  class="bg-slate-800/60 border border-slate-700/60 rounded-lg p-3 space-y-3 relative group/item"
-                >
-                  <div class="flex items-center justify-between border-b border-slate-700/40 pb-2">
-                    <span class="text-xs font-bold text-slate-300">Item #{{ index + 1 }}</span>
-                    <div class="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        @click="moveRepeaterItem(field.key, index, -1)"
-                        :disabled="index === 0"
-                        class="text-slate-400 hover:text-white bg-transparent border-0 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                        title="Move Up"
-                      >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        @click="moveRepeaterItem(field.key, index, 1)"
-                        :disabled="index === (selectedBlock.props[field.key]?.length - 1)"
-                        class="text-slate-400 hover:text-white bg-transparent border-0 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                        title="Move Down"
-                      >
-                        ↓
-                      </button>
-                      <button
-                        type="button"
-                        @click="deleteRepeaterItem(field.key, index)"
-                        class="text-rose-400 hover:text-rose-300 bg-transparent border-0 cursor-pointer ml-1"
-                        title="Delete Item"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- Sub fields -->
-                  <div class="space-y-2">
-                    <div v-for="sub in field.subFields" :key="sub.key" class="space-y-1">
-                      <label class="text-[10px] font-semibold text-slate-400 block">{{ sub.label }}</label>
-                      
-                      <!-- Sub field select -->
-                      <select
-                        v-if="sub.type === 'select'"
-                        v-model="item[sub.key]"
-                        @change="saveCanvasState"
-                        class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs focus:outline-none focus:border-indigo-500 cursor-pointer"
-                      >
-                        <option v-for="opt in sub.options" :key="opt.value" :value="opt.value">
-                          {{ opt.label }}
-                        </option>
-                      </select>
-
-                      <!-- Sub field text -->
-                      <input
-                        v-else
-                        type="text"
-                        v-model="item[sub.key]"
-                        @input="saveCanvasState"
-                        :placeholder="sub.placeholder"
-                        class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs focus:outline-none focus:border-indigo-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  @click="addRepeaterItem(field.key, field.subFields)"
-                  class="w-full bg-slate-800 hover:bg-slate-700 border border-dashed border-slate-600 hover:border-slate-500 text-slate-300 text-xs font-semibold py-2 px-3 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                >
-                  + Add Item
-                </button>
-              </div>
-
-              <!-- Text fallback -->
-              <input
-                v-else
-                type="text"
-                v-model="selectedBlock.props[field.key]"
-                :placeholder="field.placeholder"
-                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
-              />
-            </div>
-          </div>
-
-          <button 
-            @click="deleteSelectedBlock" 
-            class="w-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold py-2 px-3 rounded-lg transition-all cursor-pointer border-0 mt-4"
-          >
-            Delete Block
-          </button>
-        </div>
-        <p v-else class="text-sm text-slate-500 mt-4 italic">Click a block on the canvas to inspect it.</p>
-
-        <!-- Block Library -->
-        <div class="border-t border-slate-800 pt-4 mt-4">
-          <!-- Library Tabs -->
-          <div class="flex border-b border-slate-800 mb-3 gap-3">
-            <button
-              type="button"
-              :class="['text-xs font-bold pb-2 border-b-2 cursor-pointer transition-colors bg-transparent border-0', activeLibraryTab === 'blocks' ? 'text-indigo-400 border-indigo-500' : 'text-slate-500 border-transparent hover:text-slate-300']"
-              @click="activeLibraryTab = 'blocks'"
-            >
-              Blocks
-            </button>
-            <button
-              type="button"
-              :class="['text-xs font-bold pb-2 border-b-2 cursor-pointer transition-colors bg-transparent border-0', activeLibraryTab === 'presets' ? 'text-indigo-400 border-indigo-500' : 'text-slate-500 border-transparent hover:text-slate-300']"
-              @click="activeLibraryTab = 'presets'"
-            >
-              Presets
-            </button>
-          </div>
-
-          <!-- Tab Content: Blocks -->
-          <div v-if="activeLibraryTab === 'blocks'" class="grid grid-cols-2 gap-2">
-            <button 
-              v-for="def in blockDefinitions" 
-              :key="def.type"
-              @click="addBlock(def.type)" 
-              :class="def.type === 'AtomicText' ? 'col-span-2' : ''"
-              class="bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 text-xs py-2 px-2.5 rounded font-medium transition-colors cursor-pointer"
-            >
-              + {{ def.label }}
-            </button>
-            <p class="text-[10px] text-slate-500 mt-2 col-span-2 italic">Tip: If a Layout container is selected, the new block is nested inside it.</p>
-          </div>
-
-          <!-- Tab Content: Presets -->
-          <div v-else-if="activeLibraryTab === 'presets'" class="space-y-2">
-            <button
-              v-for="preset in blockPresets"
-              :key="preset.key"
-              @click="addPreset(preset)"
-              class="w-full text-left bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/60 hover:border-slate-600 rounded p-2.5 transition-all cursor-pointer group"
-            >
-              <div class="font-bold text-xs text-indigo-300 group-hover:text-indigo-200">{{ preset.label }}</div>
-              <div class="text-[10px] text-slate-500 group-hover:text-slate-400 mt-0.5 leading-relaxed">{{ preset.description }}</div>
-            </button>
-          </div>
-        </div>
+        <BlockLibrary
+          :block-definitions="blockDefinitions"
+          :block-presets="blockPresets"
+          @add-block="addBlock"
+          @add-preset="addPreset"
+        />
       </div>
 
       <!-- Action Panel at the Bottom of Sidebar -->
@@ -1336,117 +845,18 @@ const moveRepeaterItem = (fieldKey, index, direction) => {
     </div>
 
     <!-- Create Page Modal -->
-    <div v-if="showCreateModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <h3 class="text-base font-bold text-white">Create New Page</h3>
-          <button @click="showCreateModal = false" class="text-slate-400 hover:text-white bg-transparent border-0 cursor-pointer p-1">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <form @submit.prevent="submitCreatePage" class="space-y-4">
-          <div>
-            <label class="text-xs font-semibold text-slate-400 block mb-1">Page Title</label>
-            <input 
-              type="text" 
-              v-model="createForm.title" 
-              @input="autoGenerateSlug"
-              required 
-              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 text-slate-100"
-              placeholder="e.g. About Us"
-            />
-            <p v-if="createForm.errors.title" class="text-rose-500 text-xs mt-1">{{ createForm.errors.title }}</p>
-          </div>
-
-          <div>
-            <label class="text-xs font-semibold text-slate-400 block mb-1">URL Slug</label>
-            <input 
-              type="text" 
-              v-model="createForm.slug" 
-              required 
-              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 font-mono text-slate-100"
-              placeholder="e.g. about-us"
-            />
-            <p v-if="createForm.errors.slug" class="text-rose-500 text-xs mt-1">{{ createForm.errors.slug }}</p>
-          </div>
-
-          <div class="flex items-center justify-end gap-3 pt-2">
-            <button 
-              type="button" 
-              @click="showCreateModal = false" 
-              class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2 px-4 rounded-lg transition-all cursor-pointer border border-slate-700"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              :disabled="createForm.processing"
-              class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold py-2 px-4 rounded-lg transition-all cursor-pointer border-0"
-            >
-              {{ createForm.processing ? 'Creating...' : 'Create Page' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <CreatePageModal
+      :show="showCreateModal"
+      @close="showCreateModal = false"
+    />
 
     <!-- Rename Page Modal -->
-    <div v-if="showRenameModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <h3 class="text-base font-bold text-white">Rename Page Settings</h3>
-          <button @click="showRenameModal = false" class="text-slate-400 hover:text-white bg-transparent border-0 cursor-pointer p-1">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <form @submit.prevent="submitRenamePage" class="space-y-4">
-          <div>
-            <label class="text-xs font-semibold text-slate-400 block mb-1">Page Title</label>
-            <input 
-              type="text" 
-              v-model="renameForm.title" 
-              required 
-              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 text-slate-100"
-            />
-            <p v-if="renameForm.errors.title" class="text-rose-500 text-xs mt-1">{{ renameForm.errors.title }}</p>
-          </div>
-
-          <div>
-            <label class="text-xs font-semibold text-slate-400 block mb-1">URL Slug</label>
-            <input 
-              type="text" 
-              v-model="renameForm.slug" 
-              required 
-              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 font-mono text-slate-100"
-            />
-            <p v-if="renameForm.errors.slug" class="text-rose-500 text-xs mt-1">{{ renameForm.errors.slug }}</p>
-          </div>
-
-          <div class="flex items-center justify-end gap-3 pt-2">
-            <button 
-              type="button" 
-              @click="showRenameModal = false" 
-              class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2 px-4 rounded-lg transition-all cursor-pointer border border-slate-700"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              :disabled="renameForm.processing"
-              class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold py-2 px-4 rounded-lg transition-all cursor-pointer border-0"
-            >
-              {{ renameForm.processing ? 'Saving...' : 'Save Settings' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <RenamePageModal
+      :show="showRenameModal"
+      :page="pageToRename"
+      :current-page-slug="props.page.slug"
+      @close="showRenameModal = false"
+    />
 
     <!-- Toast Container -->
     <Toaster position="top-right" closeButton richColors />
