@@ -1,6 +1,6 @@
 # Web Builder — Ground-Truth Project Specification
 
-> Reverse-engineered from the active codebase on 2026-07-05. Only implemented, non-commented-out code is documented.
+> Last reconciled with the active codebase on 2026-07-14. Implemented behavior is documented, and known implementation/documentation mismatches are called out explicitly.
 
 ---
 
@@ -60,6 +60,7 @@ graph LR
 | **Build Tool** | Vite | 8.0 |
 | **CSS Framework** | Tailwind CSS | v4 |
 | **Drag-and-Drop** | `vuedraggable` | 4.1 |
+| **Rich Text Editor** | TipTap (`@tiptap/vue-3`, StarterKit) | 3.27+ |
 | **UI Primitives** | Reka UI | 2.9+ |
 | **Icons** | Lucide Vue | 1.17+ |
 | **Utilities** | VueUse, clsx, tailwind-merge, class-variance-authority | — |
@@ -206,7 +207,8 @@ erDiagram
 - Traits: `HasFactory`
 - Fillable: `tenant_id`, `slug`, `title`, `is_homepage`, `sort_order`, `draft_config`, `published_config`
 - Casts: `is_homepage` → boolean, `draft_config` → array, `published_config` → array
-- Relationship: `belongsTo(Tenant)`, `hasMany(ContactSubmission)`
+- Relationship: `belongsTo(Tenant)`
+- `ContactSubmission` defines the inverse `belongsTo(Page)` relationship, but `Page` does not currently define `hasMany(ContactSubmission)`
 - **Global Scope**: [TenantScope](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Models/Scopes/TenantScope.php) auto-filters all queries by `tenant_id` when `app('currentTenant')` is bound
 
 #### [Media](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Models/Media.php)
@@ -272,7 +274,7 @@ interface BlockNode {
 | `DividerBlock` | Leaf | `thickness` (1-8), `color`, `margin` (0-60) |
 | `SpacerBlock` | Leaf | `height` (4-200) |
 | `ImageBlock` | Leaf | `src`, `alt`, `objectFit`, `borderRadius`, `width`, `height`, `padding`, `backgroundColor` |
-| `RichTextBlock` | Leaf | `html` (raw HTML), `padding`, `backgroundColor` |
+| `RichTextBlock` | Leaf | `html`, `padding`, `backgroundColor`; TipTap provides the editor UI and the public renderer outputs the stored HTML |
 | `VideoEmbedBlock` | Leaf | `url`, `provider` (youtube/vimeo/loom/raw), `aspectRatio` (16/9, 4/3, 1/1), `padding`, `backgroundColor` |
 | `FAQBlock` | Leaf | `items[]` (question/answer pairs), `padding`, `backgroundColor` |
 | `TestimonialBlock` | Leaf | `quote`, `authorName`, `authorRole`, `avatarSrc`, `padding`, `backgroundColor` |
@@ -362,6 +364,9 @@ Authorization is **controller-level, not policy-based**:
 | `PATCH /editor/navigation` | `navigation_config`: required array; `navigation_config.header`: required array; `navigation_config.footer`: required array |
 | `POST /contact` | `page_id`: nullable integer exists:pages,id; `data`: required array (rate-limited: 5/min per IP) |
 
+> [!WARNING]
+> The current `exists:pages,id` validation is not tenant-scoped because it uses the database validation rule rather than an Eloquent query with `TenantScope`. A submitted `page_id` can therefore reference another tenant's page. This must be corrected with a tenant-qualified existence rule or an explicitly tenant-scoped page lookup.
+
 **Reserved Subdomains**: `www`, `admin`, `api`, `mail`, `blog`, `domain`, `central`, `app`, `webmaster`, `host`, `system`, `editor`
 
 ---
@@ -436,7 +441,7 @@ sequenceDiagram
     Server->>Server: Auth ownership check
     Server->>DB: Page::findOrFail(page_id) — TenantScope
     Server->>DB: BEGIN TRANSACTION
-    Server->>DB: $page->refresh() — lock to latest
+    Server->>DB: $page->refresh() — reload latest committed values (no row lock)
     Server->>DB: UPDATE pages SET published_config = draft_config
     Server->>DB: COMMIT
     Server->>UI: JSON {status: 'success', message: 'Site published!'}
@@ -453,7 +458,7 @@ sequenceDiagram
     participant DB as SQLite
     participant Vue as Inertia / Vue SSR
 
-    Visitor->>Tenant: GET /{slug?} (default: "home")
+    Visitor->>Tenant: GET /{slug?} (empty slug resolves the designated homepage, then falls back to "home")
     Tenant->>MW: Extract subdomain, resolve Tenant
     MW->>DB: Tenant::where('subdomain', $sub)->firstOrFail()
     MW->>MW: Bind app('currentTenant')
@@ -462,11 +467,11 @@ sequenceDiagram
     Controller->>Controller: Check published_config !== null (else 404)
     Controller->>Vue: Inertia::render('Tenant/PublicPage', {tenant, page})
     Vue->>Vue: RenderPublicNode recursively renders block tree via <component :is>
-    Vue->>Visitor: SSR-rendered HTML (or client-side SPA hydration)
+    Vue->>Visitor: Inertia response; SSR HTML is produced only when the SSR build and server are running
 ```
 
 > [!IMPORTANT]
-> Public sites are rendered via **Inertia** using the exact same Vue component definition tree as the editor (`RenderPublicNode.vue`). This ensures 100% template alignment between the editor canvas and the live site, eliminating the double-definition code drift vector. Inertia v3 SSR (built into the Vite plugin) enables server-side pre-rendering for SEO while hydrating into a client-side app for interactivity.
+> Public sites are rendered via **Inertia** using the exact same Vue component definition tree as the editor (`RenderPublicNode.vue`). This eliminates the Blade/Vue block-template drift vector. The repository is configured for Inertia SSR, but production SSR output requires the SSR bundle and server process to be built, started, and monitored by the deployment environment.
 
 ### 4.5 Unified Rendering Architecture
 
@@ -475,7 +480,7 @@ The block configuration is rendered in a unified rendering pipeline governed by 
 | Context | Renderer | Technology | Dispatcher Component | Source |
 |---|---|---|---|---|
 | **Editor (authed)** | Vue components via `RenderNode` | Vue 3 + vuedraggable | [RenderNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderNode.vue) | `draft_config` |
-| **Public Site (visitor)** | Vue components via Inertia SSR | Vue 3 Server Rendering | [RenderPublicNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderPublicNode.vue) | `published_config` |
+| **Public Site (visitor)** | Vue components via Inertia; SSR-capable | Vue 3 client rendering or SSR when the SSR server is active | [RenderPublicNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderPublicNode.vue) | `published_config` |
 
 The [blockRegistry.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/lib/blockRegistry.ts) file maps type strings to Vue components. Block definitions (defaultProps, inspectorFields, labels, icons, categories) are dynamically resolved from `config/blocks.php` shared via Inertia's `blocksConfig` prop. The full registry of 15 block types: `HeroBlock`, `FeatureBlock`, `AtomicText`, `LayoutGrid`, `LayoutColumn`, `ButtonBlock`, `DividerBlock`, `SpacerBlock`, `ImageBlock`, `RichTextBlock`, `VideoEmbedBlock`, `FAQBlock`, `TestimonialBlock`, `PricingTableBlock`, `ContactFormBlock`.
 
@@ -540,7 +545,7 @@ Tenant-level theme configuration (`theme_config` JSON column on `tenants` table,
 
 **Pipeline**:
 
-1. **Persistence** — `PATCH /theme` (`TenantThemeController`) validates hex colors, curated Google Fonts list, and radius presets, merges with existing settings, and persists to `tenants.theme_config`.
+1. **Persistence** — `PATCH /theme` (`TenantThemeController`) validates hex colors, curated Google Fonts, and radius presets, then performs a shallow top-level merge with the existing configuration. Supplying a partial nested `colors` or `typography` object replaces that entire nested object rather than recursively merging its keys.
 2. **Propagation (Editor)** — `TenantEditorController::edit` includes `theme_config` in the `tenant` prop. `Editor.vue` passes the getter to the `useTheme()` composable from [theme.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/lib/theme.ts), which binds the resulting `cssVars` computed onto `.canvas-runtime`.
 3. **Propagation (Public)** — `TenantPublicSiteController::show` includes `theme_config` in the `tenant` prop. `PublicPage.vue` binds `cssVars` to its root `<div>`.
 4. **Google Fonts injection** — `useTheme()` watches the heading/body font names, deduplicates them, constructs a Google Fonts CSS2 URL (wght@400;500;600;700), and returns `fontUrl`. To prevent Flash of Unstyled Text (FOUT), this URL is rendered server-side inside Inertia’s `<Head>` component in [PublicPage.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/pages/Tenant/PublicPage.vue) and [Editor.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/pages/Tenant/Editor.vue). In the browser context, it reactively injects and updates a single `<link rel="stylesheet" id="theme-google-fonts">` element in `document.head`.
@@ -556,10 +561,10 @@ Tenant-level theme configuration (`theme_config` JSON column on `tenants` table,
 | `--theme-font-heading` | `theme_config.typography.headingFont` |
 | `--theme-font-body` | `theme_config.typography.bodyFont` |
 
-Block components opt into the theme by referencing these tokens (e.g., `var(--theme-primary)`) instead of hardcoded hex values. All 15 block types have been routed through these tokens:
+Block components opt into the theme by referencing these tokens (e.g., `var(--theme-primary)`). Most block rendering paths use the theme tokens, while a few legacy creation/default paths still persist raw white or text-color values that the renderers normalize for compatibility:
 - **ButtonBlock** uses `var(--theme-primary)` / `var(--theme-secondary)` for variant backgrounds and `var(--theme-border-radius)` for button corners
 - **HeroBlock** and **FeatureBlock** use `var(--theme-text)` for text colors and `var(--theme-font-heading)` for heading fonts
-- **AtomicText** defaults its `color` prop to `--theme-text` so new blocks inherit the theme text color
+- **AtomicText** maps its component default and the legacy `#0f172a` value to `--theme-text`; the backend definition still needs to be normalized to use the token directly
 - **ImageBlock** uses `var(--theme-border-radius)` for border radius and `var(--theme-primary)` for placeholder accent
 - **TestimonialBlock, PricingTableBlock, ContactFormBlock** use `var(--theme-font-body)`, `var(--theme-text)`, `var(--theme-primary)`, and `var(--theme-border-radius)` throughout their templates
 - All blocks that render styled containers reference `var(--theme-font-body)` and `var(--theme-text)`
@@ -641,7 +646,10 @@ The editor includes a navigation editor for site-wide header/footer chrome outsi
 1. **Storage**: Stored as `navigation_config` JSON on the `Tenant` model with two top-level keys: `header` (logo visibility, nav items, CTA button) and `footer` (copyright text).
 2. **Save API**: `PATCH /editor/navigation` validates and persists via `TenantNavigationController`.
 3. **Editor UI**: `NavigationSettings.vue` panel in the editor sidebar provides controls for managing the navigation structure.
-4. **Rendering**: `SiteHeader.vue` and `SiteFooter.vue` components render the navigation on both the editor canvas and the public site, driven by the same `navigation_config` prop.
+4. **Rendering components**: `SiteHeader.vue` and `SiteFooter.vue` are present in both the editor canvas and public page and expect the same `navigation_config` prop.
+
+> [!WARNING]
+> Navigation persistence is implemented, but end-to-end propagation is currently broken: `TenantEditorController` and `TenantPublicSiteController` omit `navigation_config` from the tenant props they return. Saved navigation therefore does not load in the editor or render on the public site until those props and their integration tests are corrected.
 
 ### 4.13 Contact Form Submissions
 
@@ -649,4 +657,3 @@ The public contact form block submits to `POST /contact` (no auth required):
 1. **Rate Limited**: 5 attempts per minute per IP address (inlined in `TenantContactController`).
 2. **Storage**: Creates a `ContactSubmission` record with `tenant_id`, optional `page_id`, submitted `form_data` (array), and `ip_address`.
 3. **Response**: Returns JSON success with the submission record.
-

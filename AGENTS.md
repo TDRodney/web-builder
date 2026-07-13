@@ -213,19 +213,16 @@ When adding a new block type, ALL of these files must be updated. Missing any st
 
 1. **`resources/js/components/BuilderBlocks/YourBlock.vue`** — Create the Vue component. Must accept `nodeId` and `blockProps` props. Use `blockProps` as the prop name (not `props`) to avoid SFC collision.
 
-2. **`resources/js/lib/blockRegistry.ts`** — Three changes:
+2. **`resources/js/lib/blockRegistry.ts`** — Two changes:
    - Add import at the top
    - Add to `blockComponents` map (key = type string)
-   - Add a `BlockDefinition` entry to `blockDefinitions[]` with `type`, `label`, `category`, `icon`, `defaultProps`, `inspectorFields`, and optionally `allowedChildren`
 
-3. **`config/blocks.php`** — Four changes:
-   - Add type string to the `types` array
-   - Optionally add a `nesting` key for the new type if it can contain children
-   - If the new block can be a child of `LayoutColumn`, add it to `LayoutColumn`'s allowed children list
-   - If any existing parent type should accept the new block, add it there too
-   - **CRITICAL**: Check EVERY parent's nesting list (`LayoutGrid`, `LayoutColumn`, etc.) and add the new block type to each one that should allow it. Missing a parent entry = save fails with 422 for anyone using that nesting combination.
+3. **`config/blocks.php`** — Add the block's keyed entry under `definitions` with `type`, `label`, `category`, `icon`, `defaultProps`, `inspectorFields`, and optionally `allowedChildren` if the new block is a container.
+   - If an existing parent should accept the new block, add it to that parent's inline `allowedChildren` list.
+   - Add the same parent-child permission to the top-level `nesting` map used by backend validation.
+   - **CRITICAL**: Check EVERY applicable parent (`LayoutGrid`, `LayoutColumn`, etc.) in both locations. Missing a parent entry can make the editor reject insertion or make save fail with a 422 response.
 
-4. **`resources/js/lib/blockRegistry.ts` (second pass)** — The frontend dynamically resolves both definitions and allowedChildren rules from the backend config shared via Inertia's `blocksConfig` prop. You do not need to manually synchronize properties in TypeScript anymore. Vue components only mapping is required inside the `blockComponents` dictionary.
+4. **Frontend definition resolution** — The frontend dynamically resolves definitions and allowed-children rules from `config/blocks.php` through the Inertia `blocksConfig` prop. Do not create or maintain a separate `blockDefinitions[]` array in TypeScript.
 
 5. **`npm run build`** — Verify the Vite build succeeds
 
@@ -235,7 +232,7 @@ When adding a new block type, ALL of these files must be updated. Missing any st
 
 ### Default Props Rules
 
-- **`backgroundColor` must default to `'transparent'`** — hardcoded white/light defaults (e.g. `#ffffff`, `#f8fafc`) will mask the canvas theme background color. `RenderNode.vue` maps `#ffffff`, `#f8fafc`, and any other known defaults to `transparent` via its `resolvedBgColor` computed, but the cleanest approach is to set `transparent` in `config/blocks.php` and `blockRegistry.ts` defaultProps from the start.
+- **`backgroundColor` must default to `'transparent'`** — hardcoded white/light defaults (e.g. `#ffffff`, `#f8fafc`) will mask the canvas theme background color. `RenderNode.vue` maps the known legacy white defaults to `transparent`, but new block defaults must use `transparent` in `config/blocks.php` from the start.
 - **`padding` defaults to `20`** — measured in pixels, applied by `RenderNode.vue` to the wrapper div.
 - Leaf blocks with text content should default their color prop to `'--theme-text'` (the CSS variable name string), not a raw hex. `AtomicText.vue` demonstrates this pattern.
 
