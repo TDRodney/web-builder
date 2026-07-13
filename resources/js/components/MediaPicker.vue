@@ -13,11 +13,24 @@ const selectedId = ref(null);
 const confirmDeleteId = ref(null);
 const deleteHttp = useHttp({});
 
+/**
+ * Read the XSRF-TOKEN cookie that Laravel sets automatically.
+ * Laravel expects this as the X-XSRF-TOKEN request header.
+ */
+const getCsrfToken = () => {
+  const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : '';
+};
+
 const fetchMedia = async () => {
   isLoading.value = true;
   try {
     const res = await fetch('/editor/media', {
-      headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json',
+        'X-XSRF-TOKEN': getCsrfToken(),
+      },
       credentials: 'same-origin',
     });
     if (res.ok) {
@@ -81,9 +94,7 @@ const uploadFiles = async (files) => {
         headers: {
           'X-Requested-With': 'XMLHttpRequest',
           'Accept': 'application/json',
-          'X-CSRF-TOKEN': document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1]
-            ? decodeURIComponent(document.cookie.match(/XSRF-TOKEN=([^;]+)/)[1])
-            : document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+          'X-XSRF-TOKEN': getCsrfToken(),
         },
         credentials: 'same-origin',
         body: formData,
@@ -93,7 +104,7 @@ const uploadFiles = async (files) => {
         const newMedia = await res.json();
         mediaItems.value.unshift(newMedia);
       } else {
-        const body = await res.json();
+        const body = await res.json().catch(() => ({}));
         uploadError.value = body.message || `Upload failed (${res.status})`;
       }
     } catch (e) {
@@ -108,6 +119,7 @@ const uploadFiles = async (files) => {
   }
 };
 </script>
+
 
 <template>
   <!-- Backdrop -->
