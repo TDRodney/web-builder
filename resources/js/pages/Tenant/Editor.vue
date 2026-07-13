@@ -1,5 +1,5 @@
 <script setup>
-import { useHttp, Link, router, usePage } from '@inertiajs/vue3';
+import { useHttp, Link, Head, router, usePage } from '@inertiajs/vue3';
 import { ref, computed, watch, provide, nextTick } from 'vue';
 import draggable from 'vuedraggable';
 

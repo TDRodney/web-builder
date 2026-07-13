@@ -2,6 +2,7 @@
 import { inject, ref, onErrorCaptured, computed } from 'vue';
 import draggable from 'vuedraggable';
 import { usePage } from '@inertiajs/vue3';
+import { GripVertical } from '@lucide/vue';
 import { getBlockDefinition } from '@/lib/blockRegistry';
 import RenderNode from './RenderNode.vue';
 import BlockToolbar from './BlockToolbar.vue';
@@ -18,6 +19,9 @@ const selectedBlock = inject('selectedBlock', null);
 const canvasSelection = inject('canvasSelection', null);
 const isDragging = inject('isDragging', null);
 const forceSave = inject('forceSave', null);
+
+const blockDefinition = computed(() => getBlockDefinition(props.node.type));
+const blockLabel = computed(() => blockDefinition.value?.label || props.node.type);
 
 const checkAllowedChild = (parentType, childType) => {
   const page = usePage();
@@ -95,9 +99,17 @@ const resolvedBgColor = computed(() => {
     class="border-2 border-transparent hover:border-indigo-500 rounded-lg relative my-2 cursor-pointer transition-[border-color,background-color]"
     :class="isHovered ? 'border-indigo-500' : ''"
   >
-    <div class="drag-handle">
-      <BlockToolbar :node-id="node.id" :visible="isHovered" />
+    <!-- Dedicated drag handle displaying block label and grip icon -->
+    <div 
+      class="drag-handle absolute top-2 left-2 flex items-center gap-1.5 z-20 bg-slate-900/90 backdrop-blur-sm rounded-lg border border-slate-700/50 shadow-lg px-2 py-1 text-xs text-slate-200 font-semibold cursor-grab active:cursor-grabbing transition-opacity select-none"
+      :class="isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
+    >
+      <GripVertical class="h-3.5 w-3.5 text-slate-400" />
+      <span>{{ blockLabel }}</span>
     </div>
+
+    <!-- Action buttons toolbar -->
+    <BlockToolbar :node-id="node.id" :visible="isHovered" />
     
     <div v-if="hasError" class="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-lg text-xs flex flex-col gap-1 my-2">
       <div class="font-bold flex items-center gap-1">
