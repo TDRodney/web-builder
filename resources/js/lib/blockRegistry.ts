@@ -8,6 +8,12 @@ import ImageBlock from '@/components/BuilderBlocks/ImageBlock.vue';
 import LayoutColumn from '@/components/BuilderBlocks/LayoutColumn.vue';
 import LayoutGrid from '@/components/BuilderBlocks/LayoutGrid.vue';
 import SpacerBlock from '@/components/BuilderBlocks/SpacerBlock.vue';
+import RichTextBlock from '@/components/BuilderBlocks/RichTextBlock.vue';
+import VideoEmbedBlock from '@/components/BuilderBlocks/VideoEmbedBlock.vue';
+import FAQBlock from '@/components/BuilderBlocks/FAQBlock.vue';
+import TestimonialBlock from '@/components/BuilderBlocks/TestimonialBlock.vue';
+import PricingTableBlock from '@/components/BuilderBlocks/PricingTableBlock.vue';
+import ContactFormBlock from '@/components/BuilderBlocks/ContactFormBlock.vue';
 
 export const blockComponents: Record<string, any> = {
   HeroBlock,
@@ -18,17 +24,24 @@ export const blockComponents: Record<string, any> = {
   ButtonBlock,
   DividerBlock,
   SpacerBlock,
-  ImageBlock
+  ImageBlock,
+  RichTextBlock,
+  VideoEmbedBlock,
+  FAQBlock,
+  TestimonialBlock,
+  PricingTableBlock,
+  ContactFormBlock
 };
 
 export interface InspectorField {
   key: string;
   label: string;
-  type: 'text' | 'number' | 'color' | 'range' | 'select' | 'media';
+  type: 'text' | 'number' | 'color' | 'range' | 'select' | 'media' | 'repeater';
   min?: number;
   max?: number;
   placeholder?: string;
   options?: Array<{ label: string; value: string }>;
+  subFields?: InspectorField[];
 }
 
 export interface BlockDefinition {

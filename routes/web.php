@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\Auth\CentralAuthenticatedSessionController;
 use App\Http\Controllers\Auth\CentralRegisteredUserController;
+use App\Http\Controllers\TenantContactController;
 use App\Http\Controllers\TenantEditorController;
 use App\Http\Controllers\TenantMediaController;
+use App\Http\Controllers\TenantNavigationController;
 use App\Http\Controllers\TenantPageController;
 use App\Http\Controllers\TenantPageSaveController;
 use App\Http\Controllers\TenantPublicSiteController;
@@ -83,8 +85,13 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
                 Route::get('/media', [TenantMediaController::class, 'index'])->name('tenant.media.index');
                 Route::post('/media', [TenantMediaController::class, 'store'])->name('tenant.media.store');
                 Route::delete('/media/{media}', [TenantMediaController::class, 'destroy'])->name('tenant.media.destroy');
+
+                Route::patch('/navigation', [TenantNavigationController::class, 'update'])->name('tenant.navigation.update');
             });
         });
+
+        // Contact Form Submission
+        Route::post('/contact', [TenantContactController::class, 'store'])->name('tenant.contact.store');
 
         // State 2: Public User visiting the live published site
         Route::get('/{slug?}', [TenantPublicSiteController::class, 'show'])

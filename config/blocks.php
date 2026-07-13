@@ -75,7 +75,10 @@ return [
                 ['key' => 'columns', 'label' => 'Columns Count', 'type' => 'number', 'min' => 1, 'max' => 12],
                 ['key' => 'gap', 'label' => 'Gap Size (e.g. 1rem, 16px)', 'type' => 'text'],
             ],
-            'allowedChildren' => ['HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock', 'ImageBlock'],
+            'allowedChildren' => [
+                'HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock', 'ImageBlock',
+                'RichTextBlock', 'VideoEmbedBlock', 'FAQBlock', 'TestimonialBlock', 'PricingTableBlock', 'ContactFormBlock',
+            ],
         ],
         'LayoutColumn' => [
             'type' => 'LayoutColumn',
@@ -98,7 +101,10 @@ return [
                 ['key' => 'height', 'label' => 'Height (e.g. auto, 200px)', 'type' => 'text'],
                 ['key' => 'gap', 'label' => 'Gap', 'type' => 'text'],
             ],
-            'allowedChildren' => ['HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock', 'ImageBlock'],
+            'allowedChildren' => [
+                'HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock', 'ImageBlock',
+                'RichTextBlock', 'VideoEmbedBlock', 'FAQBlock', 'TestimonialBlock', 'PricingTableBlock', 'ContactFormBlock',
+            ],
         ],
         'ButtonBlock' => [
             'type' => 'ButtonBlock',
@@ -176,9 +182,185 @@ return [
                 ['key' => 'backgroundColor', 'label' => 'Background',   'type' => 'color'],
             ],
         ],
+        'RichTextBlock' => [
+            'type' => 'RichTextBlock',
+            'label' => 'Rich Text',
+            'category' => 'content',
+            'icon' => 'file-text',
+            'defaultProps' => [
+                'html' => '<p>Start typing...</p>',
+                'padding' => 20,
+                'backgroundColor' => 'transparent',
+            ],
+            'inspectorFields' => [
+                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
+            ],
+        ],
+        'VideoEmbedBlock' => [
+            'type' => 'VideoEmbedBlock',
+            'label' => 'Video Embed',
+            'category' => 'media',
+            'icon' => 'video',
+            'defaultProps' => [
+                'url' => '',
+                'provider' => 'youtube',
+                'aspectRatio' => '16/9',
+                'padding' => 20,
+                'backgroundColor' => 'transparent',
+            ],
+            'inspectorFields' => [
+                ['key' => 'url', 'label' => 'Video URL', 'type' => 'text', 'placeholder' => 'YouTube, Vimeo, or Loom URL'],
+                ['key' => 'provider', 'label' => 'Provider', 'type' => 'select', 'options' => [
+                    ['label' => 'YouTube', 'value' => 'youtube'],
+                    ['label' => 'Vimeo', 'value' => 'vimeo'],
+                    ['label' => 'Loom', 'value' => 'loom'],
+                    ['label' => 'Direct / Raw', 'value' => 'raw'],
+                ]],
+                ['key' => 'aspectRatio', 'label' => 'Aspect Ratio', 'type' => 'select', 'options' => [
+                    ['label' => '16:9', 'value' => '16/9'],
+                    ['label' => '4:3', 'value' => '4/3'],
+                    ['label' => '1:1', 'value' => '1/1'],
+                ]],
+                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
+            ],
+        ],
+        'FAQBlock' => [
+            'type' => 'FAQBlock',
+            'label' => 'FAQ Accordion',
+            'category' => 'content',
+            'icon' => 'help-circle',
+            'defaultProps' => [
+                'items' => [
+                    ['question' => 'What is this platform?', 'answer' => 'It is a multitenant website builder.'],
+                    ['question' => 'How does pricing work?', 'answer' => 'Check our plans section below.'],
+                ],
+                'padding' => 20,
+                'backgroundColor' => 'transparent',
+            ],
+            'inspectorFields' => [
+                ['key' => 'items', 'label' => 'FAQ Items', 'type' => 'repeater', 'subFields' => [
+                    ['key' => 'question', 'label' => 'Question', 'type' => 'text', 'placeholder' => 'Enter question'],
+                    ['key' => 'answer', 'label' => 'Answer', 'type' => 'text', 'placeholder' => 'Enter answer'],
+                ]],
+                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
+            ],
+        ],
+        'TestimonialBlock' => [
+            'type' => 'TestimonialBlock',
+            'label' => 'Testimonial',
+            'category' => 'content',
+            'icon' => 'message-square',
+            'defaultProps' => [
+                'quote' => 'This website builder is incredibly fast and customizable!',
+                'authorName' => 'Jane Smith',
+                'authorRole' => 'CEO, TechCorp',
+                'avatarSrc' => '',
+                'padding' => 40,
+                'backgroundColor' => 'transparent',
+            ],
+            'inspectorFields' => [
+                ['key' => 'quote', 'label' => 'Quote Text', 'type' => 'text', 'placeholder' => 'Enter testimonial quote'],
+                ['key' => 'authorName', 'label' => 'Author Name', 'type' => 'text', 'placeholder' => 'Enter name'],
+                ['key' => 'authorRole', 'label' => 'Author Role / Company', 'type' => 'text', 'placeholder' => 'Enter role'],
+                ['key' => 'avatarSrc', 'label' => 'Avatar Image', 'type' => 'media'],
+                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
+            ],
+        ],
+        'PricingTableBlock' => [
+            'type' => 'PricingTableBlock',
+            'label' => 'Pricing Cards',
+            'category' => 'content',
+            'icon' => 'dollar-sign',
+            'defaultProps' => [
+                'plans' => [
+                    [
+                        'title' => 'Starter',
+                        'price' => '$9',
+                        'period' => '/mo',
+                        'features' => '1 Website, 5GB Storage, Community Support',
+                        'ctaText' => 'Get Started',
+                        'ctaUrl' => '#',
+                        'isPopular' => false,
+                    ],
+                    [
+                        'title' => 'Professional',
+                        'price' => '$29',
+                        'period' => '/mo',
+                        'features' => '5 Websites, 50GB Storage, Priority Support',
+                        'ctaText' => 'Upgrade Now',
+                        'ctaUrl' => '#',
+                        'isPopular' => true,
+                    ],
+                ],
+                'padding' => 40,
+                'backgroundColor' => 'transparent',
+            ],
+            'inspectorFields' => [
+                ['key' => 'plans', 'label' => 'Pricing Plans', 'type' => 'repeater', 'subFields' => [
+                    ['key' => 'title', 'label' => 'Plan Title', 'type' => 'text'],
+                    ['key' => 'price', 'label' => 'Price (e.g. $29)', 'type' => 'text'],
+                    ['key' => 'period', 'label' => 'Period (e.g. /mo)', 'type' => 'text'],
+                    ['key' => 'features', 'label' => 'Features (comma-separated)', 'type' => 'text'],
+                    ['key' => 'ctaText', 'label' => 'Button Label', 'type' => 'text'],
+                    ['key' => 'ctaUrl', 'label' => 'Button Link', 'type' => 'text'],
+                    ['key' => 'isPopular', 'label' => 'Popular / Highlighted', 'type' => 'select', 'options' => [
+                        ['label' => 'No', 'value' => 'no'],
+                        ['label' => 'Yes', 'value' => 'yes'],
+                    ]],
+                ]],
+                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
+            ],
+        ],
+        'ContactFormBlock' => [
+            'type' => 'ContactFormBlock',
+            'label' => 'Contact Form',
+            'category' => 'content',
+            'icon' => 'mail',
+            'defaultProps' => [
+                'fields' => [
+                    ['type' => 'text', 'label' => 'Your Name', 'placeholder' => 'John Doe', 'required' => 'yes'],
+                    ['type' => 'email', 'label' => 'Your Email', 'placeholder' => 'john@example.com', 'required' => 'yes'],
+                    ['type' => 'textarea', 'label' => 'Message', 'placeholder' => 'How can we help?', 'required' => 'yes'],
+                ],
+                'submitLabel' => 'Send Message',
+                'successMessage' => 'Thank you! Your message has been sent successfully.',
+                'padding' => 40,
+                'backgroundColor' => 'transparent',
+            ],
+            'inspectorFields' => [
+                ['key' => 'submitLabel', 'label' => 'Submit Button Text', 'type' => 'text'],
+                ['key' => 'successMessage', 'label' => 'Success Message', 'type' => 'text'],
+                ['key' => 'fields', 'label' => 'Form Fields', 'type' => 'repeater', 'subFields' => [
+                    ['key' => 'type', 'label' => 'Field Type', 'type' => 'select', 'options' => [
+                        ['label' => 'Text', 'value' => 'text'],
+                        ['label' => 'Email', 'value' => 'email'],
+                        ['label' => 'Textarea', 'value' => 'textarea'],
+                    ]],
+                    ['key' => 'label', 'label' => 'Label', 'type' => 'text'],
+                    ['key' => 'placeholder', 'label' => 'Placeholder', 'type' => 'text'],
+                    ['key' => 'required', 'label' => 'Required', 'type' => 'select', 'options' => [
+                        ['label' => 'Yes', 'value' => 'yes'],
+                        ['label' => 'No', 'value' => 'no'],
+                    ]],
+                ]],
+                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
+            ],
+        ],
     ],
     'nesting' => [
-        'LayoutGrid' => ['HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock', 'ImageBlock'],
-        'LayoutColumn' => ['HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock', 'ImageBlock'],
+        'LayoutGrid' => [
+            'HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock', 'ImageBlock',
+            'RichTextBlock', 'VideoEmbedBlock', 'FAQBlock', 'TestimonialBlock', 'PricingTableBlock', 'ContactFormBlock',
+        ],
+        'LayoutColumn' => [
+            'HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock', 'ImageBlock',
+            'RichTextBlock', 'VideoEmbedBlock', 'FAQBlock', 'TestimonialBlock', 'PricingTableBlock', 'ContactFormBlock',
+        ],
     ],
 ];

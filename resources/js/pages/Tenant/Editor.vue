@@ -5,7 +5,10 @@ import draggable from 'vuedraggable';
 
 import RenderNode from '@/components/BuilderBlocks/RenderNode.vue';
 import MediaPicker from '@/components/MediaPicker.vue';
+import SiteHeader from '@/components/SiteHeader.vue';
+import SiteFooter from '@/components/SiteFooter.vue';
 import { getBlockDefinition, blockComponents } from '@/lib/blockRegistry';
+import { blockPresets } from '@/lib/blockPresets';
 import { useTheme } from '@/lib/theme';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'vue-sonner';
@@ -27,6 +30,77 @@ const blockDefinitions = computed(() => {
   return Array.isArray(definitions) ? definitions : Object.values(definitions);
 });
 
+// Library and presets tab state
+const activeLibraryTab = ref('blocks');
+
+const addPreset = (preset) => {
+  const clonedBlocks = preset.blocks.map(generateNewIds);
+  clonedBlocks.forEach((block) => {
+    blocks.value.push(block);
+  });
+  saveCanvasState();
+  toast.success(`Preset "${preset.label}" added to page`);
+};
+
+// Navigation config state
+const navigationConfig = ref(props.tenant?.navigation_config || {
+  header: {
+    showLogo: true,
+    items: [],
+    ctaButton: { show: false, label: 'Contact', slug: 'home' }
+  },
+  footer: {
+    copyright: '© 2026 ' + (props.tenant?.subdomain || 'My Workspace')
+  }
+});
+
+const isSavingNav = ref(false);
+
+const addNavLink = () => {
+  if (!navigationConfig.value.header.items) {
+    navigationConfig.value.header.items = [];
+  }
+  navigationConfig.value.header.items.push({
+    label: 'New Link',
+    type: 'internal',
+    slug: 'home',
+    href: 'https://'
+  });
+};
+
+const deleteNavLink = (index) => {
+  navigationConfig.value.header.items.splice(index, 1);
+};
+
+const saveNavigation = async () => {
+  isSavingNav.value = true;
+  try {
+    const res = await fetch('/editor/navigation', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json',
+        'X-XSRF-TOKEN': getCsrfToken(),
+      },
+      body: JSON.stringify({
+        navigation_config: navigationConfig.value,
+      }),
+    });
+    if (res.ok) {
+      toast.success('Navigation settings saved successfully');
+    } else {
+      toast.error('Failed to save navigation settings');
+    }
+  } catch (e) {
+    toast.error('Error saving navigation settings');
+  } finally {
+    isSavingNav.value = false;
+  }
+};
+
+
+
 // Seed some initial demo data if the draft is empty so you have blocks to see instantly
 const blocks = ref(props.page.draft_config || [
   { 
@@ -46,6 +120,8 @@ const blocks = ref(props.page.draft_config || [
 const selectedNode = ref(null);
 const selectedBlock = selectedNode;
 provide('selectedBlock', selectedBlock);
+const showNavigationSettings = ref(false);
+
 provide('canvasSelection', {
   selectedNode,
   selectNode: (node) => {
@@ -684,6 +760,37 @@ const onMediaSelected = (item) => {
   }
   showMediaPicker.value = false;
 };
+
+// Repeater helpers
+const addRepeaterItem = (fieldKey, subFields) => {
+  if (!selectedBlock.value) return;
+  if (!selectedBlock.value.props[fieldKey] || !Array.isArray(selectedBlock.value.props[fieldKey])) {
+    selectedBlock.value.props[fieldKey] = [];
+  }
+  const newItem = {};
+  subFields.forEach((sub) => {
+    newItem[sub.key] = sub.type === 'select' ? (sub.options?.[0]?.value || '') : '';
+  });
+  selectedBlock.value.props[fieldKey].push(newItem);
+  saveCanvasState();
+};
+
+const deleteRepeaterItem = (fieldKey, index) => {
+  if (!selectedBlock.value || !selectedBlock.value.props[fieldKey]) return;
+  selectedBlock.value.props[fieldKey].splice(index, 1);
+  saveCanvasState();
+};
+
+const moveRepeaterItem = (fieldKey, index, direction) => {
+  if (!selectedBlock.value || !selectedBlock.value.props[fieldKey]) return;
+  const list = selectedBlock.value.props[fieldKey];
+  const targetIndex = index + direction;
+  if (targetIndex < 0 || targetIndex >= list.length) return;
+  const temp = list[index];
+  list[index] = list[targetIndex];
+  list[targetIndex] = temp;
+  saveCanvasState();
+};
 </script>
 
 <template>
@@ -695,6 +802,14 @@ const onMediaSelected = (item) => {
     <div class="flex-1 overflow-y-auto p-8 bg-slate-950 h-screen">
       <div class="mx-auto text-slate-900 rounded-xl shadow-2xl min-h-[600px] p-6 canvas-runtime" :style="[themeVars, { maxWidth: canvasMaxWidth, backgroundColor: themeVars['--theme-bg'] }]">
         
+        <SiteHeader 
+          :navigation-config="navigationConfig" 
+          :pages="props.pages" 
+          :tenant-name="props.tenant?.subdomain"
+          :is-editable="true"
+          class="mb-6"
+        />
+
         <draggable 
           v-model="blocks" 
           item-key="id" 
@@ -708,6 +823,12 @@ const onMediaSelected = (item) => {
             <RenderNode :node="element" />
           </template>
         </draggable>
+
+        <SiteFooter 
+          :navigation-config="navigationConfig"
+          :tenant-name="props.tenant?.subdomain"
+          class="mt-8 border-t pt-4"
+        />
 
       </div>
     </div>
@@ -779,6 +900,152 @@ const onMediaSelected = (item) => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Navigation Settings Panel -->
+        <div class="border-t border-slate-800 pt-4 space-y-3">
+          <button
+            type="button"
+            @click="showNavigationSettings = !showNavigationSettings"
+            class="w-full flex items-center justify-between text-left text-xs font-bold text-slate-400 uppercase tracking-widest bg-transparent border-0 cursor-pointer p-0"
+          >
+            <span>Navigation Settings</span>
+            <span class="text-slate-500">{{ showNavigationSettings ? '▼' : '►' }}</span>
+          </button>
+
+          <div v-if="showNavigationSettings" class="space-y-4 animate-fade-in bg-slate-900/40 p-3 rounded-lg border border-slate-800/80">
+            <!-- Logo Toggle -->
+            <label class="flex items-center gap-2 text-xs text-slate-300 font-semibold cursor-pointer">
+              <input 
+                type="checkbox" 
+                v-model="navigationConfig.header.showLogo" 
+                class="rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-indigo-500 animate-none w-auto h-auto" 
+              />
+              Show Site Logo Text
+            </label>
+
+            <!-- Nav Links List -->
+            <div class="space-y-2">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Header Links</span>
+              <div v-if="!navigationConfig.header.items || !navigationConfig.header.items.length" class="text-xs text-slate-500 italic">
+                No navigation links added.
+              </div>
+              <draggable
+                v-model="navigationConfig.header.items"
+                item-key="label"
+                handle=".nav-drag-handle"
+                class="space-y-2"
+              >
+                <template #item="{ element, index }">
+                  <div class="bg-slate-850 border border-slate-700/50 rounded p-2 space-y-2 relative">
+                    <div class="flex items-center justify-between">
+                      <span class="nav-drag-handle text-slate-500 hover:text-slate-300 cursor-move text-xs">☰ Drag</span>
+                      <button
+                        type="button"
+                        @click="deleteNavLink(index)"
+                        class="text-rose-450 hover:text-rose-300 bg-transparent border-0 cursor-pointer"
+                        title="Delete Link"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <div class="space-y-1.5">
+                      <input
+                        type="text"
+                        v-model="element.label"
+                        placeholder="Link Label"
+                        class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs focus:outline-none focus:border-indigo-500"
+                      />
+                      <div class="grid grid-cols-2 gap-1.5">
+                        <select
+                          v-model="element.type"
+                          class="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-white text-[10px] focus:outline-none focus:border-indigo-500 cursor-pointer"
+                        >
+                          <option value="internal">Internal</option>
+                          <option value="external">External</option>
+                        </select>
+                        <select
+                          v-if="element.type === 'internal'"
+                          v-model="element.slug"
+                          class="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-white text-[10px] focus:outline-none focus:border-indigo-500 cursor-pointer"
+                        >
+                          <option v-for="p in props.pages" :key="p.id" :value="p.slug">
+                            {{ p.title }}
+                          </option>
+                        </select>
+                        <input
+                          v-else
+                          type="text"
+                          v-model="element.href"
+                          placeholder="https://..."
+                          class="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-white text-[10px] focus:outline-none focus:border-indigo-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </draggable>
+
+              <button
+                type="button"
+                @click="addNavLink"
+                class="w-full bg-slate-800 hover:bg-slate-700/60 border border-slate-700 text-slate-300 text-xs font-semibold py-1.5 px-3 rounded transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-transparent"
+              >
+                + Add Link
+              </button>
+            </div>
+
+            <!-- CTA Button -->
+            <div class="border-t border-slate-800/80 pt-3 space-y-2">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">CTA Button</span>
+              <label class="flex items-center gap-2 text-xs text-slate-300 font-semibold cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  v-model="navigationConfig.header.ctaButton.show" 
+                  class="rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-indigo-500 animate-none w-auto h-auto" 
+                />
+                Show CTA Button
+              </label>
+
+              <div v-if="navigationConfig.header.ctaButton.show" class="space-y-2 pl-4 border-l-2 border-indigo-600/30">
+                <input
+                  type="text"
+                  v-model="navigationConfig.header.ctaButton.label"
+                  placeholder="Button Label"
+                  class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs focus:outline-none focus:border-indigo-500"
+                />
+                <select
+                  v-model="navigationConfig.header.ctaButton.slug"
+                  class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs focus:outline-none focus:border-indigo-500 cursor-pointer"
+                >
+                  <option v-for="p in props.pages" :key="p.id" :value="p.slug">
+                    {{ p.title }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- FooterCopyright -->
+            <div class="border-t border-slate-800/80 pt-3 space-y-2">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Footer Copyright</span>
+              <input
+                type="text"
+                v-model="navigationConfig.footer.copyright"
+                placeholder="© 2026 Brand Name"
+                class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <button
+              type="button"
+              @click="saveNavigation"
+              :disabled="isSavingNav"
+              class="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold py-2 px-3 rounded-lg transition-all cursor-pointer border-0 mt-2 shadow-sm"
+            >
+              {{ isSavingNav ? 'Saving...' : 'Save Navigation' }}
+            </button>
           </div>
         </div>
 
@@ -887,6 +1154,86 @@ const onMediaSelected = (item) => {
                 </button>
               </div>
 
+              <!-- Repeater Field -->
+              <div v-else-if="field.type === 'repeater'" class="space-y-3">
+                <div 
+                  v-for="(item, index) in (selectedBlock.props[field.key] || [])" 
+                  :key="index" 
+                  class="bg-slate-800/60 border border-slate-700/60 rounded-lg p-3 space-y-3 relative group/item"
+                >
+                  <div class="flex items-center justify-between border-b border-slate-700/40 pb-2">
+                    <span class="text-xs font-bold text-slate-300">Item #{{ index + 1 }}</span>
+                    <div class="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        @click="moveRepeaterItem(field.key, index, -1)"
+                        :disabled="index === 0"
+                        class="text-slate-400 hover:text-white bg-transparent border-0 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Move Up"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        @click="moveRepeaterItem(field.key, index, 1)"
+                        :disabled="index === (selectedBlock.props[field.key]?.length - 1)"
+                        class="text-slate-400 hover:text-white bg-transparent border-0 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Move Down"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        @click="deleteRepeaterItem(field.key, index)"
+                        class="text-rose-400 hover:text-rose-300 bg-transparent border-0 cursor-pointer ml-1"
+                        title="Delete Item"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Sub fields -->
+                  <div class="space-y-2">
+                    <div v-for="sub in field.subFields" :key="sub.key" class="space-y-1">
+                      <label class="text-[10px] font-semibold text-slate-400 block">{{ sub.label }}</label>
+                      
+                      <!-- Sub field select -->
+                      <select
+                        v-if="sub.type === 'select'"
+                        v-model="item[sub.key]"
+                        @change="saveCanvasState"
+                        class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs focus:outline-none focus:border-indigo-500 cursor-pointer"
+                      >
+                        <option v-for="opt in sub.options" :key="opt.value" :value="opt.value">
+                          {{ opt.label }}
+                        </option>
+                      </select>
+
+                      <!-- Sub field text -->
+                      <input
+                        v-else
+                        type="text"
+                        v-model="item[sub.key]"
+                        @input="saveCanvasState"
+                        :placeholder="sub.placeholder"
+                        class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white text-xs focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  @click="addRepeaterItem(field.key, field.subFields)"
+                  class="w-full bg-slate-800 hover:bg-slate-700 border border-dashed border-slate-600 hover:border-slate-500 text-slate-300 text-xs font-semibold py-2 px-3 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  + Add Item
+                </button>
+              </div>
+
               <!-- Text fallback -->
               <input
                 v-else
@@ -909,8 +1256,26 @@ const onMediaSelected = (item) => {
 
         <!-- Block Library -->
         <div class="border-t border-slate-800 pt-4 mt-4">
-          <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Add Block</h4>
-          <div class="grid grid-cols-2 gap-2">
+          <!-- Library Tabs -->
+          <div class="flex border-b border-slate-800 mb-3 gap-3">
+            <button
+              type="button"
+              :class="['text-xs font-bold pb-2 border-b-2 cursor-pointer transition-colors bg-transparent border-0', activeLibraryTab === 'blocks' ? 'text-indigo-400 border-indigo-500' : 'text-slate-500 border-transparent hover:text-slate-300']"
+              @click="activeLibraryTab = 'blocks'"
+            >
+              Blocks
+            </button>
+            <button
+              type="button"
+              :class="['text-xs font-bold pb-2 border-b-2 cursor-pointer transition-colors bg-transparent border-0', activeLibraryTab === 'presets' ? 'text-indigo-400 border-indigo-500' : 'text-slate-500 border-transparent hover:text-slate-300']"
+              @click="activeLibraryTab = 'presets'"
+            >
+              Presets
+            </button>
+          </div>
+
+          <!-- Tab Content: Blocks -->
+          <div v-if="activeLibraryTab === 'blocks'" class="grid grid-cols-2 gap-2">
             <button 
               v-for="def in blockDefinitions" 
               :key="def.type"
@@ -920,8 +1285,21 @@ const onMediaSelected = (item) => {
             >
               + {{ def.label }}
             </button>
+            <p class="text-[10px] text-slate-500 mt-2 col-span-2 italic">Tip: If a Layout container is selected, the new block is nested inside it.</p>
           </div>
-          <p class="text-[10px] text-slate-500 mt-2 italic">Tip: If a Layout container is selected, the new block is nested inside it.</p>
+
+          <!-- Tab Content: Presets -->
+          <div v-else-if="activeLibraryTab === 'presets'" class="space-y-2">
+            <button
+              v-for="preset in blockPresets"
+              :key="preset.key"
+              @click="addPreset(preset)"
+              class="w-full text-left bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/60 hover:border-slate-600 rounded p-2.5 transition-all cursor-pointer group"
+            >
+              <div class="font-bold text-xs text-indigo-300 group-hover:text-indigo-200">{{ preset.label }}</div>
+              <div class="text-[10px] text-slate-500 group-hover:text-slate-400 mt-0.5 leading-relaxed">{{ preset.description }}</div>
+            </button>
+          </div>
         </div>
       </div>
 

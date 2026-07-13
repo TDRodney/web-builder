@@ -12,10 +12,11 @@ class Tenant extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'subdomain', 'theme_config'];
+    protected $fillable = ['user_id', 'subdomain', 'theme_config', 'navigation_config'];
 
     protected $casts = [
         'theme_config' => 'array',
+        'navigation_config' => 'array',
     ];
 
     public function user(): BelongsTo
@@ -31,6 +32,11 @@ class Tenant extends Model
     public function media(): HasMany
     {
         return $this->hasMany(Media::class);
+    }
+
+    public function contactSubmissions(): HasMany
+    {
+        return $this->hasMany(ContactSubmission::class);
     }
 
     /**
