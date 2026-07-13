@@ -281,12 +281,14 @@ The theme is injected as CSS custom properties on the canvas root `.canvas-runti
 The inspector sidebar renders controls dynamically from the `inspectorFields` array in `config/blocks.php`. Supported field types:
 
 | `type` | Renders As | Notes |
-|---|---|---|
+|---|---|---|---|
 | `'text'` | Single-line text input | Use for labels, URLs, titles |
 | `'color'` | Native `<input type="color">` + hex text input | Returns 6-digit hex string |
 | `'range'` | Slider | Requires `min` and `max` |
 | `'number'` | Numeric input | Requires `min` and `max` |
 | `'select'` | Dropdown | Requires an `options: [{label, value}]` array |
+| `'media'` | Image preview + "Choose Image" button | Opens `MediaPicker` modal; stores the selected image URL |
+| `'repeater'` | Dynamic list of grouped subfields | Requires `subFields: InspectorField[]`; supports add/delete/reorder |
 
 Example `inspectorFields` definition in `config/blocks.php`:
 

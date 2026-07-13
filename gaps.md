@@ -7,16 +7,16 @@
 
 ## Executive Summary
 
-The current codebase implements a **solid multi-tenant foundation** with a working drag-and-drop canvas, draft/publish lifecycle, and robust auth. However, it is functionally a **single-page, single-block-palette proof-of-concept**. To reach a production-grade website builder, 8 major capability gaps must be addressed across 4 implementation phases.
+The current codebase implements a **multi-tenant website builder** with 15 block types, a drag-and-drop canvas, draft/publish lifecycle, multi-page management, media pipeline (upload + thumbnails), navigation system, theme engine, contact form handling, block presets, and robust auth. The core building blocks are in place, but several production-grade features remain.
 
 ```mermaid
 pie title Current vs. Required Capability Coverage
-    "Implemented" : 25
+    "Implemented" : 60
     "Multi-Page Management" : 10
-    "Block Library" : 15
-    "Media Pipeline" : 10
+    "Block Library (6 missing types)" : 8
+    "Media Pipeline" : 8
     "Theming & Global Styles" : 10
-    "Navigation & Menus" : 5
+    "Navigation & Menus" : 8
     "SEO & Public Quality" : 10
     "History & Collaboration" : 8
     "Infrastructure & DX" : 7
@@ -84,13 +84,17 @@ Allow any page to be designated as the homepage. The public site controller shou
 
 ### What's Implemented
 
-8 block types: `HeroBlock`, `FeatureBlock`, `AtomicText`, `LayoutGrid`, `LayoutColumn`, `ButtonBlock`, `DividerBlock`, `SpacerBlock`.
+15 block types: `HeroBlock`, `FeatureBlock`, `AtomicText`, `LayoutGrid`, `LayoutColumn`, `ButtonBlock`, `DividerBlock`, `SpacerBlock`, `ImageBlock`, `RichTextBlock`, `VideoEmbedBlock`, `FAQBlock`, `TestimonialBlock`, `PricingTableBlock`, `ContactFormBlock`.
 
 ### What's Still Missing (from original gap)
 
-A production website builder needs **15-25+ block types** to be useful. The current palette has 8 types (5 original + 3 P0: Button, Divider, Spacer) and still lacks images (blocked by Gap 3), videos, forms, embeds, lists, testimonials, pricing, FAQ, and more.
+A production website builder needs **20+ block types** to be comprehensive. The current palette has 15 types. The remaining gaps are mostly lower-priority specialized blocks:
 
-The centralized block schema registry (`blockRegistry.ts`) and data-driven inspector have been built (see Phase 1). Adding a new block now requires updating 4 files centrally, but the process is documented in `AGENTS.md`.
+- P1: `IconBlock`, `ListBlock`
+- P2: `MapEmbedBlock`
+- P3: `CodeBlock`, `CountdownBlock`, `SocialLinksBlock`
+
+The centralized block schema registry (`blockRegistry.ts`) and data-driven inspector have been built (see Phase 1). Adding a new block now requires updating only `config/blocks.php` (definitions + nesting) and adding a Vue component + registry mapping — the process is documented in `AGENTS.md`.
 
 ### Newly Discovered Gap: Nesting Matrix Synchronization [RESOLVED]
 
@@ -138,26 +142,33 @@ This eliminates the massive `if/else if` chains in both `addBlock()` and the ins
 
 **Backend** — refactor [block.blade.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/views/partials/block.blade.php) to use a `@switch($block['type'])` with dedicated Blade partials per block type in a `partials/blocks/` directory, instead of one monolithic file.
 
-#### 2.2 — Priority Block Types to Implement
+#### 2.2 — Block Types: Implemented vs Remaining
 
-| Priority | Block Type | Category | Key Props | Notes |
-|---|---|---|---|---|
-| **P0** | `ImageBlock` | media | `src`, `alt`, `width`, `height`, `objectFit`, `borderRadius` | Requires media pipeline (Gap 3) |
-| **P0** | `ButtonBlock` | interactive | `label`, `href`, `variant`, `size`, `target` | ✅ Done — see `ButtonBlock.vue` |
-| **P0** | `DividerBlock` | layout | `thickness`, `color`, `style` (solid/dashed/dotted), `marginY` | ✅ Done — see `DividerBlock.vue` |
-| **P0** | `SpacerBlock` | layout | `height` | ✅ Done — see `SpacerBlock.vue` |
-| **P1** | `RichTextBlock` | content | `html` | Requires inline WYSIWYG (TipTap or similar) |
-| **P1** | `VideoEmbedBlock` | media | `url`, `provider` (YouTube/Vimeo), `aspectRatio` | Parse embed URLs, render iframe |
-| **P1** | `IconBlock` | media | `icon` (Lucide name), `size`, `color` | Pick from Lucide icon set |
-| **P1** | `ListBlock` | content | `items[]`, `ordered`, `iconType` | Bulleted/numbered/icon lists |
-| **P2** | `TestimonialBlock` | content | `quote`, `author`, `role`, `avatarSrc` | Social proof block |
-| **P2** | `PricingTableBlock` | commerce | `plans[]` with title/price/features/ctaUrl | Grid of pricing cards |
-| **P2** | `FAQBlock` | content | `items[]` with question/answer | Accordion-style Q&A |
-| **P2** | `ContactFormBlock` | interactive | `fields[]`, `submitAction`, `recipientEmail` | Requires form submission backend (new endpoint) |
-| **P2** | `MapEmbedBlock` | media | `embedUrl` or `lat/lng`, `zoom` | Google Maps/OpenStreetMap iframe |
-| **P3** | `CodeBlock` | content | `code`, `language` | Syntax-highlighted code snippet |
-| **P3** | `CountdownBlock` | interactive | `targetDate`, `labelFormat` | JS-powered countdown timer |
-| **P3** | `SocialLinksBlock` | interactive | `links[]` with platform/url | Row of social media icons |
+| Status | Priority | Block Type | Category | Key Props | Notes |
+|---|---|---|---|---|---|
+| ✅ Done | P0 | `HeroBlock` | content | `headline`, `subheadline`, `padding`, `backgroundColor` | Original block, uses theme CSS vars |
+| ✅ Done | P0 | `FeatureBlock` | content | `title`, `body`, `padding`, `backgroundColor` | Original block, uses theme CSS vars |
+| ✅ Done | P0 | `AtomicText` | content | `content`, `fontSize`, `color`, `padding`, `backgroundColor` | Defaults `color` to `--theme-text` |
+| ✅ Done | P0 | `LayoutGrid` | layout | `columns`, `gap`, `padding`, `backgroundColor` | Auto-creates 3 LayoutColumn children |
+| ✅ Done | P0 | `LayoutColumn` | layout | `span`, `padding`, `width`, `height`, `gap`, `backgroundColor` | Container for nested blocks |
+| ✅ Done | P0 | `ButtonBlock` | content | `label`, `variant`, `url`, `size` | Uses `--theme-primary`/`--theme-secondary` |
+| ✅ Done | P0 | `DividerBlock` | content | `thickness` (1-8), `color`, `margin` | |
+| ✅ Done | P0 | `SpacerBlock` | content | `height` (4-200) | |
+| ✅ Done | P0 | `ImageBlock` | media | `src`, `alt`, `objectFit`, `borderRadius`, `width`, `height` | Connected to media picker |
+| ✅ Done | P1 | `RichTextBlock` | content | `html`, `padding`, `backgroundColor` | ⚠️ Renders raw HTML; WYSIWYG editor (TipTap) not yet integrated |
+| ✅ Done | P1 | `VideoEmbedBlock` | media | `url`, `provider` (youtube/vimeo/loom/raw), `aspectRatio` | Parses embed URLs, renders iframe |
+| ✅ Done | P2 | `FAQBlock` | content | `items[]` (question/answer), `padding`, `backgroundColor` | Accordion-style via repeater |
+| ✅ Done | P2 | `TestimonialBlock` | content | `quote`, `authorName`, `authorRole`, `avatarSrc` | Social proof with avatar picker |
+| ✅ Done | P2 | `PricingTableBlock` | content | `plans[]`, `padding`, `backgroundColor` | Repeater-based pricing cards |
+| ✅ Done | P2 | `ContactFormBlock` | content | `fields[]`, `submitLabel`, `successMessage` | Submits to `POST /contact` (rate-limited 5/min) |
+| ❌ Missing | P1 | `IconBlock` | media | `icon` (Lucide name), `size`, `color` | Pick from Lucide icon set |
+| ❌ Missing | P1 | `ListBlock` | content | `items[]`, `ordered`, `iconType` | Bulleted/numbered/icon lists |
+| ❌ Missing | P2 | `MapEmbedBlock` | media | `embedUrl` or `lat/lng`, `zoom` | Google Maps/OpenStreetMap iframe |
+| ❌ Missing | P3 | `CodeBlock` | content | `code`, `language` | Syntax-highlighted code snippet |
+| ❌ Missing | P3 | `CountdownBlock` | interactive | `targetDate`, `labelFormat` | JS-powered countdown timer |
+| ❌ Missing | P3 | `SocialLinksBlock` | interactive | `links[]` with platform/url | Row of social media icons |
+
+**15 block types implemented** across 5 original + 10 new additions. 6 block types remain unimplemented.
 
 #### 2.3 — Block Toolbar (In-Canvas Actions) ✅ Done
 
@@ -172,9 +183,19 @@ Blocks now have an in-canvas floating toolbar on hover/select rendered by `Block
 
 All actions are provided via `provide('blockActions', ...)` from `Editor.vue` and consumed via `inject` in `RenderNode.vue` / `BlockToolbar.vue`. Tree manipulation helpers (`findParent`, `generateNewIds`, `deleteBlockById`, `duplicateBlock`, `moveBlock`, `copyBlock`, `pasteBlock`, `wrapInContainer`) are centralized in `Editor.vue`.
 
-#### 2.4 — Block Templates / Presets
+#### 2.4 — Block Templates / Presets ✅ Done
 
 Pre-designed combinations of blocks (e.g., "Pricing Section" = LayoutGrid + 3 LayoutColumns with pre-styled content). These are inserted as a group rather than one block at a time.
+
+3 presets implemented in [blockPresets.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/lib/blockPresets.ts):
+
+| Preset | Blocks | Description |
+|---|---|---|
+| **Hero with CTA** | LayoutGrid → 2× LayoutColumn → HeroBlock + ButtonBlock / ImageBlock | Split section with headline, CTA, and hero image |
+| **Features Grid** | LayoutGrid → 3× LayoutColumn → FeatureBlock | Three-column feature card row |
+| **FAQ Accordion Row** | LayoutGrid → LayoutColumn → HeroBlock + FAQBlock | Headline + accordion Q&A |
+
+Presets appear in the editor sidebar Block Library under a "Presets" tab, rendered by `BlockLibrary.vue`. Inserted via `addPreset()` which clones blocks with new IDs and appends to the root block tree.
 
 ---
 
@@ -182,66 +203,26 @@ Pre-designed combinations of blocks (e.g., "Pricing Section" = LayoutGrid + 3 La
 
 ### What's Implemented
 
-**Nothing.** There is no file upload, no media library, no image handling anywhere in the codebase. The `filesystems.php` config exists but is entirely default/unused.
+A complete media management pipeline has been built:
 
-### What to Build
+| Component | Implementation |
+|---|---|
+| **Database** | `media` table with `tenant_id`, `filename`, `disk`, `path`, `mime_type`, `size`, `width`, `height`, `thumb_path` + `TenantScope` |
+| **Model** | `App\Models\Media` — `belongsTo(Tenant)`, `url` and `thumb_url` accessors via `Storage::disk()->url()` |
+| **Upload API** | `POST /editor/media` — validates file (image, max 5MB, jpeg/png/gif/webp/svg), stores under `public/media/{tenant_id}/`, dispatches `OptimizeMediaJob` |
+| **List API** | `GET /editor/media` — returns all tenant media newest first with computed URLs |
+| **Delete API** | `DELETE /editor/media/{media}` — removes file, thumbnail, and record with double ownership guard |
+| **Image Optimization** | `OptimizeMediaJob` — detects dimensions via `getimagesize()`, generates 150×150 cover-style JPEG thumbnail using GD with transparency preservation. Queued after upload. |
+| **Media Picker** | `MediaPicker.vue` modal — displays uploaded media grid, supports drag-and-drop / file-select upload, returns selected URL |
+| **Block Integration** | `ImageBlock` and `TestimonialBlock` (avatar) connect to the media picker via `'media'`-type inspector field; `ContentInspector.vue` renders preview + "Choose Image" button |
 
-#### 3.1 — Media Model & Storage
+### What to Build (Remaining)
 
-**Migration** — `create_media_table`:
-
-```php
-Schema::create('media', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('tenant_id')->constrained()->onDelete('cascade');
-    $table->string('filename');
-    $table->string('disk')->default('public');    // 'public' or 's3'
-    $table->string('path');                        // relative storage path
-    $table->string('mime_type');
-    $table->unsignedBigInteger('size_bytes');
-    $table->unsignedInteger('width')->nullable();  // image dimensions
-    $table->unsignedInteger('height')->nullable();
-    $table->string('alt_text')->nullable();
-    $table->timestamps();
-
-    $table->index('tenant_id');
-});
-```
-
-**Model** — `App\Models\Media`:
-- `belongsTo(Tenant)`
-- Apply `TenantScope` (same pattern as `Page`)
-- Accessor for `url` that generates the full public URL via `Storage::disk($this->disk)->url($this->path)`
-
-#### 3.2 — Upload API
-
-| Route | Method | Controller | Purpose |
-|---|---|---|---|
-| `/editor/media` | `GET` | `TenantMediaController::index` | List tenant's media (paginated) |
-| `/editor/media` | `POST` | `TenantMediaController::store` | Upload file(s) — validate type, max size |
-| `/editor/media/{media}` | `DELETE` | `TenantMediaController::destroy` | Delete media file |
-| `/editor/media/{media}` | `PATCH` | `TenantMediaController::update` | Update alt text |
-
-**Validation**: Allow `image/jpeg`, `image/png`, `image/webp`, `image/svg+xml`, `image/gif`. Max size: 5MB per file. Enforce per-tenant storage quota (e.g., 100MB free tier).
-
-**Storage Strategy**: Use `Storage::disk('public')` for local dev, with an S3-compatible disk for production. Store files under `tenants/{tenant_id}/media/{uuid}.{ext}`.
-
-#### 3.3 — Media Picker Component
-
-A modal/drawer Vue component (`<MediaPicker>`) that:
-
-- Shows the tenant's uploaded media in a grid
-- Supports drag-and-drop upload directly into the picker
-- Returns the selected media URL + metadata to the calling block inspector
-- Used by `ImageBlock`, `TestimonialBlock` (avatar), and any future block needing images
-
-#### 3.4 — Image Optimization
-
-Integrate server-side image processing (e.g., via Intervention Image or Spatie Media Library):
-
-- Auto-generate thumbnails (150px, 600px, 1200px)
-- Convert uploads to WebP
-- Serve responsive `srcset` attributes in the Blade public renderer
+- [ ] **Per-tenant storage quota enforcement** (e.g., 100MB free tier cap)
+- [ ] **S3-compatible storage adapter** for production deployments
+- [ ] **Responsive `srcset` generation** (600px, 1200px variants) — currently only 150px thumbnail
+- [ ] **WebP format conversion** — currently stores originals as-is; `OptimizeMediaJob` only generates JPEG thumbnails
+- [ ] **`PATCH /editor/media/{media}` endpoint** for updating alt text or metadata
 
 ---
 
@@ -330,64 +311,41 @@ Expose a curated font picker (or search against the Google Fonts API). The selec
 
 ### What's Implemented
 
-**Nothing.** There is no site navigation, no header, no footer, no menu system. The public Blade view renders raw blocks inside a `<main>` tag with no surrounding chrome.
+A complete navigation configuration system has been built:
 
-### What to Build
+| Component | Implementation |
+|---|---|
+| **Storage** | `navigation_config` JSON column on `tenants` table, cast to array via `Tenant` model |
+| **Save API** | `PATCH /editor/navigation` via `TenantNavigationController` — validates `header` and `footer` required keys, ownership-guarded |
+| **Editor UI** | `NavigationSettings.vue` sidebar panel — add/remove/reorder nav items, link to internal pages (auto-populated), toggle logo visibility, configure CTA button, edit footer copyright |
+| **Editor Canvas Rendering** | `SiteHeader.vue` and `SiteFooter.vue` render inside the editor canvas (above and below the draggable block tree) |
+| **Public Site Rendering** | `SiteHeader.vue` and `SiteFooter.vue` render on `PublicPage.vue` wrapping the block output |
 
-#### 5.1 — Navigation Model
-
-Either store navigation in the `tenant_settings` / `theme_config` JSON or as a dedicated `navigation_items` table:
+The navigation config shape stored on `tenants.navigation_config`:
 
 ```json
 {
   "header": {
-    "logo": true,
+    "showLogo": true,
     "items": [
-      { "label": "Home", "slug": "home", "type": "internal" },
-      { "label": "About", "slug": "about", "type": "internal" },
-      { "label": "Blog", "href": "https://blog.example.com", "type": "external" },
+      { "label": "Home", "slug": "home", "type": "internal" }
     ],
-    "ctaButton": { "label": "Contact", "slug": "contact" }
+    "ctaButton": { "show": false, "label": "Contact", "slug": "home" }
   },
   "footer": {
-    "columns": [
-      { "heading": "Company", "links": [...] },
-      { "heading": "Legal", "links": [...] }
-    ],
-    "copyright": "© 2026 {{site_name}}"
+    "copyright": "© 2026 My Workspace"
   }
 }
 ```
 
-#### 5.2 — Navigation Editor UI
-
-A dedicated section in the editor sidebar or a separate `/editor/navigation` page where users can:
-
-- Add/remove/reorder navigation items
-- Link to internal pages (auto-populated from the page list) or external URLs
-- Toggle logo visibility
-- Configure a CTA button
-- Edit footer columns and copyright text
-
-#### 5.3 — Navigation Blade Rendering
-
-Add `<header>` and `<footer>` partials to [tenant-public.blade.php](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/views/tenant-public.blade.php):
-
-```blade
-<body>
-    @include('partials.tenant-header', ['nav' => $tenant->navigation, 'tenant' => $tenant])
-
-    <main>
-        @foreach($blocks as $block)
-            @include('partials.block', ['block' => $block])
-        @endforeach
-    </main>
-
-    @include('partials.tenant-footer', ['nav' => $tenant->navigation, 'tenant' => $tenant])
-</body>
-```
-
 The header and footer are **outside** the block tree — they're site-wide chrome that wraps every page.
+
+### What to Build (Remaining)
+
+- [ ] **Multi-column footer** with heading + links structure (currently single copyright line)
+- [ ] **External URL support** in nav items (currently internal page slugs only)
+- [ ] **Custom domain-aware navigation** — resolve slugs to correct URLs when using custom domains
+- [ ] **Active/highlighted state** for current page in navigation
 
 ---
 
@@ -541,67 +499,48 @@ Before publishing, show the user what changed between the current published stat
 
 ### What's Implemented
 
-- 10 feature tests covering auth, tenant isolation, save, publish, and public rendering
-- `UserFactory` with `withTwoFactor()` state
-- Basic `DatabaseSeeder`
-- Pest v4 + Larastan
+- **23 feature tests** covering auth (registration, login, 2FA, passkeys, password reset, email verification, password confirmation), tenant isolation (editor, save, publish), multi-page CRUD, editor block operations (advanced, validation, manipulation), theme settings, navigation, media upload, contact submissions, dashboard, and profile/security settings
+- `UserFactory` with `withTwoFactor()` state, `TenantFactory`, `PageFactory`
+- `DatabaseSeeder`
+- Pest v4 + Larastan v3
+- **`ValidatesBlockSchema`** custom rule — recursively validates id, type, props, children, and nesting rules against `config('blocks.nesting')` on every save operation
 
 ### What's Missing
 
-#### 8.1 — Missing Factories
+#### 8.1 — Remaining Factory Needs
 
-No factories exist for `Tenant` or `Page`. Tests manually create these with `Tenant::create(...)`, which is fragile. Create:
-
-- `TenantFactory` with states like `->withHomePage()`, `->withPublishedSite()`
-- `PageFactory` with states like `->published()`, `->withBlocks(count: 5)`
+- `MediaFactory` with states like `->withThumbnail()`
+- `ContactSubmissionFactory`
 
 #### 8.2 — Missing Test Coverage
 
 | Area | Current Tests | Gaps |
 |---|---|---|
-| Registration + Tenant creation | 1 test | Doesn't test subdomain validation (reserved words, format) |
-| Multi-page management | 0 | No page CRUD tests (will be needed for Gap 1) |
+| Registration + Tenant creation | 2 tests | Subdomain validation edge cases (reserved words, format) |
+| Multi-page management | 4 tests (`TenantPageCrudTest`) | Well covered |
 | Public site SEO | 0 | No tests for meta tags, sitemap, robots.txt |
-| Media upload | 0 | Will be needed for Gap 3 |
-| Editor block operations | 0 | No frontend integration tests for add/delete/duplicate |
-| Cross-tenant data leakage | 2 tests | Good, but add tests for media and settings isolation |
+| Media upload | 3 tests (`TenantMediaTest`) | Covers index, store, destroy |
+| Editor block operations | 3 tests (`BlockManipulationTest`, `TenantBlockAdvancedTest`) | Covers add, reorder, remove, nesting validation |
+| Cross-tenant data leakage | 2 tests | Add tests for media and navigation isolation |
+| Navigation | 3 tests (`TenantNavigationTest`) | Covers update, validation |
+| Contact form | 3 tests (`TenantContactSubmissionTest`) | Covers store, rate limiting, validation |
 
-#### 8.3 — `draft_config` Validation
+#### 8.4 — Block Prop Schema Inconsistency ✅ RESOLVED
 
-Currently, `POST /editor/save` validates `draft_config` as `'required|array'` — **no structural validation**. A malicious user could save arbitrary JSON. Add a recursive block-tree validation rule:
+Previously the registration controller seeded blocks with `styles`/`content` sub-keys while the editor used a flat `props` format. This was fixed by normalizing the registration seeder and `TenantEditorController` to use the flat `props` format consistently. The block schema is now uniform across creation, editing, and rendering.
 
-```php
-'draft_config' => ['required', 'array'],
-'draft_config.*.type' => ['required', 'string', Rule::in(array_keys($allowedBlockTypes))],
-'draft_config.*.id' => ['required', 'string'],
-'draft_config.*.props' => ['required', 'array'],
-'draft_config.*.children' => ['sometimes', 'array'],
-```
+#### 8.5 — Error Handling & User Feedback ✅ RESOLVED
 
-Consider a custom validation rule `ValidBlockTree` that recursively validates the tree depth and structure.
+vue-sonner has been wired into `Editor.vue` with proper toast notifications:
 
-#### 8.4 — Block Prop Schema Inconsistency
+- **Save success**: `toast.success('Draft saved successfully')` — fires after a failed save recovers
+- **Save failure**: `toast.error('Auto-save failed: ...')` with extracted error message from `extractHttpError()` — handles `HttpCancelledError`, `HttpNetworkError`, 419 CSRF, 401/403, 500+, and validation error messages
+- **Publish success**: `toast.success` with clear message
+- **Publish failure**: Detailed `toast.error` with error extraction
+- **Save error state**: `saveError` ref disables the Publish button until next successful save; auto-clears after 10s
+- **Page operations**: Loading/success/error toasts for page switch, create, rename, delete, and set-homepage
 
-There is a **prop naming inconsistency** between the registration controller and the editor controller:
-
-| Source | Schema |
-|---|---|
-| [CentralRegisteredUserController](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/Auth/CentralRegisteredUserController.php#L70-L85) | Uses `styles` and `content` as separate sub-objects |
-| [TenantEditorController](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantEditorController.php#L22-L28) | Uses a flat `props` object |
-| [Editor.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/pages/Tenant/Editor.vue#L30-L43) | Uses a flat `props` object with `children` |
-
-The registration controller seeds blocks with `styles`/`content` sub-keys, but the editor creates blocks with flat `props`. This means the initial page created at registration has a different schema than pages edited in the editor. **Normalize to the flat `props` format everywhere.**
-
-#### 8.5 — Error Handling & User Feedback
-
-The editor has minimal error feedback:
-
-- Auto-save failures are silently swallowed (`console.warn`)
-- No toast/notification system in the editor (vue-sonner is installed but unused in Editor.vue)
-- Publish success shows a temporary text message, not a proper toast
-- No offline detection or reconnection handling
-
-Add vue-sonner toasts for: save success (subtle), save failure (error), publish success, publish failure, network disconnection warning.
+#### 8.6 — SQLite to Production Database
 
 #### 8.6 — SQLite to Production Database
 
@@ -620,7 +559,8 @@ erDiagram
     User ||--o| Tenant : "owns"
     Tenant ||--o{ Page : "has many"
     Tenant ||--o{ Media : "has many"
-    Page ||--o{ PageRevision : "has many"
+    Tenant ||--o{ ContactSubmission : "has many"
+    Page ||--o{ PageRevision : "has many"  "[not implemented]"
 
     User {
         bigint id PK
@@ -633,44 +573,52 @@ erDiagram
         bigint id PK
         bigint user_id FK_UK
         string subdomain UK
-        string site_name
-        string tagline
-        string favicon_path
-        string logo_path
-        string custom_domain UK
-        json theme_config
-        json navigation_config
-        json social_links
-        json seo_defaults
-        json analytics_config
+        json theme_config "[implemented]"
+        json navigation_config "[implemented]"
+        string site_name "[not implemented]"
+        string tagline "[not implemented]"
+        string favicon_path "[not implemented]"
+        string logo_path "[not implemented]"
+        string custom_domain UK "[not implemented]"
+        json social_links "[not implemented]"
+        json seo_defaults "[not implemented]"
+        json analytics_config "[not implemented]"
     }
 
     Page {
         bigint id PK
         bigint tenant_id FK
         string slug
-        string title
-        boolean is_homepage
-        integer sort_order
-        json draft_config
-        json published_config
-        string meta_title
-        string meta_description
-        string og_image_path
-        boolean is_indexed
+        string title "[implemented]"
+        boolean is_homepage "[implemented]"
+        integer sort_order "[implemented]"
+        json draft_config "[implemented]"
+        json published_config "[implemented]"
+        string meta_title "[not implemented]"
+        string meta_description "[not implemented]"
+        string og_image_path "[not implemented]"
+        boolean is_indexed "[not implemented]"
     }
 
     Media {
         bigint id PK
         bigint tenant_id FK
-        string filename
-        string disk
-        string path
-        string mime_type
-        bigint size_bytes
-        integer width
-        integer height
-        string alt_text
+        string filename "[implemented]"
+        string disk "[implemented]"
+        string path "[implemented]"
+        string mime_type "[implemented]"
+        unsignedBigInteger size "[implemented]"
+        unsignedSmallInteger width "[implemented]"
+        unsignedSmallInteger height "[implemented]"
+        string thumb_path "[implemented]"
+    }
+
+    ContactSubmission {
+        bigint id PK
+        bigint tenant_id FK
+        bigint page_id FK "nullable, nullOnDelete"
+        json form_data "[implemented]"
+        string ip_address "[implemented]"
     }
 
     PageRevision {
@@ -714,16 +662,16 @@ erDiagram
 
 > The visual polish and asset management layer.
 
-- [ ] **Media model + upload API** — File upload, storage, listing, deletion (Gap 3.1, 3.2)
-- [ ] **Media picker component** — Modal UI for browsing/uploading/selecting images (Gap 3.3)
-- [ ] **Image optimization pipeline** — Thumbnails, WebP conversion, srcset (Gap 3.4)
-- [ ] **ImageBlock with real uploads** — Connect to media picker (Gap 2.2)
-- [~] **Tenant settings schema** — site_name, tagline, theme_config, social_links, favicon, logo (Gap 4.1, theme_config added)
+- [x] **Media model + upload API** — File upload, storage, listing, deletion (Gap 3.1, 3.2)
+- [x] **Media picker component** — Modal UI for browsing/uploading/selecting images (Gap 3.3)
+- [x] **Image optimization pipeline** — Thumbnails (150px via GD), dimension detection (Gap 3.4; WebP conversion and responsive srcset still pending)
+- [x] **ImageBlock with real uploads** — Connected to media picker (Gap 2.2)
+- [~] **Tenant settings schema** — site_name, tagline, theme_config, social_links, favicon, logo (Gap 4.1, theme_config + navigation_config added)
 - [x] **Theme database schema** — `theme_config` JSON column added to `tenants` table, `Tenant` model casts + fillable updated (Gap 4.2)
 - [x] **Theme save API + dashboard UI** — `TenantThemeController::update` with validation, `PATCH /theme` route, CentralDashboard.vue theme panel with presets/color pickers/font selectors/radius presets (Gap 4.2, 4.3)
 - [x] **Theme canvas variables + fonts injection** — `useTheme()` composable injects Google Font `<link>` and CSS custom properties (`--theme-primary`, `--theme-font-*`, `--theme-border-radius`) on editor canvas and public site (Gap 4.2, 4.3)
 - [x] **Theme leaf block styling** — adapt ButtonBlock, HeroBlock, FeatureBlock, AtomicText to use CSS variables (Gap 4.2, 4.3)
-- [ ] **Navigation system** — Navigation JSON config, editor UI, Blade header/footer partials (Gap 5)
+- [x] **Navigation system** — Navigation JSON config (`navigation_config` on Tenant), `TenantNavigationController`, `PATCH /editor/navigation`, `NavigationSettings.vue`, `SiteHeader.vue`, `SiteFooter.vue` (Gap 5)
 - [ ] **Per-page SEO metadata** — meta_title, meta_description, og:image in editor and Blade (Gap 6.1, 6.2)
 - [ ] **Sitemap + robots.txt** — Auto-generated per tenant (Gap 6.3, 6.4)
 
@@ -732,12 +680,13 @@ erDiagram
 > Production-grade reliability and advanced features.
 
 - [ ] **Page revision history** — Model, auto-save checkpoints, restore UI (Gap 7.1, 7.2)
-- [ ] **Block library expansion (P1-P2)** — RichTextBlock, VideoEmbedBlock, ListBlock, FAQBlock, TestimonialBlock, PricingTableBlock, ContactFormBlock (Gap 2.2)
-- [ ] **Block presets/templates** — Pre-designed multi-block combinations (Gap 2.4)
-- [ ] **Form submission backend** — Endpoint for ContactFormBlock submissions, email notifications (Gap 2.2)
+- [x] **Block library expansion (P1-P2)** — RichTextBlock ✅, VideoEmbedBlock ✅, FAQBlock ✅, TestimonialBlock ✅, PricingTableBlock ✅, ContactFormBlock ✅; ListBlock still missing (Gap 2.2)
+- [ ] ⚠️ **RichTextBlock WYSIWYG integration** — Block exists but uses raw HTML textarea; no TipTap or inline editor attached yet
+- [x] **Block presets/templates** — 3 presets (Hero with CTA, Features Grid, FAQ Accordion) in `blockPresets.ts` (Gap 2.4)
+- [x] **Form submission backend** — `TenantContactController` with rate limiting (5/min/IP), `ContactSubmission` model, `POST /contact` endpoint (Gap 2.2)
 - [ ] **Custom domain support** — CNAME verification, SSL provisioning (Gap 4.1)
 - [ ] **Production database migration** — MySQL/PostgreSQL compatibility audit (Gap 8.6)
-- [ ] **Google Fonts integration** — Font picker + dynamic loading (Gap 4.4)
+- [ ] **Google Fonts integration** — Font picker UI enhancement (current fontUrl injection works but uses hardcoded dropdown)
 - [ ] **Publish diff summary** — Show changes before publishing (Gap 7.3)
 
 ---
@@ -746,22 +695,26 @@ erDiagram
 
 ### Extend vs. Refactor
 
-| Decision | Recommendation | Rationale |
-|---|---|---|
-| Block registry | **Refactor** — create centralized registry | Current scattered definitions (3 files per block) won't scale past 10 blocks |
-| Inspector sidebar | **Refactor** — make data-driven | The 200+ line `v-if` chain in Editor.vue is unmaintainable |
-| Public Blade view | **Refactor** — split into partials per block type | The monolithic `block.blade.php` is already 80 lines and growing |
-| Page model | **Extend** — add columns via migration | Schema is clean and extensible |
-| Tenant model | **Extend** — add settings columns | Simpler than a separate `tenant_settings` table for now |
-| Editor layout | **Extend** — add page switcher, settings panel | Existing sidebar architecture supports additional panels |
-| Auth system | **Keep** — no changes needed | Fortify + Passkeys setup is comprehensive |
-| Routing architecture | **Keep** — no changes needed | Central/tenant domain split is sound |
+| Decision | Status | Outcome |
+|---|---|---|---|
+| Block registry | ✅ **Done** | Centralized `config/blocks.php` (backend) + `blockRegistry.ts` (frontend) — dynamic resolution via Inertia props |
+| Inspector sidebar | ✅ **Done** | `ContentInspector.vue` renders all field types (text, color, range, number, select, media, repeater) from registry metadata |
+| Public site rendering | ✅ **Done** | Uses Inertia Vue rendering (`PublicPage.vue` + `RenderPublicNode.vue` + shared block components), not Blade |
+| Block presets | ✅ **Done** | 3 presets in `blockPresets.ts` with "Presets" tab in BlockLibrary |
+| Media pipeline | ✅ **Done** | `Media` model, CRUD API, `MediaPicker.vue`, `OptimizeMediaJob` (GD thumbnails) |
+| Navigation system | ✅ **Done** | `navigation_config` JSON on Tenant, `TenantNavigationController`, `NavigationSettings.vue`, `SiteHeader/SiteFooter` |
+| Contact form handler | ✅ **Done** | `TenantContactController` with rate limiting, `ContactSubmission` model |
+| Page model | ✅ **Done** | Extended with `title`, `is_homepage`, `sort_order` columns |
+| Tenant model | ✅ **Done** | Extended with `theme_config`, `navigation_config` columns |
+| Editor layout | ✅ **Done** | Page switcher sidebar, navigation settings panel, media picker modal, block library with presets tab |
+| Auth system | **Keep** | No changes needed — Fortify + Passkeys setup is comprehensive |
+| Routing architecture | **Keep** | No changes needed — Central/tenant domain split is sound |
 
 ### Key Technical Risks
 
 | Risk | Mitigation |
-|---|---|
-| **Dual rendering drift** — Vue blocks and Blade partials diverge as block count grows | Centralized registry generates both Vue component list and Blade partial list. Automated snapshot tests compare editor preview to Blade output for each block type. |
+|---|---|---|
+| **Rendering consistency** — Editor and public site share the same Vue component tree via `RenderNode.vue` / `RenderPublicNode.vue`; no Blade/Vue drift | Unified component tree eliminates drift by design. Block-level `onErrorCaptured` boundaries prevent single block crashes from taking down the full page. |
 | **JSON config size** — Complex pages with many blocks could produce large `draft_config` payloads | Monitor average payload size. If >500KB, consider compressing at rest or splitting into page sections. SQLite has a 1GB blob limit; PostgreSQL JSONB is unlimited. |
 | **Cross-subdomain session issues in production** — Wildcard cookies may not work with custom domains | For custom domains, use a separate session cookie or token-based auth with a redirect handshake from the central domain. |
-| **Image storage costs** — Tenant media can grow unbounded | Enforce per-tenant storage quotas. Show usage in the dashboard. Compress aggressively with WebP. |
+| **Image storage costs** — Tenant media can grow unbounded | Enforce per-tenant storage quotas. Show usage in the dashboard. Improve WebP compression. |
