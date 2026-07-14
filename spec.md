@@ -655,3 +655,38 @@ The public contact form block submits to `POST /contact` (no auth required):
 1. **Rate Limited**: 5 attempts per minute per IP address (inlined in `TenantContactController`).
 2. **Storage**: Creates a `ContactSubmission` record with `tenant_id`, optional `page_id`, submitted `form_data` (array), and `ip_address`.
 3. **Response**: Returns JSON success with the submission record.
+
+### 4.14 Design Catalog, Shared Page Layouts, and Site Kits
+
+The design catalog is an additive composition layer over the existing page, block, theme, and navigation infrastructure. It must not introduce a second renderer, block registry, page model, or publishing workflow.
+
+The catalog is defined in `config/designs.php` and has three independently extensible collections:
+
+- **Styles** provide a named `theme_config` and optional `navigation_config` starting point.
+- **Shared page layouts** provide reusable page blueprints such as a standard About or Contact page. Each layout contains the same `{ id, type, props, children }` block AST already accepted by `Page::draft_config`.
+- **Site kits** combine one style with an ordered set of page definitions that reference shared page-layout keys. A site kit describes a complete starting site for an industry; it is not a new runtime entity.
+
+Applying a shared page layout or site kit always deep-clones its block tree and assigns fresh block IDs before persisting it to ordinary tenant pages. After application, every generated page is independent: editing a catalog definition cannot mutate existing tenant content, and editing one tenant page cannot affect another tenant or the source layout.
+
+The first content release is limited to exactly three professional industry site kits: **Restaurant**, **Retail**, and **Hotel**. Their page inventories, visual directions, copy, assets, and functional claims must be explicitly approved before catalog content is added. The schema itself must remain straightforward to extend with more kits and layouts later.
+
+The approved initial inventories are:
+
+- **Restaurant** — Home, Menu, About, and Reservations, with a warm editorial theme.
+- **Retail** — Home, Shop, About, and Contact, with a modern minimal editorial theme.
+- **Hotel** — Home, Rooms, Amenities, and Contact, with a refined hospitality theme.
+
+Restaurant reservations and Hotel stay requests use the existing contact-submission pipeline as enquiries; they do not promise live availability or confirmed bookings. Retail Shop is a presentation layout and does not provide inventory, cart, checkout, or payment behavior.
+
+Every initial page layout contains an `ImageBlock` with an empty `src` and descriptive replacement guidance. The editor displays the existing editable placeholder, and the block's existing media-picker integration lets users replace it with an uploaded image. No parallel asset source or image persistence path is introduced.
+
+Safety rules:
+
+1. Initial site-kit selection is available only to a new or explicitly verified empty workspace.
+2. Eligibility is decided on the server. The client must not infer safety from the current page payload.
+3. Applying a kit must occur in a database transaction and must never overwrite an existing non-empty workspace.
+4. Generated content is written to `draft_config`. It is not made public until the existing publish flow copies the draft to `published_config`.
+5. All catalog block trees must pass the same `ValidatesBlockSchema` rule used by editor saves.
+6. `spec.md`, `AGENTS.md`, and `gaps.md` must be updated whenever the catalog schema or application flow changes.
+
+Implementation status: the catalog contract, validation foundation, three styles, twelve page layouts, and three site-kit manifests are implemented. Dashboard browsing, preview, workspace-eligibility persistence, and transactional kit application remain staged work and must extend the existing controllers, models, and Inertia flows.

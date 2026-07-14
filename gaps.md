@@ -400,6 +400,31 @@ Implemented test coverage includes:
 
 ## Updated Implementation Roadmap
 
+### Phase 0 — Design Catalog Foundation [Complete]
+
+- [x] Define the additive catalog contract for styles, shared page layouts, and site kits.
+- [x] Confirm that shared layouts are cloned into independent `Page::draft_config` block trees rather than live-linked templates.
+- [x] Limit the first content release to three explicitly approved professional industry kits.
+- [x] Add the configuration-backed catalog and structural validation tests.
+- [x] Confirm Restaurant, Retail, and Hotel as the first three kit identities.
+- [x] Confirm their page inventories, enquiry-only functional scope, copy direction, visual direction, and editable media-placeholder strategy.
+- [x] Author three styles, twelve reusable page layouts, and three site-kit manifests through the existing block and theme schemas.
+
+### Phase 1 — Safe Dashboard Selection
+
+- [ ] Add a dedicated dashboard design-library entry point and catalog browsing screen.
+- [ ] Add preview data and responsive previews without creating a second renderer.
+- [ ] Add an explicit server-side workspace-setup/eligibility marker with existing tenants safely backfilled as completed.
+- [ ] Permit initial kit selection only for new or verified empty workspaces.
+
+### Phase 2 — Transactional Kit Application
+
+- [ ] Deep-clone selected layouts and regenerate all block IDs.
+- [ ] Create ordinary tenant pages and write cloned blocks only to `draft_config`.
+- [ ] Apply the kit style/navigation defaults only when doing so cannot overwrite existing work.
+- [ ] Wrap the complete operation in a database transaction and test rollback, retries, tenant isolation, and duplicate application.
+- [ ] Route successful setup into the existing editor for normal customization and publishing.
+
 ### Phase A — Correctness and Integration
 
 - [x] Fix navigation propagation to editor and public pages.
@@ -448,6 +473,7 @@ Implemented test coverage includes:
 | Header/footer outside the page block tree | Correctly models site-wide chrome |
 | Tenant scope plus explicit ownership guards | Provides defense in depth for tenant isolation |
 | Presets as cloned block trees | Reuses the same schema and renderer as normal blocks |
+| Shared page layouts and site kits as cloned catalog data | Enables reusable professional designs without creating live template coupling or a second infrastructure stack |
 | Curated fonts before arbitrary font search | Keeps validation and loading predictable |
 
 ---
