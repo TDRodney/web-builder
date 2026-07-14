@@ -325,6 +325,7 @@ All routes protected by [IdentifyTenant](file:///c:/Users/Z.BOOK/Desktop/things/
 | Method | Path | Name | Controller / Handler | Auth | Description |
 |---|---|---|---|---|---|---|
 | `GET` | `/dashboard` | `dashboard` | Closure → Inertia `CentralDashboard` (with tenant + theme_config props) | auth | Tenant-scoped dashboard |
+| `GET` | `/designs` | `tenant.designs.index` | `TenantDesignLibraryController::index` | auth | Browse site kits and render homepage previews through the shared public block renderer |
 | `PATCH` | `/theme` | `tenant.theme.update` | [TenantThemeController::update](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantThemeController.php#L22) | auth | Save theme settings (colors, typography, borderRadius) |
 | `GET` | `/editor` | `tenant.editor` | [TenantEditorController::edit](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantEditorController.php#L10) | auth | Canvas editor (accepts optional `?page={slug}`, resolves active or homepage, passes pages + urls props) |
 | `POST` | `/editor/save` | `tenant.page.save` | [TenantPageSaveController::store](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageSaveController.php#L12) | auth | Save draft_config (JSON endpoint) |
@@ -385,14 +386,15 @@ sequenceDiagram
     User->>Central: POST /register {name, email, password, subdomain}
     Central->>Central: Validate (unique email, unique subdomain, reserved check)
     Central->>DB: INSERT users
-    Central->>DB: INSERT tenants (user_id, subdomain)
-    Central->>DB: INSERT pages (tenant_id, slug='home', draft_config=default_hero, published_config=default_hero)
+    Central->>DB: INSERT tenants (user_id, subdomain, site_setup_completed_at=null)
     Central->>Central: Auth::login(user)
-    Central->>User: Inertia::location → redirect to {subdomain}.domain.localhost/editor
-    User->>Tenant: GET /editor (shared session cookie)
+    Central->>User: Inertia::location → redirect to {subdomain}.domain.localhost/dashboard
+    User->>Tenant: GET /dashboard (shared session cookie)
     Tenant->>Tenant: IdentifyTenant middleware resolves tenant
-    Tenant->>User: Inertia render Editor.vue with page data
+    Tenant->>User: Inertia render CentralDashboard with site-kit eligibility
 ```
+
+New registrations intentionally create no pages, theme configuration, or navigation configuration. They remain eligible for an initial site kit until one is applied or a successful page/theme/navigation mutation marks setup complete. Direct editor access by an eligible empty tenant redirects to `/designs` instead of creating content during a GET request.
 
 ### 4.2 Editor Auto-Save Flow (Draft Persistence)
 
@@ -419,6 +421,7 @@ sequenceDiagram
     Server->>Server: Validate {page_id: int, draft_config: array}
     Server->>DB: Page::findOrFail(page_id) — TenantScope applied
     Server->>DB: UPDATE pages SET draft_config = ? WHERE id = ? AND tenant_id = ?
+    Server->>DB: UPDATE tenants SET site_setup_completed_at = ? (first successful mutation only)
     Server->>Inertia: JSON {status: 'success'}
 ```
 
@@ -689,4 +692,8 @@ Safety rules:
 5. All catalog block trees must pass the same `ValidatesBlockSchema` rule used by editor saves.
 6. `spec.md`, `AGENTS.md`, and `gaps.md` must be updated whenever the catalog schema or application flow changes.
 
-Implementation status: the catalog contract, validation foundation, three styles, twelve page layouts, and three site-kit manifests are implemented. Dashboard browsing, preview, workspace-eligibility persistence, and transactional kit application remain staged work and must extend the existing controllers, models, and Inertia flows.
+Workspace eligibility is stored as nullable `tenants.site_setup_completed_at` and also requires that the tenant has no pages, `theme_config`, or `navigation_config`. Historical tenants are backfilled as completed. Successful page create/update/delete/save/publish, theme updates, and navigation updates permanently complete setup; media operations do not because kit application does not remove the media library.
+
+The `/designs` Inertia page receives validated kit summaries and only each kit's homepage block tree for preview. It renders that tree with the existing `RenderPublicNode`, block registry, theme composable, header, and footer. Desktop, tablet, and mobile modes resize the same preview runtime. Empty kit images use the existing `ImageBlock` with a preview-only placeholder flag; public pages still render nothing for an empty source.
+
+Implementation status: the catalog contract, validation foundation, three styles, twelve page layouts, three site-kit manifests, dashboard design library, shared-renderer responsive previews, and server eligibility lifecycle are implemented. Transactional kit application remains staged work.

@@ -41,5 +41,19 @@ test('authenticated users can visit the dashboard', function () {
             ->where('tenant.id', $tenant->id)
             ->where('tenant.subdomain', 'test-tenant')
             ->where('theme_config', $themeConfig)
+            ->where('can_apply_site_kit', false)
         );
+});
+
+test('authenticated users cannot visit another tenant dashboard', function () {
+    $owner = User::factory()->create();
+    $tenant = Tenant::factory()->create([
+        'user_id' => $owner->id,
+        'subdomain' => 'protected-tenant',
+    ]);
+    $otherUser = User::factory()->create();
+
+    $this->actingAs($otherUser)
+        ->get(route('dashboard', ['tenant' => $tenant->subdomain]))
+        ->assertForbidden();
 });

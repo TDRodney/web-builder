@@ -64,6 +64,7 @@ class TenantPageController extends Controller
                 ],
             ],
         ]);
+        $tenant->markSiteSetupCompleted();
 
         return response()->json([
             'status' => 'success',
@@ -106,6 +107,7 @@ class TenantPageController extends Controller
         }
 
         $page->update($validated);
+        $tenant->markSiteSetupCompleted();
 
         return response()->json([
             'status' => 'success',
@@ -136,6 +138,7 @@ class TenantPageController extends Controller
         }
 
         $page->delete();
+        $tenant->markSiteSetupCompleted();
 
         return response()->json([
             'status' => 'success',

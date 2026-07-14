@@ -37,6 +37,7 @@ class TenantPageSaveController extends Controller
         $page->update([
             'draft_config' => $validated['draft_config'],
         ]);
+        $tenant->markSiteSetupCompleted();
 
         return response()->json(['status' => 'success', 'message' => 'Draft saved safely.']);
     }
@@ -57,6 +58,7 @@ class TenantPageSaveController extends Controller
             $page->published_config = $page->draft_config;
             $page->save();
         });
+        $tenant->markSiteSetupCompleted();
 
         return response()->json(['status' => 'success', 'message' => 'Site published successfully!']);
     }

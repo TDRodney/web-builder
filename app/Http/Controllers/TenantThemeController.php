@@ -46,6 +46,7 @@ class TenantThemeController extends Controller
         $theme = array_merge($existing, $incoming);
 
         $tenant->update(['theme_config' => $theme]);
+        $tenant->markSiteSetupCompleted();
 
         return response()->json([
             'status' => 'success',

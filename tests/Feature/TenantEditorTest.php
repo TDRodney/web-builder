@@ -25,6 +25,7 @@ test('authorized tenant owners can access their editor canvas', function () {
     $tenant = Tenant::create([
         'user_id' => $user->id,
         'subdomain' => 'test-tenant',
+        'site_setup_completed_at' => now(),
     ]);
 
     $this->actingAs($user);

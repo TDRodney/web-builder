@@ -2,17 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class TenantEditorController extends Controller
 {
-    public function edit(): Response
+    public function edit(): Response|RedirectResponse
     {
         $tenant = app('currentTenant');
 
         if (auth()->id() !== $tenant->user_id) {
             abort(403, 'Unauthorized access to this tenant workspace.');
+        }
+
+        if ($tenant->isEligibleForInitialSiteKit()) {
+            return redirect()->route('tenant.designs.index', ['tenant' => $tenant->subdomain]);
         }
 
         $slug = request()->query('page');

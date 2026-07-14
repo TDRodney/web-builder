@@ -410,12 +410,14 @@ Implemented test coverage includes:
 - [x] Confirm their page inventories, enquiry-only functional scope, copy direction, visual direction, and editable media-placeholder strategy.
 - [x] Author three styles, twelve reusable page layouts, and three site-kit manifests through the existing block and theme schemas.
 
-### Phase 1 — Safe Dashboard Selection
+### Phase 1 — Safe Dashboard Selection [Complete]
 
-- [ ] Add a dedicated dashboard design-library entry point and catalog browsing screen.
-- [ ] Add preview data and responsive previews without creating a second renderer.
-- [ ] Add an explicit server-side workspace-setup/eligibility marker with existing tenants safely backfilled as completed.
-- [ ] Permit initial kit selection only for new or verified empty workspaces.
+- [x] Add a dedicated dashboard design-library entry point and catalog browsing screen.
+- [x] Add preview data and responsive previews through the existing public block renderer.
+- [x] Add an explicit server-side workspace-setup marker with historical tenants safely backfilled as completed.
+- [x] Require a pending marker, zero pages, and null theme/navigation data for initial-kit eligibility.
+- [x] Create new registrations as empty pending workspaces and redirect direct editor access to the design library.
+- [x] Permanently complete setup after successful page, theme, or navigation mutations.
 
 ### Phase 2 — Transactional Kit Application
 

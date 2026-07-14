@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\CentralAuthenticatedSessionController;
 use App\Http\Controllers\Auth\CentralRegisteredUserController;
 use App\Http\Controllers\TenantContactController;
+use App\Http\Controllers\TenantDesignLibraryController;
 use App\Http\Controllers\TenantEditorController;
 use App\Http\Controllers\TenantMediaController;
 use App\Http\Controllers\TenantNavigationController;
@@ -61,12 +62,16 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
             // Tenant Dashboard
             Route::get('/dashboard', function () {
                 $tenant = app('currentTenant');
+                abort_unless(auth()->id() === $tenant->user_id, 403);
 
                 return Inertia::render('CentralDashboard', [
                     'tenant' => $tenant->only(['id', 'subdomain']),
                     'theme_config' => $tenant->theme_config,
+                    'can_apply_site_kit' => $tenant->isEligibleForInitialSiteKit(),
                 ]);
             })->name('dashboard');
+
+            Route::get('/designs', [TenantDesignLibraryController::class, 'index'])->name('tenant.designs.index');
 
             // Theme Settings
             Route::patch('/theme', [TenantThemeController::class, 'update'])->name('tenant.theme.update');

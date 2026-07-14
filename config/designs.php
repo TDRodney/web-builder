@@ -141,7 +141,7 @@ return [
                     ],
                     'ctaButton' => ['show' => true, 'label' => 'Reserve', 'slug' => 'reservations'],
                 ],
-                'footer' => [],
+                'footer' => ['copyright' => ''],
             ],
         ],
         'retail-editorial' => [
@@ -166,7 +166,7 @@ return [
                     ],
                     'ctaButton' => ['show' => true, 'label' => 'Contact', 'slug' => 'contact'],
                 ],
-                'footer' => [],
+                'footer' => ['copyright' => ''],
             ],
         ],
         'hotel-refined' => [
@@ -191,7 +191,7 @@ return [
                     ],
                     'ctaButton' => ['show' => true, 'label' => 'Book a stay', 'slug' => 'contact'],
                 ],
-                'footer' => [],
+                'footer' => ['copyright' => ''],
             ],
         ],
     ],

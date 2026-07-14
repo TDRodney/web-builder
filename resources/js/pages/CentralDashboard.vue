@@ -8,6 +8,7 @@ import {
     ExternalLink,
     FolderGit2,
     LayoutDashboard,
+    LayoutTemplate,
     LogOut,
     Monitor,
     Palette,
@@ -22,6 +23,7 @@ import { Toaster, toast } from 'vue-sonner';
 
 import { logout } from '@/routes';
 import { edit as editProfile } from '@/routes/profile';
+import { index as designLibrary } from '@/routes/tenant/designs';
 
 defineOptions({ layout: [] });
 
@@ -63,6 +65,7 @@ const props = defineProps<{
         subdomain: string;
     } | null;
     theme_config?: ThemeConfig | null;
+    can_apply_site_kit?: boolean;
 }>();
 
 const page = usePage();
@@ -317,7 +320,7 @@ const workspaceHost = computed(() => {
                 </div>
 
                 <nav
-                    class="grid grid-cols-2 border-b border-[#252527] min-[880px]:grid-cols-1 min-[880px]:border-b-0 min-[880px]:p-3"
+                    class="grid grid-cols-3 border-b border-[#252527] min-[880px]:grid-cols-1 min-[880px]:border-b-0 min-[880px]:p-3"
                     aria-label="Dashboard sections"
                 >
                     <a
@@ -334,6 +337,14 @@ const workspaceHost = computed(() => {
                         <Palette :size="14" />
                         Site theme
                     </a>
+                    <Link
+                        v-if="tenant"
+                        :href="designLibrary(tenant.subdomain)"
+                        class="flex h-11 items-center gap-2 px-4 text-[10px] font-bold tracking-[0.05em] text-zinc-500 uppercase transition hover:bg-[#151517] hover:text-zinc-200 min-[880px]:mt-1 min-[880px]:rounded-[5px]"
+                    >
+                        <LayoutTemplate :size="14" />
+                        Site kits
+                    </Link>
                 </nav>
 
                 <div
@@ -495,11 +506,23 @@ const workspaceHost = computed(() => {
                                     <p
                                         class="mt-2 text-xs leading-5 text-zinc-400"
                                     >
-                                        Inspect the published experience in a
-                                        new tab.
+                                        Preview professional site kits or
+                                        inspect the published experience.
                                     </p>
                                 </div>
-                                <div class="grid">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <Link
+                                        v-if="tenant"
+                                        :href="designLibrary(tenant.subdomain)"
+                                        class="inline-flex h-9 items-center justify-center gap-1.5 rounded-[5px] border border-[#3f4652] bg-[#1b2028] text-[10px] font-semibold text-[#c4d2e8] transition hover:bg-[#252d38] hover:text-white"
+                                    >
+                                        <LayoutTemplate :size="12" />
+                                        {{
+                                            props.can_apply_site_kit
+                                                ? 'Choose kit'
+                                                : 'Browse kits'
+                                        }}
+                                    </Link>
                                     <a
                                         :href="tenantPublicUrl"
                                         target="_blank"

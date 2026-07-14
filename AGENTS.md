@@ -222,6 +222,10 @@ When adding or changing a design catalog entry:
 7. **Validate and test** — run the design-catalog validation tests and add focused tests for new references, block trees, eligibility rules, cloning, rollback, and tenant isolation as those stages are implemented.
 8. **Keep documentation synchronized** — update `spec.md`, `AGENTS.md`, and `gaps.md` in the same change whenever the catalog schema or workflow changes.
 9. **Use the media pipeline** — starter images must be ordinary `ImageBlock` nodes. An editable placeholder uses an empty `src` plus useful alt/replacement guidance and is replaced through the existing media picker; do not add a separate kit-asset system.
+10. **Enforce server eligibility** — initial application requires `site_setup_completed_at === null`, no pages, and null theme/navigation configuration. Re-check this condition while holding a tenant row lock inside the future application transaction.
+11. **Complete setup on user work** — successful page create/update/delete/save/publish, theme updates, and navigation updates permanently set `site_setup_completed_at`. Media operations do not. Never reset a completed tenant to pending.
+
+New registrations must remain empty and route to the dashboard. Pending empty tenants who directly request the editor are redirected to the design library; do not create starter content during an editor GET request.
 
 The initial Restaurant reservation and Hotel contact layouts are enquiry experiences only. The initial Retail Shop layout is presentational only. Do not describe or implement booking confirmation, live availability, inventory, cart, checkout, or payments unless those capabilities are separately approved and built.
 
