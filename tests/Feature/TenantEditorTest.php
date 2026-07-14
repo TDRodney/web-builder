@@ -31,7 +31,34 @@ test('authorized tenant owners can access their editor canvas', function () {
 
     $response = $this->get('http://test-tenant.domain.localhost/editor');
 
-    $response->assertOk();
+    $response->assertOk()
+        ->assertInertia(fn (Assert $inertia) => $inertia
+            ->component('Tenant/Editor')
+            ->where('urls.live', 'http://test-tenant.domain.localhost')
+        );
+});
+
+test('editor receives the live URL for the page being edited', function () {
+    $user = User::factory()->create();
+    $tenant = Tenant::factory()->withHomePage()->create([
+        'user_id' => $user->id,
+        'subdomain' => 'test-tenant',
+    ]);
+    $page = Page::factory()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'About',
+        'slug' => 'about',
+        'is_homepage' => false,
+    ]);
+
+    $this->actingAs($user)
+        ->get('http://test-tenant.domain.localhost/editor?page=about')
+        ->assertOk()
+        ->assertInertia(fn (Assert $inertia) => $inertia
+            ->component('Tenant/Editor')
+            ->where('page.id', $page->id)
+            ->where('urls.live', 'http://test-tenant.domain.localhost/about')
+        );
 });
 
 test('tenant owners cannot access another tenant editor canvas', function () {
