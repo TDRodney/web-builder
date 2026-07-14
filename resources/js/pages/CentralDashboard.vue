@@ -260,7 +260,7 @@ const workspaceHost = computed(() => {
                     <span
                         class="block text-[10px] font-bold tracking-[0.15em] text-[#7c8eae] uppercase"
                     >
-                        Nexura control center
+                        Editor Dashboard
                     </span>
                     <span class="block truncate text-[10px] text-[#9ca3af]">
                         {{ props.tenant?.subdomain || 'Account dashboard' }}
