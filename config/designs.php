@@ -115,6 +115,27 @@ $contactFormBlock = static fn (string $id, string $submitLabel, string $successM
     ],
 ];
 
+$commerceSection = static fn (string $id, string $type, array $settings = []): array => ['id' => $id, 'type' => $type, 'settings' => $settings, 'blocks' => [], 'disabled' => false];
+
+$retailCommerceTemplates = [
+    ['type' => 'home', 'key' => 'default', 'label' => 'Editorial storefront', 'is_default' => true, 'config' => ['schemaVersion' => 1, 'sections' => [
+        $commerceSection('retail-announcement', 'announcement', ['text' => 'Thoughtful objects, delivered with care']),
+        $commerceSection('retail-commerce-hero', 'image-hero', ['heading' => 'Objects with a life beyond the season', 'body' => 'A considered edit of useful, beautiful pieces for home and daily ritual.', 'image' => '', 'linkLabel' => 'Explore the collection', 'linkUrl' => '/collections/all']),
+        $commerceSection('retail-story', 'image-with-text', ['heading' => 'Fewer, better things', 'body' => 'We select honest materials, enduring forms, and pieces that become more familiar with use.', 'image' => '']),
+        $commerceSection('retail-featured', 'featured-collection', ['heading' => 'The current edit', 'collectionHandle' => 'all', 'limit' => 4]),
+        $commerceSection('retail-values', 'trust-values', ['heading' => 'Considered from source to doorstep', 'body' => 'Independent makers. Responsible materials. Personal service.']),
+        $commerceSection('retail-newsletter', 'newsletter', ['heading' => 'Notes from the shop', 'body' => 'New collections and thoughtful stories, occasionally.']),
+    ]]],
+    ['type' => 'collection', 'key' => 'default', 'label' => 'Editorial collection', 'is_default' => true, 'config' => ['schemaVersion' => 1, 'sections' => [
+        $commerceSection('retail-collection-copy', 'rich-text', ['heading' => '', 'body' => 'Browse the connected collection.']),
+        $commerceSection('retail-product-grid', 'product-grid', ['columns' => 4, 'pageSize' => 24]),
+    ]]],
+    ['type' => 'product', 'key' => 'default', 'label' => 'Standard product', 'is_default' => true, 'config' => ['schemaVersion' => 1, 'sections' => [
+        $commerceSection('retail-main-product', 'main-product', ['showDescription' => true, 'showQuantity' => true]),
+        $commerceSection('retail-recommendations', 'product-recommendations', ['heading' => 'You may also like', 'limit' => 4]),
+    ]]],
+];
+
 return [
     'schema_version' => 1,
 
@@ -387,6 +408,8 @@ return [
         ],
     ],
 
+    'commerce_templates' => ['retail' => $retailCommerceTemplates],
+
     'site_kits' => [
         'restaurant' => [
             'label' => 'Restaurant',
@@ -405,6 +428,7 @@ return [
             'industry' => 'Retail and Commerce',
             'description' => 'A clean editorial showcase for collections, brand story, and product enquiries.',
             'style_key' => 'retail-editorial',
+            'commerce_template_set' => 'retail',
             'pages' => [
                 ['title' => 'Home', 'slug' => 'home', 'layout_key' => 'retail-home', 'is_homepage' => true],
                 ['title' => 'Shop', 'slug' => 'shop', 'layout_key' => 'retail-shop', 'is_homepage' => false],

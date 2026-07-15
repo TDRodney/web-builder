@@ -4,6 +4,7 @@ namespace App\Actions\Designs;
 
 use App\Models\Tenant;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ApplySiteKit
 {
@@ -33,7 +34,9 @@ class ApplySiteKit
         $style = $catalog['styles'][$siteKit['style_key']];
         $pageLayouts = $catalog['page_layouts'];
 
-        $homepageSlug = DB::transaction(function () use ($tenant, $siteKit, $style, $pageLayouts) {
+        $commerceTemplates = $catalog['commerce_templates'][$siteKit['commerce_template_set'] ?? ''] ?? [];
+
+        $homepageSlug = DB::transaction(function () use ($tenant, $siteKit, $style, $pageLayouts, $commerceTemplates) {
             foreach ($siteKit['pages'] as $index => $pageDef) {
                 $layoutBlocks = $pageLayouts[$pageDef['layout_key']]['blocks'] ?? [];
 
@@ -46,6 +49,21 @@ class ApplySiteKit
                     'sort_order' => $index,
                     'draft_config' => $clonedBlocks,
                     'published_config' => null,
+                ]);
+            }
+
+            foreach ($commerceTemplates as $template) {
+                $config = $template['config'];
+                $config['sections'] = collect($config['sections'])->map(function (array $section): array {
+                    $section['id'] = (string) Str::uuid();
+                    $section['blocks'] = CloneBlockTree::handle($section['blocks']);
+
+                    return $section;
+                })->all();
+
+                $tenant->commerceTemplates()->create([
+                    'type' => $template['type'], 'key' => $template['key'], 'label' => $template['label'],
+                    'is_default' => $template['is_default'], 'draft_config' => $config, 'published_config' => null,
                 ]);
             }
 

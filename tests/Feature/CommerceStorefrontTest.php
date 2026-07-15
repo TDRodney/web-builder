@@ -3,6 +3,7 @@
 use App\Models\CommerceTemplate;
 use App\Models\Page;
 use App\Models\Tenant;
+use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
 function publishedCommerceTemplate(Tenant $tenant, string $type): CommerceTemplate
@@ -32,4 +33,20 @@ test('legacy public page route remains available', function () {
     $tenant = Tenant::factory()->create(['subdomain' => 'legacy-still-works']);
     Page::factory()->for($tenant)->create(['slug' => 'about', 'published_config' => [['id' => 'text', 'type' => 'AtomicText', 'props' => ['content' => 'Legacy']]]]);
     $this->get(route('tenant.page.public', ['tenant' => $tenant->subdomain, 'slug' => 'about']))->assertOk()->assertInertia(fn (Assert $page) => $page->component('Tenant/PublicPage'));
+});
+
+test('cart is provider owned and redirects to hosted checkout', function () {
+    $tenant = Tenant::factory()->create(['subdomain' => 'cart-store']);
+    $response = $this->postJson(route('tenant.commerce.cart.lines.store', ['tenant' => $tenant->subdomain]), ['variantId' => 'linen-throw-default', 'quantity' => 1]);
+    $response->assertOk()->assertJsonPath('cart.id', 'fake-cart');
+    $this->post(route('tenant.commerce.checkout', ['tenant' => $tenant->subdomain]))->assertRedirect('https://checkout.example.test/fake-cart');
+});
+
+test('retail kit adds draft commerce templates without publishing or changing legacy pages', function () {
+    $user = User::factory()->create();
+    $tenant = Tenant::factory()->awaitingSiteSetup()->create(['user_id' => $user->id, 'subdomain' => 'retail-commerce-kit']);
+    $this->actingAs($user)->postJson(route('tenant.designs.apply-kit', ['tenant' => $tenant->subdomain, 'kit' => 'retail']))->assertOk();
+    expect($tenant->commerceTemplates()->count())->toBe(3)
+        ->and($tenant->commerceTemplates()->whereNotNull('published_config')->count())->toBe(0)
+        ->and($tenant->pages()->count())->toBe(4);
 });

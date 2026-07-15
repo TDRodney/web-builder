@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 import SiteFooter from '@/components/SiteFooter.vue';
 import SiteHeader from '@/components/SiteHeader.vue';
 import { useTheme } from '@/lib/theme';
@@ -14,6 +14,16 @@ const props = defineProps<{
 const { cssVars, fontUrl } = useTheme(() => props.tenant.theme_config);
 const data = computed(() => props.resource.data ?? {});
 const products = computed(() => data.value.products ?? []);
+const cartOpen = ref(false);
+const addToCart = () => {
+    const variantId = data.value.variants?.[0]?.id;
+    if (!variantId) return;
+    router.post(
+        '/cart/lines',
+        { variantId, quantity: 1 },
+        { preserveScroll: true, onSuccess: () => (cartOpen.value = true) },
+    );
+};
 </script>
 
 <template>
@@ -31,6 +41,27 @@ const products = computed(() => data.value.products ?? []);
             :navigation-config="tenant.navigation_config"
             :tenant-name="tenant.subdomain"
         />
+        <button
+            class="fixed top-20 right-5 z-40 rounded-full bg-[var(--theme-primary)] px-4 py-3 text-sm text-white shadow"
+            @click="cartOpen = true"
+        >
+            Cart
+        </button>
+        <aside
+            v-if="cartOpen"
+            class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white p-6 text-stone-900 shadow-2xl"
+        >
+            <button class="float-right" @click="cartOpen = false">Close</button>
+            <h2 class="text-2xl font-semibold">Your cart</h2>
+            <p class="mt-6 opacity-70">
+                Review items and totals on the cart page.
+            </p>
+            <Link
+                href="/cart"
+                class="mt-8 inline-block bg-[var(--theme-primary)] px-5 py-3 text-white"
+                >View cart</Link
+            >
+        </aside>
         <main>
             <template
                 v-for="section in template.sections?.filter(
@@ -105,6 +136,7 @@ const products = computed(() => data.value.products ?? []);
                                 !resource.purchasingEnabled ||
                                 !data.variants?.[0]?.available
                             "
+                            @click="addToCart"
                         >
                             Add to cart
                         </button>
@@ -163,7 +195,27 @@ const products = computed(() => data.value.products ?? []);
                 class="mx-auto max-w-4xl px-6 py-20"
             >
                 <h1 class="text-4xl font-semibold">Your cart</h1>
-                <p class="mt-4 opacity-70">Your cart is currently empty.</p>
+                <p v-if="!data.lines?.length" class="mt-4 opacity-70">
+                    Your cart is currently empty.
+                </p>
+                <article
+                    v-for="line in data.lines"
+                    :key="line.id"
+                    class="mt-6 flex justify-between border-b pb-4"
+                >
+                    <span>{{ line.title }}</span
+                    ><span>{{ line.total?.formatted }}</span>
+                </article>
+                <div class="mt-8 flex items-center justify-between">
+                    <strong>{{ data.subtotal?.formatted }}</strong
+                    ><button
+                        class="bg-[var(--theme-primary)] px-6 py-3 text-white disabled:opacity-40"
+                        :disabled="!data.canCheckout"
+                        @click="router.post('/cart/checkout')"
+                    >
+                        Continue to checkout
+                    </button>
+                </div>
             </section>
         </main>
         <SiteFooter

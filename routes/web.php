@@ -2,8 +2,8 @@
 
 use App\Http\Controllers\Auth\CentralAuthenticatedSessionController;
 use App\Http\Controllers\Auth\CentralRegisteredUserController;
-use App\Http\Controllers\CommerceTemplateController;
 use App\Http\Controllers\CommerceStorefrontController;
+use App\Http\Controllers\CommerceTemplateController;
 use App\Http\Controllers\TenantContactController;
 use App\Http\Controllers\TenantDesignLibraryController;
 use App\Http\Controllers\TenantEditorController;
@@ -120,7 +120,12 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
 
         Route::get('/collections/{handle}', [CommerceStorefrontController::class, 'collection'])->name('tenant.commerce.collection');
         Route::get('/products/{handle}', [CommerceStorefrontController::class, 'product'])->name('tenant.commerce.product');
+        Route::get('/store', [CommerceStorefrontController::class, 'home'])->name('tenant.commerce.home');
         Route::get('/cart', [CommerceStorefrontController::class, 'cart'])->name('tenant.commerce.cart');
+        Route::post('/cart/lines', [CommerceStorefrontController::class, 'addLine'])->name('tenant.commerce.cart.lines.store');
+        Route::patch('/cart/lines/{lineId}', [CommerceStorefrontController::class, 'updateLine'])->name('tenant.commerce.cart.lines.update');
+        Route::delete('/cart/lines/{lineId}', [CommerceStorefrontController::class, 'removeLine'])->name('tenant.commerce.cart.lines.destroy');
+        Route::post('/cart/checkout', [CommerceStorefrontController::class, 'checkout'])->name('tenant.commerce.checkout');
 
         // State 2: Public User visiting the live published site
         Route::get('/{slug?}', [TenantPublicSiteController::class, 'show'])
