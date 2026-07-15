@@ -771,11 +771,14 @@ const onMediaSelected = (item) => {
             :can-redo="redoStack.length > 0"
             :save-state="saveState"
             :commerce-preview="props.commerce_preview"
+            :pages="props.pages"
+            :current-page-slug="props.page.slug"
             @toggle-sidebar="sidebarOpen = !sidebarOpen"
             @update:view-mode="viewMode = $event"
             @undo="undo"
             @redo="redo"
             @update:commerce-preview="updateCommercePreview"
+            @switch-page="switchPage"
         />
 
         <div class="editor-body">
@@ -831,6 +834,7 @@ const onMediaSelected = (item) => {
                     isDragging = false;
                     forceSave();
                 "
+                @navigate-page="switchPage"
             />
         </div>
 

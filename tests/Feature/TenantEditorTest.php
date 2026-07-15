@@ -62,6 +62,30 @@ test('editor receives the live URL for the page being edited', function () {
         );
 });
 
+test('editor receives every tenant page for topbar and canvas navigation', function () {
+    $user = User::factory()->create();
+    $tenant = Tenant::factory()->withHomePage()->create([
+        'user_id' => $user->id,
+        'subdomain' => 'page-navigation',
+    ]);
+    Page::factory()->create([
+        'tenant_id' => $tenant->id,
+        'title' => 'Product',
+        'slug' => 'product',
+        'is_homepage' => false,
+    ]);
+
+    $this->actingAs($user)
+        ->get('http://page-navigation.domain.localhost/editor')
+        ->assertOk()
+        ->assertInertia(fn (Assert $inertia) => $inertia
+            ->component('Tenant/Editor')
+            ->has('pages', 2)
+            ->where('pages.0.slug', 'home')
+            ->where('pages.1.slug', 'product')
+        );
+});
+
 test('tenant owners cannot access another tenant editor canvas', function () {
     $user1 = User::factory()->create();
     $tenant1 = Tenant::create([

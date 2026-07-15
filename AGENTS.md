@@ -373,4 +373,6 @@ Commerce data is resolved per request through `CommerceProvider` and returned in
 
 Fixture cart state is server-side session data namespaced by tenant ID and provider key. Storefront clients send only variant IDs and quantities; providers validate availability and return totals. Do not calculate live-provider prices, discounts, stock, or totals in Vue. Preview selection is request-only and must never trigger a page save. The fixture checkout page is a handoff simulator and must never be described as payment or order placement.
 
+Editor-internal navigation from the topbar, header, or canvas links must call the editor's save-before-switch operation. Never navigate directly away from the editor with an internal anchor because that can discard unsaved draft state. Public links still target ordinary page slugs and require the destination page to be published.
+
 </laravel-boost-guidelines>

@@ -12,7 +12,7 @@ const props = defineProps({
     cartCount: { type: Number, default: 0 },
 });
 
-const emit = defineEmits(['open-cart']);
+const emit = defineEmits(['open-cart', 'navigate-page']);
 
 const page = usePage();
 
@@ -31,6 +31,12 @@ const getPageUrl = (slug) => {
     }
 
     return slug === 'home' ? '/' : `/${slug}`;
+};
+
+const navigateInEditor = (slug) => {
+    if (props.isEditable) {
+        emit('navigate-page', slug);
+    }
 };
 
 const normalizedPath = computed(() => {
@@ -59,9 +65,11 @@ const isItemActive = (item) => {
         <div class="header-shell">
             <div v-if="showLogo" class="site-logo">
                 <component
-                    :is="isEditable ? 'span' : Link"
+                    :is="isEditable ? 'button' : Link"
+                    :type="isEditable ? 'button' : undefined"
                     :href="isEditable ? undefined : '/'"
                     class="logo-link"
+                    @click="navigateInEditor('home')"
                 >
                     {{ logoText }}
                 </component>
@@ -85,7 +93,8 @@ const isItemActive = (item) => {
                         </a>
 
                         <component
-                            :is="isEditable ? 'span' : Link"
+                            :is="isEditable ? 'button' : Link"
+                            :type="isEditable ? 'button' : undefined"
                             v-else
                             :href="getPageUrl(item.slug)"
                             :aria-current="
@@ -95,6 +104,7 @@ const isItemActive = (item) => {
                                 'nav-link',
                                 { 'nav-link-active': isItemActive(item) },
                             ]"
+                            @click="navigateInEditor(item.slug)"
                         >
                             {{ item.label }}
                             <span
@@ -127,22 +137,26 @@ const isItemActive = (item) => {
                 </button>
                 <component
                     v-if="ctaButton.show"
-                    :is="isEditable ? 'span' : Link"
+                    :is="isEditable ? 'button' : Link"
+                    :type="isEditable ? 'button' : undefined"
                     :href="getPageUrl(ctaButton.slug)"
                     class="action-button contact-action"
                     :aria-label="ctaButton.label || 'Contact us'"
                     :title="ctaButton.label || 'Contact us'"
+                    @click="navigateInEditor(ctaButton.slug)"
                 >
                     <Phone :size="30" :stroke-width="1.8" aria-hidden="true" />
                 </component>
 
                 <component
                     v-if="ctaButton.show"
-                    :is="isEditable ? 'span' : Link"
+                    :is="isEditable ? 'button' : Link"
+                    :type="isEditable ? 'button' : undefined"
                     :href="getPageUrl(ctaButton.slug)"
                     class="action-button primary-action"
                     :aria-label="ctaButton.label || 'Continue'"
                     :title="ctaButton.label || 'Continue'"
+                    @click="navigateInEditor(ctaButton.slug)"
                 >
                     <ArrowRight
                         :size="34"
@@ -196,8 +210,13 @@ const isItemActive = (item) => {
 }
 
 .logo-link {
+    padding: 0;
     color: inherit;
+    background: transparent;
+    border: 0;
+    font: inherit;
     text-decoration: none;
+    cursor: pointer;
 }
 
 .header-nav {
@@ -232,6 +251,9 @@ const isItemActive = (item) => {
     text-decoration: none;
     white-space: nowrap;
     cursor: pointer;
+    border: 0;
+    background: transparent;
+    font-family: inherit;
     transition:
         color 180ms ease,
         transform 180ms ease;

@@ -22,6 +22,8 @@ const props = defineProps({
     canRedo: { type: Boolean, default: false },
     saveState: { type: String, default: 'saved' },
     commercePreview: { type: Object, default: () => ({}) },
+    pages: { type: Array, default: () => [] },
+    currentPageSlug: { type: String, default: '' },
 });
 
 const emit = defineEmits([
@@ -30,6 +32,7 @@ const emit = defineEmits([
     'undo',
     'redo',
     'update:commerce-preview',
+    'switch-page',
 ]);
 
 const productPreviewOptions = computed(() =>
@@ -64,9 +67,28 @@ const viewModes = [
 
             <div class="builder-title">
                 <span class="builder-kicker">Visual builder</span>
-                <span class="builder-page"
-                    >{{ tenantName }} / {{ pageTitle }}</span
-                >
+                <label class="builder-page-select">
+                    <span class="sr-only">Edit page</span>
+                    <select
+                        :value="currentPageSlug"
+                        aria-label="Edit page"
+                        @change="
+                            emit(
+                                'switch-page',
+                                ($event.target as HTMLSelectElement).value,
+                            )
+                        "
+                    >
+                        <option
+                            v-for="page in pages"
+                            :key="page.id"
+                            :value="page.slug"
+                        >
+                            {{ tenantName }} / {{ page.title
+                            }}{{ page.is_homepage ? ' · Homepage' : '' }}
+                        </option>
+                    </select>
+                </label>
             </div>
         </div>
 
@@ -248,13 +270,31 @@ const viewModes = [
     text-transform: uppercase;
 }
 
-.builder-page {
+.builder-page-select select {
     max-width: 240px;
-    overflow: hidden;
+    padding: 0;
     color: #9ca3af;
+    background: transparent;
+    border: 0;
     font-size: 10px;
-    text-overflow: ellipsis;
+    cursor: pointer;
+}
+
+.builder-page-select select:focus-visible {
+    outline: 1px solid #93c5fd;
+    outline-offset: 2px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
     white-space: nowrap;
+    border: 0;
 }
 
 .viewport-switcher {
@@ -427,7 +467,7 @@ a:focus-visible {
         grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
     }
 
-    .builder-page,
+    .builder-page-select,
     .save-state {
         display: none;
     }
