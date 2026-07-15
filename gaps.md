@@ -506,18 +506,3 @@ Implemented test coverage includes:
 | SQLite write contention | Adequate for local development | Use PostgreSQL/MySQL in production |
 | Cross-subdomain/custom-domain sessions | Wildcard cookie for central domain | Design a separate custom-domain authentication strategy |
 | SEO depends on runtime rendering mode | Inertia `<Head>` metadata is available client-side | Validate and operate production SSR if crawl-time HTML is required |
-# Commerce implementation
-
-- Retail onboarding is integrated: applying the kit opens its storefront editor, dashboard shortcuts expose the builder/live store, and all resource templates are switchable in the editor.
-
-## Compatibility audit — 2026-07-15
-
-- Commits `2dca80c`, `750c9d2`, `74877bb`, and `9bcd132` respectively add isolated persistence/contracts, the commerce editor, provider hydration, and the Retail purchase experience.
-- The complete Pest suite passes with 154 tests passed, one skipped, and 845 assertions. Production Vite builds pass.
-- The new commerce Vue files pass ESLint and Prettier. Repository-wide ESLint and Vue type checking remain blocked by pre-existing legacy errors outside the commerce implementation; no baseline files were rewritten as part of this work.
-- Production provider transport, customer accounts, native payments, quick-add/view, subscriptions, bundles, pickup, and technical SEO remain deferred.
-
-- Normalized commerce contracts and isolated persistence are present.
-- The production provider, storefront hydration, cart UI, and hosted checkout remain milestone work. The isolated section editor and registry are implemented.
-- Existing pages, block JSON, rendering, and publishing are not migrated.
-- A fake OpenAPI provider, normalized tenant-aware caching, and dedicated storefront renderer are implemented; production provider transport and cart mutations remain pending.

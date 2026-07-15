@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 class Tenant extends Model
@@ -39,16 +38,6 @@ class Tenant extends Model
     public function contactSubmissions(): HasMany
     {
         return $this->hasMany(ContactSubmission::class);
-    }
-
-    public function commerceConnection(): HasOne
-    {
-        return $this->hasOne(CommerceConnection::class);
-    }
-
-    public function commerceTemplates(): HasMany
-    {
-        return $this->hasMany(CommerceTemplate::class);
     }
 
     public function isEligibleForInitialSiteKit(): bool

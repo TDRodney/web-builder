@@ -64,14 +64,6 @@ const props = defineProps<{
     } | null;
     theme_config?: ThemeConfig | null;
     can_apply_site_kit?: boolean;
-    commerce_templates?: Array<{
-        id: number;
-        type: string;
-        key: string;
-        label: string;
-        is_default: boolean;
-        published_config: Record<string, unknown> | null;
-    }>;
     central_navigation: {
         account_settings_url: string;
         logout_url: string;
@@ -244,24 +236,6 @@ const tenantPublicUrl = computed(() => {
 
     return `${protocol}//${props.tenant.subdomain}.${baseHost}/`;
 });
-
-const commerceHomeTemplate = computed(() =>
-    props.commerce_templates?.find(
-        (template) => template.type === 'home' && template.is_default,
-    ),
-);
-
-const commerceEditorUrl = computed(() =>
-    commerceHomeTemplate.value
-        ? `/commerce/templates/${commerceHomeTemplate.value.id}/edit`
-        : '',
-);
-
-const tenantStoreUrl = computed(() =>
-    tenantPublicUrl.value
-        ? `${tenantPublicUrl.value.replace(/\/$/, '')}/store`
-        : '',
-);
 
 const workspaceHost = computed(() => {
     if (!tenantPublicUrl.value) {
@@ -479,14 +453,6 @@ const workspaceHost = computed(() => {
                                 Open visual builder
                                 <ArrowRight :size="14" />
                             </a>
-                            <a
-                                v-if="commerceEditorUrl"
-                                :href="commerceEditorUrl"
-                                class="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[5px] border border-emerald-400/50 bg-emerald-400/10 px-4 text-[11px] font-bold text-emerald-200 transition hover:bg-emerald-400/20"
-                            >
-                                Open storefront builder
-                                <LayoutTemplate :size="14" />
-                            </a>
                         </div>
 
                         <div
@@ -573,16 +539,6 @@ const workspaceHost = computed(() => {
                                     >
                                         <ExternalLink :size="12" />
                                         View live
-                                    </a>
-                                    <a
-                                        v-if="commerceHomeTemplate"
-                                        :href="tenantStoreUrl"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        class="col-span-2 inline-flex h-9 items-center justify-center gap-1.5 rounded-[5px] border border-emerald-400/30 bg-emerald-400/10 text-[10px] font-semibold text-emerald-200 transition hover:bg-emerald-400/20"
-                                    >
-                                        <ExternalLink :size="12" />
-                                        View storefront
                                     </a>
                                 </div>
                             </div>

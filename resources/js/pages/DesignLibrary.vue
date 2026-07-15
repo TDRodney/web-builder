@@ -109,15 +109,8 @@ const applyHttp = useHttp();
 const scratchHttp = useHttp();
 
 const extractHttpError = (error: unknown): string => {
-    const err = error as {
-        response?: { data?: { message?: string } };
-        message?: string;
-    };
-    return (
-        err?.response?.data?.message ||
-        err?.message ||
-        'An unknown error occurred'
-    );
+    const err = error as { response?: { data?: { message?: string } }; message?: string };
+    return err?.response?.data?.message || err?.message || 'An unknown error occurred';
 };
 
 const applyKit = async () => {
@@ -128,11 +121,7 @@ const applyKit = async () => {
         const res = await applyHttp.post(`/designs/site-kits/${kitKey}/apply`);
         if (res && res.status === 'success') {
             toast.success('Site kit applied!', { id: loadingToast });
-            router.visit(
-                res.commerce_template_id
-                    ? `/commerce/templates/${res.commerce_template_id}/edit`
-                    : `/editor?page=${res.homepage_slug}`,
-            );
+            router.visit(`/editor?page=${res.homepage_slug}`);
         }
     } catch (err) {
         toast.error(extractHttpError(err), { id: loadingToast });
@@ -144,9 +133,7 @@ const startFromScratch = async () => {
     try {
         const res = await scratchHttp.post('/designs/start-from-scratch');
         if (res && res.status === 'success') {
-            toast.success('Workspace ready — create your first page.', {
-                id: loadingToast,
-            });
+            toast.success('Workspace ready — create your first page.', { id: loadingToast });
             router.visit('/editor');
         }
     } catch (err) {
@@ -321,10 +308,7 @@ const startFromScratch = async () => {
                         </div>
                     </div>
 
-                    <div
-                        v-if="props.can_apply_site_kit"
-                        class="mt-4 flex flex-col gap-2"
-                    >
+                    <div v-if="props.can_apply_site_kit" class="mt-4 flex flex-col gap-2">
                         <button
                             type="button"
                             :disabled="!selectedKitKey || applyHttp.processing"

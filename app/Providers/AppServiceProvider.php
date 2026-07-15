@@ -2,8 +2,6 @@
 
 namespace App\Providers;
 
-use App\Commerce\Contracts\CommerceProvider;
-use App\Commerce\Providers\FakeOpenApiCommerceProvider;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +15,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(CommerceProvider::class, FakeOpenApiCommerceProvider::class);
+        //
     }
 
     /**

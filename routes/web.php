@@ -2,8 +2,6 @@
 
 use App\Http\Controllers\Auth\CentralAuthenticatedSessionController;
 use App\Http\Controllers\Auth\CentralRegisteredUserController;
-use App\Http\Controllers\CommerceStorefrontController;
-use App\Http\Controllers\CommerceTemplateController;
 use App\Http\Controllers\TenantContactController;
 use App\Http\Controllers\TenantDesignLibraryController;
 use App\Http\Controllers\TenantEditorController;
@@ -75,10 +73,6 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
                     'tenant' => $tenant->only(['id', 'subdomain']),
                     'theme_config' => $tenant->theme_config,
                     'can_apply_site_kit' => $tenant->isEligibleForInitialSiteKit(),
-                    'commerce_templates' => $tenant->commerceTemplates()
-                        ->select(['id', 'type', 'key', 'label', 'is_default', 'published_config'])
-                        ->orderBy('type')
-                        ->get(),
                     'central_navigation' => [
                         'account_settings_url' => route('profile.edit'),
                         'logout_url' => route('logout'),
@@ -93,12 +87,6 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
 
             // Theme Settings
             Route::patch('/theme', [TenantThemeController::class, 'update'])->name('tenant.theme.update');
-
-            Route::prefix('commerce/templates')->group(function () {
-                Route::get('/{commerceTemplate}/edit', [CommerceTemplateController::class, 'edit'])->name('tenant.commerce.templates.edit');
-                Route::put('/{commerceTemplate}', [CommerceTemplateController::class, 'update'])->name('tenant.commerce.templates.update');
-                Route::post('/{commerceTemplate}/publish', [CommerceTemplateController::class, 'publish'])->name('tenant.commerce.templates.publish');
-            });
 
             // State 1: Authed Tenant Owner modifying their workspace canvas
             Route::prefix('editor')->group(function () {
@@ -121,15 +109,6 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
 
         // Contact Form Submission
         Route::post('/contact', [TenantContactController::class, 'store'])->name('tenant.contact.store');
-
-        Route::get('/collections/{handle}', [CommerceStorefrontController::class, 'collection'])->name('tenant.commerce.collection');
-        Route::get('/products/{handle}', [CommerceStorefrontController::class, 'product'])->name('tenant.commerce.product');
-        Route::get('/store', [CommerceStorefrontController::class, 'home'])->name('tenant.commerce.home');
-        Route::get('/cart', [CommerceStorefrontController::class, 'cart'])->name('tenant.commerce.cart');
-        Route::post('/cart/lines', [CommerceStorefrontController::class, 'addLine'])->name('tenant.commerce.cart.lines.store');
-        Route::patch('/cart/lines/{lineId}', [CommerceStorefrontController::class, 'updateLine'])->name('tenant.commerce.cart.lines.update');
-        Route::delete('/cart/lines/{lineId}', [CommerceStorefrontController::class, 'removeLine'])->name('tenant.commerce.cart.lines.destroy');
-        Route::post('/cart/checkout', [CommerceStorefrontController::class, 'checkout'])->name('tenant.commerce.checkout');
 
         // State 2: Public User visiting the live published site
         Route::get('/{slug?}', [TenantPublicSiteController::class, 'show'])

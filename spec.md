@@ -701,18 +701,3 @@ Workspace eligibility is stored as nullable `tenants.site_setup_completed_at` an
 The `/designs` Inertia page receives validated kit summaries and only each kit's homepage block tree for preview. It renders that tree with the existing `RenderPublicNode`, block registry, theme composable, header, and footer. Desktop, tablet, and mobile modes resize the same preview runtime. Empty kit images use the existing `ImageBlock` with a preview-only placeholder flag; public pages still render nothing for an empty source.
 
 Implementation status: the catalog contract, validation foundation, three styles, twelve page layouts, three site-kit manifests, dashboard design library, shared-renderer responsive previews, server eligibility lifecycle, transactional kit application (deep-clone ID regeneration, draft-only pages, style/navigation application, DB transaction with rollback), and the "Start from scratch" escape hatch are all implemented.
-# Additive Commerce Architecture
-
-Retail kit application returns its default commerce-home template and opens that storefront builder immediately. The dashboard exposes storefront editing and `/store`; the editor switches among Home, Collection, and Product templates and renders visual commerce-section previews.
-
-The 2026-07-15 compatibility audit confirms that commerce uses additive tables, models, routes, templates, and renderer entrypoints. Existing Page JSON, block definitions, editor routes, publish semantics, and the public CMS fallback remain unchanged.
-
-The Retail kit creates three draft-only commerce templates (story-led storefront, collection, and product) alongside its unchanged legacy pages. Cart mutations remain provider-owned and checkout redirects to the provider-issued hosted URL.
-
-Commerce is an optional tenant capability beside the existing page builder. `CommerceConnection` stores administrator-provisioned provider identity and encrypted credentials. `CommerceTemplate` stores independently publishable commerce section trees without altering Page configuration or the legacy renderer.
-
-Commerce templates use `{ schemaVersion: 1, sections: CommerceSectionNode[] }`. Sections have a unique ID, registered type, settings, ordered blocks, and a disabled flag. Provider adapters normalize products, variants, money, collections, facets, carts, and checkout sessions before they reach storefront components.
-
-Commerce editing uses dedicated authenticated template routes and a separate Inertia editor. Its registry contains announcement, hero, image/text, rich text, collection, product, newsletter, and trust sections. Draft saves and publishing never call the existing page editor endpoints.
-
-Published commerce templates render through dedicated `/collections/{handle}`, `/products/{handle}`, and `/cart` routes. Provider reads are normalized and cached per tenant. A failed live read may use a stale cache only with purchasing disabled; the legacy CMS wildcard route remains unchanged and last in route precedence.
