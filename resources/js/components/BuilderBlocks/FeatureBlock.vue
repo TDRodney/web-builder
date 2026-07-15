@@ -10,11 +10,17 @@ const isEditable = inject('isEditable', false);
 </script>
 
 <template>
-  <div class="py-4 border-t border-slate-100">
-    <h3 class="text-lg font-bold text-slate-800">
+  <div class="py-4 border-t" :style="{ borderTopColor: 'color-mix(in srgb, var(--theme-text) 15%, transparent)' }">
+    <h3
+      class="text-lg font-bold"
+      :style="{ color: 'var(--theme-text)', fontFamily: 'var(--theme-font-heading)' }"
+    >
       {{ blockProps.title || (isEditable ? 'Feature Item' : '') }}
     </h3>
-    <p class="text-sm text-slate-600 mt-1">
+    <p
+      class="text-sm mt-1"
+      :style="{ color: 'color-mix(in srgb, var(--theme-text) 60%, transparent)' }"
+    >
       {{ blockProps.body || (isEditable ? 'Feature description details go here.' : '') }}
     </p>
   </div>

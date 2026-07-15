@@ -2,10 +2,17 @@
 
 use App\Http\Controllers\Auth\CentralAuthenticatedSessionController;
 use App\Http\Controllers\Auth\CentralRegisteredUserController;
+use App\Http\Controllers\TenantCommerceCartController;
+use App\Http\Controllers\TenantContactController;
+use App\Http\Controllers\TenantDesignLibraryController;
 use App\Http\Controllers\TenantEditorController;
+use App\Http\Controllers\TenantFixtureCheckoutController;
+use App\Http\Controllers\TenantMediaController;
+use App\Http\Controllers\TenantNavigationController;
 use App\Http\Controllers\TenantPageController;
 use App\Http\Controllers\TenantPageSaveController;
 use App\Http\Controllers\TenantPublicSiteController;
+use App\Http\Controllers\TenantThemeController;
 use App\Http\Middleware\IdentifyTenant;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -40,6 +47,11 @@ Route::domain(config('app.central_domain', 'domain.localhost'))->group(function 
 
             return Inertia::render('CentralDashboard', [
                 'tenant' => null,
+                'central_navigation' => [
+                    'account_settings_url' => route('profile.edit'),
+                    'logout_url' => route('logout'),
+                    'csrf_token' => csrf_token(),
+                ],
             ]);
         })->name('central.dashboard');
     });
@@ -57,11 +69,26 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
             // Tenant Dashboard
             Route::get('/dashboard', function () {
                 $tenant = app('currentTenant');
+                abort_unless(auth()->id() === $tenant->user_id, 403);
 
                 return Inertia::render('CentralDashboard', [
                     'tenant' => $tenant->only(['id', 'subdomain']),
+                    'theme_config' => $tenant->theme_config,
+                    'can_apply_site_kit' => $tenant->isEligibleForInitialSiteKit(),
+                    'central_navigation' => [
+                        'account_settings_url' => route('profile.edit'),
+                        'logout_url' => route('logout'),
+                        'csrf_token' => csrf_token(),
+                    ],
                 ]);
             })->name('dashboard');
+
+            Route::get('/designs', [TenantDesignLibraryController::class, 'index'])->name('tenant.designs.index');
+            Route::post('/designs/site-kits/{kit}/apply', [TenantDesignLibraryController::class, 'store'])->name('tenant.designs.apply-kit');
+            Route::post('/designs/start-from-scratch', [TenantDesignLibraryController::class, 'startFromScratch'])->name('tenant.designs.start-from-scratch');
+
+            // Theme Settings
+            Route::patch('/theme', [TenantThemeController::class, 'update'])->name('tenant.theme.update');
 
             // State 1: Authed Tenant Owner modifying their workspace canvas
             Route::prefix('editor')->group(function () {
@@ -73,7 +100,25 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
                 Route::post('/pages', [TenantPageController::class, 'store'])->name('tenant.pages.store');
                 Route::patch('/pages/{page}', [TenantPageController::class, 'update'])->name('tenant.pages.update');
                 Route::delete('/pages/{page}', [TenantPageController::class, 'destroy'])->name('tenant.pages.destroy');
+
+                Route::get('/media', [TenantMediaController::class, 'index'])->name('tenant.media.index');
+                Route::post('/media', [TenantMediaController::class, 'store'])->name('tenant.media.store');
+                Route::delete('/media/{media}', [TenantMediaController::class, 'destroy'])->name('tenant.media.destroy');
+
+                Route::patch('/navigation', [TenantNavigationController::class, 'update'])->name('tenant.navigation.update');
             });
+        });
+
+        // Contact Form Submission
+        Route::post('/contact', [TenantContactController::class, 'store'])->name('tenant.contact.store');
+
+        Route::prefix('commerce')->group(function () {
+            Route::get('/cart', [TenantCommerceCartController::class, 'show'])->name('tenant.commerce.cart.show');
+            Route::post('/cart/lines', [TenantCommerceCartController::class, 'store'])->name('tenant.commerce.cart.lines.store');
+            Route::patch('/cart/lines/{variantId}', [TenantCommerceCartController::class, 'update'])->name('tenant.commerce.cart.lines.update');
+            Route::delete('/cart/lines/{variantId}', [TenantCommerceCartController::class, 'destroy'])->name('tenant.commerce.cart.lines.destroy');
+            Route::post('/checkout', [TenantCommerceCartController::class, 'checkout'])->name('tenant.commerce.checkout');
+            Route::get('/fixture-checkout', [TenantFixtureCheckoutController::class, 'show'])->name('tenant.commerce.fixture-checkout');
         });
 
         // State 2: Public User visiting the live published site
