@@ -506,3 +506,8 @@ Implemented test coverage includes:
 | SQLite write contention | Adequate for local development | Use PostgreSQL/MySQL in production |
 | Cross-subdomain/custom-domain sessions | Wildcard cookie for central domain | Design a separate custom-domain authentication strategy |
 | SEO depends on runtime rendering mode | Inertia `<Head>` metadata is available client-side | Validate and operate production SSR if crawl-time HTML is required |
+# Commerce implementation
+
+- Normalized commerce contracts and isolated persistence are present.
+- The production provider, section editor, hydration, cart UI, and hosted checkout remain milestone work.
+- Existing pages, block JSON, rendering, and publishing are not migrated.

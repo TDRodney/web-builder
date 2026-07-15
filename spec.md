@@ -701,3 +701,8 @@ Workspace eligibility is stored as nullable `tenants.site_setup_completed_at` an
 The `/designs` Inertia page receives validated kit summaries and only each kit's homepage block tree for preview. It renders that tree with the existing `RenderPublicNode`, block registry, theme composable, header, and footer. Desktop, tablet, and mobile modes resize the same preview runtime. Empty kit images use the existing `ImageBlock` with a preview-only placeholder flag; public pages still render nothing for an empty source.
 
 Implementation status: the catalog contract, validation foundation, three styles, twelve page layouts, three site-kit manifests, dashboard design library, shared-renderer responsive previews, server eligibility lifecycle, transactional kit application (deep-clone ID regeneration, draft-only pages, style/navigation application, DB transaction with rollback), and the "Start from scratch" escape hatch are all implemented.
+# Additive Commerce Architecture
+
+Commerce is an optional tenant capability beside the existing page builder. `CommerceConnection` stores administrator-provisioned provider identity and encrypted credentials. `CommerceTemplate` stores independently publishable commerce section trees without altering Page configuration or the legacy renderer.
+
+Commerce templates use `{ schemaVersion: 1, sections: CommerceSectionNode[] }`. Sections have a unique ID, registered type, settings, ordered blocks, and a disabled flag. Provider adapters normalize products, variants, money, collections, facets, carts, and checkout sessions before they reach storefront components.

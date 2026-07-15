@@ -366,3 +366,6 @@ The editor has a two-step save model:
 
 
 </laravel-boost-guidelines>
+# Additive Commerce Compatibility
+
+Commerce templates and providers remain separate from existing Page JSON and its renderer. Never migrate or reinterpret existing page block trees. Normalize external payloads through `App\Commerce\Contracts\CommerceProvider`; keep credentials tenant-scoped and encrypted. Only published commerce-template configuration may render publicly.
