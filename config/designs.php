@@ -199,6 +199,8 @@ return [
     'page_layouts' => [
         'restaurant-home' => [
             'label' => 'Restaurant Home',
+            'page_type' => 'home',
+            'industry' => 'restaurant',
             'blocks' => [
                 $heroBlock('restaurant-home-hero', 'A table worth gathering around', 'Seasonal cooking, generous hospitality, and memorable evenings in the heart of the neighborhood.'),
                 $imageBlock('restaurant-home-image', 'Replace with a signature restaurant or dining-room image'),
@@ -214,6 +216,8 @@ return [
         ],
         'restaurant-menu' => [
             'label' => 'Restaurant Menu',
+            'page_type' => 'menu',
+            'industry' => 'restaurant',
             'blocks' => [
                 $heroBlock('restaurant-menu-hero', 'The menu', 'A concise, seasonal selection designed for sharing, lingering, and discovering something new.'),
                 $imageBlock('restaurant-menu-image', 'Replace with a seasonal dish or menu image', '360px'),
@@ -233,6 +237,8 @@ return [
         ],
         'restaurant-about' => [
             'label' => 'Restaurant About',
+            'page_type' => 'about',
+            'industry' => 'restaurant',
             'blocks' => [
                 $heroBlock('restaurant-about-hero', 'Made with care, served with heart', 'Good ingredients, skilled hands, and genuine hospitality under one roof.'),
                 $imageBlock('restaurant-about-image', 'Replace with a chef, team, or restaurant story image'),
@@ -246,6 +252,8 @@ return [
         ],
         'restaurant-reservations' => [
             'label' => 'Restaurant Reservations',
+            'page_type' => 'contact',
+            'industry' => 'restaurant',
             'blocks' => [
                 $heroBlock('restaurant-reservations-hero', 'Reserve your table', 'Send a reservation enquiry and tell us anything we should know before you arrive.'),
                 $imageBlock('restaurant-reservations-image', 'Replace with a table setting or private dining image', '320px'),
@@ -255,6 +263,8 @@ return [
         ],
         'retail-home' => [
             'label' => 'Retail Home',
+            'page_type' => 'home',
+            'industry' => 'retail',
             'blocks' => [
                 $heroBlock('retail-home-hero', 'Objects for a well-considered life', 'A curated collection of useful, beautiful pieces chosen for quality, character, and everyday longevity.'),
                 $imageBlock('retail-home-image', 'Replace with a campaign, storefront, or featured collection image'),
@@ -270,6 +280,8 @@ return [
         ],
         'retail-shop' => [
             'label' => 'Retail Shop',
+            'page_type' => 'shop',
+            'industry' => 'retail',
             'blocks' => [
                 $heroBlock('retail-shop-hero', 'Shop the collection', 'A presentation-ready catalog for home, work, gifting, and the rituals that make up your day.'),
                 $imageBlock('retail-shop-image', 'Replace with a collection or product-grid image'),
@@ -284,6 +296,8 @@ return [
         ],
         'retail-about' => [
             'label' => 'Retail About',
+            'page_type' => 'about',
+            'industry' => 'retail',
             'blocks' => [
                 $heroBlock('retail-about-hero', 'A slower approach to retail', 'We choose fewer, better things—and share the stories, materials, and people behind them.'),
                 $imageBlock('retail-about-image', 'Replace with a founder, studio, or brand story image'),
@@ -297,6 +311,8 @@ return [
         ],
         'retail-contact' => [
             'label' => 'Retail Contact',
+            'page_type' => 'contact',
+            'industry' => 'retail',
             'blocks' => [
                 $heroBlock('retail-contact-hero', 'We are here to help', 'Ask about product details, availability, gifting, local pickup, or an existing order.'),
                 $imageBlock('retail-contact-image', 'Replace with a storefront, service desk, or packaging image', '320px'),
@@ -310,6 +326,8 @@ return [
         ],
         'hotel-home' => [
             'label' => 'Hotel Home',
+            'page_type' => 'home',
+            'industry' => 'hotel',
             'blocks' => [
                 $heroBlock('hotel-home-hero', 'Arrive, exhale, stay awhile', 'A refined retreat where thoughtful design, attentive service, and a strong sense of place come together.'),
                 $imageBlock('hotel-home-image', 'Replace with the hotel exterior, lobby, or destination image'),
@@ -325,6 +343,8 @@ return [
         ],
         'hotel-rooms' => [
             'label' => 'Hotel Rooms',
+            'page_type' => 'rooms',
+            'industry' => 'hotel',
             'blocks' => [
                 $heroBlock('hotel-rooms-hero', 'Rooms and suites', 'Comfortable, characterful spaces designed for deep rest, slow mornings, and unhurried stays.'),
                 $imageBlock('hotel-rooms-image', 'Replace with a guest room or suite image'),
@@ -339,6 +359,8 @@ return [
         ],
         'hotel-amenities' => [
             'label' => 'Hotel Amenities',
+            'page_type' => 'amenities',
+            'industry' => 'hotel',
             'blocks' => [
                 $heroBlock('hotel-amenities-hero', 'Everything you need, nothing you do not', 'Spaces and services that make each day easier, richer, and distinctly your own.'),
                 $imageBlock('hotel-amenities-image', 'Replace with a dining, wellness, pool, or guest-experience image'),
@@ -354,6 +376,8 @@ return [
         ],
         'hotel-contact' => [
             'label' => 'Hotel Contact',
+            'page_type' => 'contact',
+            'industry' => 'hotel',
             'blocks' => [
                 $heroBlock('hotel-contact-hero', 'Plan your stay', 'Ask about dates, room recommendations, special occasions, group stays, or anything else the hotel can arrange.'),
                 $imageBlock('hotel-contact-image', 'Replace with a destination, arrival, or guest-service image', '320px'),

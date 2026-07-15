@@ -20,6 +20,7 @@ const props = defineProps({
     tenant: Object,
     page: Object,
     pages: Array,
+    page_layouts: { type: Array, default: () => [] },
     urls: Object,
 });
 
@@ -809,6 +810,7 @@ const onMediaSelected = (item) => {
 
         <CreatePageModal
             :show="showCreateModal"
+            :page-layouts="props.page_layouts"
             @close="showCreateModal = false"
         />
 

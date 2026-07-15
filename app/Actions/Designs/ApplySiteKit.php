@@ -37,7 +37,7 @@ class ApplySiteKit
             foreach ($siteKit['pages'] as $index => $pageDef) {
                 $layoutBlocks = $pageLayouts[$pageDef['layout_key']]['blocks'] ?? [];
 
-                $clonedBlocks = $this->deepCloneAndRegenerateIds($layoutBlocks);
+                $clonedBlocks = CloneBlockTree::handle($layoutBlocks);
 
                 $tenant->pages()->create([
                     'title' => $pageDef['title'],
@@ -64,28 +64,5 @@ class ApplySiteKit
             'status' => 'success',
             'homepage_slug' => $homepageSlug,
         ];
-    }
-
-    /**
-     * Recursively clone a block tree and assign fresh unique IDs.
-     *
-     * @param  array<int, array<string, mixed>>  $blocks
-     * @return array<int, array<string, mixed>>
-     */
-    private function deepCloneAndRegenerateIds(array $blocks): array
-    {
-        return collect($blocks)->map(function (array $node): array {
-            $cloned = [
-                'id' => 'blk-'.uniqid(),
-                'type' => $node['type'],
-                'props' => $node['props'],
-            ];
-
-            if (isset($node['children']) && is_array($node['children'])) {
-                $cloned['children'] = $this->deepCloneAndRegenerateIds($node['children']);
-            }
-
-            return $cloned;
-        })->values()->all();
     }
 }

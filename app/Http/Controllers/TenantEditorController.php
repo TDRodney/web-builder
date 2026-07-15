@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Designs\BuildPageLayouts;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -60,6 +61,7 @@ class TenantEditorController extends Controller
             'tenant' => $tenant->only(['id', 'subdomain', 'theme_config', 'navigation_config']),
             'page' => $currentPage->only(['id', 'slug', 'title', 'is_homepage', 'draft_config']),
             'pages' => $pages,
+            'page_layouts' => app(BuildPageLayouts::class)->handle(),
             'urls' => [
                 'dashboard' => '/dashboard',
                 'logout' => "{$protocol}://{$centralHost}/logout",
