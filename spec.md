@@ -703,6 +703,8 @@ The `/designs` Inertia page receives validated kit summaries and only each kit's
 Implementation status: the catalog contract, validation foundation, three styles, twelve page layouts, three site-kit manifests, dashboard design library, shared-renderer responsive previews, server eligibility lifecycle, transactional kit application (deep-clone ID regeneration, draft-only pages, style/navigation application, DB transaction with rollback), and the "Start from scratch" escape hatch are all implemented.
 # Additive Commerce Architecture
 
+The 2026-07-15 compatibility audit confirms that commerce uses additive tables, models, routes, templates, and renderer entrypoints. Existing Page JSON, block definitions, editor routes, publish semantics, and the public CMS fallback remain unchanged.
+
 The Retail kit creates three draft-only commerce templates (story-led storefront, collection, and product) alongside its unchanged legacy pages. Cart mutations remain provider-owned and checkout redirects to the provider-issued hosted URL.
 
 Commerce is an optional tenant capability beside the existing page builder. `CommerceConnection` stores administrator-provisioned provider identity and encrypted credentials. `CommerceTemplate` stores independently publishable commerce section trees without altering Page configuration or the legacy renderer.

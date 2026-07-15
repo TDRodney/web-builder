@@ -6,7 +6,7 @@ type Section = {
     id: string;
     type: string;
     settings: Record<string, any>;
-    blocks: unknown[];
+    blocks: any[];
     disabled: boolean;
 };
 const props = defineProps<{
@@ -37,7 +37,10 @@ const mutate = (action: () => void) => {
     save();
 };
 const add = (type: string) => {
-    if (!type) return;
+    if (!type) {
+        return;
+    }
+
     mutate(() =>
         sections.value.push({
             id: crypto.randomUUID(),
@@ -61,14 +64,17 @@ const remove = (index: number) => mutate(() => sections.value.splice(index, 1));
 const move = (index: number, delta: number) =>
     mutate(() => {
         const target = index + delta;
-        if (target >= 0 && target < sections.value.length)
+
+        if (target >= 0 && target < sections.value.length) {
             [sections.value[index], sections.value[target]] = [
                 sections.value[target],
                 sections.value[index],
             ];
+        }
     });
 const undo = () => {
     const value = undoStack.value.pop();
+
     if (value) {
         redoStack.value.push(snapshot());
         sections.value = value;
@@ -77,6 +83,7 @@ const undo = () => {
 };
 const redo = () => {
     const value = redoStack.value.pop();
+
     if (value) {
         undoStack.value.push(snapshot());
         sections.value = value;

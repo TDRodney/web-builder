@@ -368,4 +368,6 @@ The editor has a two-step save model:
 </laravel-boost-guidelines>
 # Additive Commerce Compatibility
 
+The commerce milestone history is intentionally reviewable as four feature commits followed by a documentation audit commit. New commerce files must pass focused ESLint/Prettier checks even while repository-wide legacy frontend debt remains.
+
 Commerce templates and providers remain separate from existing Page JSON and its renderer. Never migrate or reinterpret existing page block trees. Normalize external payloads through `App\Commerce\Contracts\CommerceProvider`; keep credentials tenant-scoped and encrypted. Only published commerce-template configuration may render publicly.

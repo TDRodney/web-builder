@@ -17,7 +17,11 @@ const products = computed(() => data.value.products ?? []);
 const cartOpen = ref(false);
 const addToCart = () => {
     const variantId = data.value.variants?.[0]?.id;
-    if (!variantId) return;
+
+    if (!variantId) {
+        return;
+    }
+
     router.post(
         '/cart/lines',
         { variantId, quantity: 1 },
