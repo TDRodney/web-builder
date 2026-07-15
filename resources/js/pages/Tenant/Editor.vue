@@ -10,6 +10,7 @@ import EditorSidebar from '@/components/Editor/EditorSidebar.vue';
 import EditorTopbar from '@/components/Editor/EditorTopbar.vue';
 import { getBlockDefinition, blockComponents } from '@/lib/blockRegistry';
 import { blockPresets } from '@/lib/blockPresets';
+import { commerceHydrationKey, emptyCommerceHydration } from '@/lib/commerce';
 import { useTheme } from '@/lib/theme';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'vue-sonner';
@@ -21,8 +22,14 @@ const props = defineProps({
     page: Object,
     pages: Array,
     page_layouts: { type: Array, default: () => [] },
+    commerce_hydration: { type: Object, default: () => emptyCommerceHydration },
     urls: Object,
 });
+
+provide(
+    commerceHydrationKey,
+    computed(() => props.commerce_hydration || emptyCommerceHydration),
+);
 
 const { cssVars: themeVars, fontUrl } = useTheme(
     () => props.tenant?.theme_config,

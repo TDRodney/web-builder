@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Commerce\CommerceHydrator;
 use App\Models\Page;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class TenantPublicSiteController extends Controller
 {
+    public function __construct(private CommerceHydrator $commerceHydrator) {}
+
     public function show(?string $slug = null): Response
     {
         $tenant = app('currentTenant');
@@ -33,6 +36,7 @@ class TenantPublicSiteController extends Controller
         return Inertia::render('Tenant/PublicPage', [
             'tenant' => $tenant->only(['id', 'subdomain', 'theme_config', 'navigation_config']),
             'page' => $page,
+            'commerce_hydration' => $this->commerceHydrator->hydrate($tenant, $page->published_config),
         ]);
     }
 }

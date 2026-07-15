@@ -54,6 +54,8 @@ class ValidatesBlockSchema implements ValidationRule
 
         if (! isset($node['props']) || ! is_array($node['props'])) {
             $fail("The block at {$path} must contain a 'props' array.");
+        } else {
+            $this->validateCommerceBinding($node['props'], $path, $fail);
         }
 
         if (isset($node['children'])) {
@@ -75,6 +77,37 @@ class ValidatesBlockSchema implements ValidationRule
                 }
                 $this->validateNode($child, "{$path}.children.{$index}", $fail);
             }
+        }
+    }
+
+    /**
+     * Validate the additive commerce binding fields without changing legacy block schemas.
+     *
+     * @param  array<string, mixed>  $props
+     * @param  Closure(string, ?string=): PotentiallyTranslatedString  $fail
+     */
+    protected function validateCommerceBinding(array $props, string $path, Closure $fail): void
+    {
+        if (isset($props['bindingVersion']) && (! is_int($props['bindingVersion']) || $props['bindingVersion'] !== 1)) {
+            $fail("The commerce binding at {$path} must use bindingVersion 1.");
+        }
+
+        if (isset($props['sourceKey']) && (! is_string($props['sourceKey']) || strlen($props['sourceKey']) > 100 || ($props['sourceKey'] !== '' && preg_match('/^[A-Za-z0-9._-]+$/', $props['sourceKey']) !== 1))) {
+            $fail("The commerce sourceKey at {$path} must be a safe string of at most 100 characters.");
+        }
+
+        if (! isset($props['dataBinding'])) {
+            return;
+        }
+
+        $binding = $props['dataBinding'];
+
+        if (! is_array($binding)
+            || ($binding['version'] ?? null) !== 1
+            || ! is_string($binding['resource'] ?? null)
+            || ! is_string($binding['source'] ?? null)
+            || ($binding['source'] ?? '') === '') {
+            $fail("The dataBinding at {$path} must contain version 1, resource, and source values.");
         }
     }
 }

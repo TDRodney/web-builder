@@ -367,6 +367,8 @@ The editor has a two-step save model:
 
 ## Storefront Block Compatibility
 
-Storefront design uses ordinary registered blocks inside `Page::draft_config` and `Page::published_config`. Do not introduce separate commerce templates, editors, renderers, or publish routes. `sourceKey` and product `key` fields are hydration boundaries; manual block props remain the editor fallback.
+Storefront design uses ordinary registered blocks inside `Page::draft_config` and `Page::published_config`. Do not introduce separate commerce templates, editors, renderers, or publish routes. Version 1 `sourceKey`/`dataBinding` values are presentation bindings; manual block props remain the editor fallback.
+
+Commerce data is resolved per request through `CommerceProvider` and returned in a separate envelope keyed by block UUID. Never persist fixture, preview, provider, price, stock, cart, or checkout data into a page block tree. New providers must preserve normalized money/variant/availability shapes, receive the current tenant explicitly, and return an unavailable state instead of inventing authoritative values.
 
 </laravel-boost-guidelines>

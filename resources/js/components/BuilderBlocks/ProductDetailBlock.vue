@@ -1,19 +1,71 @@
 <script setup lang="ts">
-import { computed, inject, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { useCommerceBlock } from '@/lib/commerce';
+import type { CommerceProduct, CommerceVariant } from '@/types/commerce';
+
 const props = defineProps<{
     nodeId?: string;
     blockProps: Record<string, any>;
 }>();
-const context = inject<any>('commerceContext', null);
-const product = computed(() => context?.product || props.blockProps);
-const selected = ref('');
+const hydratedBlock = useCommerceBlock<CommerceProduct>(props.nodeId);
+const product = computed<Record<string, any>>(() => {
+    if (hydratedBlock.value?.status === 'ready' && hydratedBlock.value.data) {
+        return hydratedBlock.value.data;
+    }
+
+    return props.blockProps;
+});
+const variants = computed<CommerceVariant[]>(
+    () => product.value.variants || [],
+);
+const selectedVariantId = ref('');
+const selectedVariant = computed(() =>
+    variants.value.find((variant) => variant.id === selectedVariantId.value),
+);
+const optionLabels = computed(() =>
+    variants.value.length
+        ? variants.value.map((variant) => ({
+              id: variant.id,
+              label: variant.title,
+              available: variant.available,
+          }))
+        : (product.value.options || []).map((option: string) => ({
+              id: option,
+              label: option,
+              available: true,
+          })),
+);
+const displayedPrice = computed(
+    () =>
+        selectedVariant.value?.price?.formatted ||
+        product.value.price?.formatted ||
+        product.value.priceLabel ||
+        '',
+);
+const canPurchase = computed(
+    () =>
+        hydratedBlock.value?.status === 'ready' &&
+        product.value.available !== false &&
+        (variants.value.length === 0 ||
+            selectedVariant.value?.available === true),
+);
+
+watch(
+    variants,
+    (availableVariants) => {
+        selectedVariantId.value =
+            availableVariants.find((variant) => variant.available)?.id || '';
+    },
+    { immediate: true },
+);
 </script>
+
 <template>
     <section>
         <div class="gallery">
             <div
-                v-for="image in product.images || []"
-                :key="image.src"
+                v-for="(image, index) in product.images || []"
+                :key="image.src || index"
                 class="media"
             >
                 <img
@@ -21,31 +73,47 @@ const selected = ref('');
                     :src="image.src"
                     :alt="image.alt || product.title"
                 />
+                <span v-else aria-hidden="true">Product image</span>
             </div>
         </div>
         <div class="details">
+            <div
+                v-if="hydratedBlock?.status === 'unavailable'"
+                class="connection-note"
+                role="status"
+            >
+                {{ hydratedBlock.message }} Purchasing is disabled.
+            </div>
             <p class="vendor">{{ product.vendor }}</p>
             <h1>{{ product.title }}</h1>
-            <p class="price">{{ product.priceLabel }}</p>
+            <p class="price">{{ displayedPrice }}</p>
             <p class="description">{{ product.description }}</p>
-            <label v-if="product.options?.length"
-                >Option<select v-model="selected">
-                    <option value="">Choose an option</option>
+            <label v-if="optionLabels.length"
+                >Option<select v-model="selectedVariantId">
                     <option
-                        v-for="option in product.options"
-                        :key="option"
-                        :value="option"
+                        v-for="option in optionLabels"
+                        :key="option.id"
+                        :value="option.id"
+                        :disabled="!option.available"
                     >
-                        {{ option }}
+                        {{ option.label
+                        }}{{ option.available ? '' : ' — Unavailable' }}
                     </option>
                 </select></label
-            ><button type="button">
-                {{ product.buttonLabel || 'Add to cart' }}
+            ><button type="button" :disabled="!canPurchase">
+                {{
+                    product.available === false
+                        ? 'Unavailable'
+                        : product.buttonLabel ||
+                          blockProps.buttonLabel ||
+                          'Add to cart'
+                }}
             </button>
-            <div class="meta">{{ product.meta }}</div>
+            <div class="meta">{{ product.meta || blockProps.meta }}</div>
         </div>
     </section>
 </template>
+
 <style scoped>
 section {
     display: grid;
@@ -59,8 +127,16 @@ section {
     gap: 0.75rem;
 }
 .media {
+    display: grid;
     aspect-ratio: 4/5;
+    place-items: center;
     background: color-mix(in srgb, var(--theme-text) 8%, transparent);
+}
+.media span {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    opacity: 0.35;
+    text-transform: uppercase;
 }
 img {
     width: 100%;
@@ -73,14 +149,20 @@ img {
     height: max-content;
     padding: 2rem 0;
 }
+.connection-note {
+    margin-bottom: 1.25rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid color-mix(in srgb, var(--theme-text) 18%, transparent);
+    font-size: 0.8rem;
+}
 .vendor {
-    text-transform: uppercase;
-    letter-spacing: 0.16em;
     font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
 }
 h1 {
     margin: 0.6rem 0;
-    font: 600 clamp(2.5rem, 5vw, 4.5rem)/1 var(--theme-font-heading);
+    font: 600 clamp(2.5rem, 5vw, 4.5rem) / 1 var(--theme-font-heading);
 }
 .price {
     font-size: 1.15rem;
@@ -99,29 +181,35 @@ label {
 }
 select,
 button {
-    min-height: 3rem;
+    width: 100%;
+    padding: 0.9rem 1rem;
     border: 1px solid color-mix(in srgb, var(--theme-text) 25%, transparent);
-    padding: 0.8rem;
+    border-radius: var(--theme-border-radius);
     background: transparent;
     color: var(--theme-text);
+    font: inherit;
 }
 button {
-    width: 100%;
     margin-top: 1rem;
+    border-color: var(--theme-primary);
     background: var(--theme-primary);
-    color: white;
-    border: 0;
-    font-weight: 600;
+    color: var(--theme-bg);
+    cursor: pointer;
 }
-@container (max-width:760px) {
+button:hover:not(:disabled) {
+    filter: brightness(0.9);
+}
+button:disabled {
+    cursor: not-allowed;
+    filter: grayscale(1);
+    opacity: 0.55;
+}
+@container (max-width: 720px) {
     section {
         grid-template-columns: 1fr;
     }
     .details {
         position: static;
-    }
-    .gallery {
-        gap: 0.4rem;
     }
 }
 </style>

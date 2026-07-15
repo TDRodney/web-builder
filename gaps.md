@@ -510,5 +510,6 @@ Implemented test coverage includes:
 ## Storefront hydration
 
 - The Retail kit is a five-page, block-composed storefront editable in the original visual editor.
-- Product and collection blocks are presentational until a provider maps resources into stable source keys.
+- Product and collection blocks are hydrated at request time through a block-ID-keyed provider envelope. `COMMERCE_DRIVER=fixture` supplies development data and `COMMERCE_DRIVER=null` exercises the disconnected fallback.
+- Live platform authentication, tenant connection storage, cache policy, dynamic product/collection routing, authoritative cart mutations, and hosted checkout remain deferred until the platform contract is assessed.
 - Cart, live inventory, authoritative pricing, and checkout remain deferred instead of using a parallel renderer.

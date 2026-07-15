@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Designs\BuildPageLayouts;
+use App\Commerce\CommerceHydrator;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class TenantEditorController extends Controller
 {
+    public function __construct(private CommerceHydrator $commerceHydrator) {}
+
     public function edit(): Response|RedirectResponse
     {
         $tenant = app('currentTenant');
@@ -62,6 +65,7 @@ class TenantEditorController extends Controller
             'page' => $currentPage->only(['id', 'slug', 'title', 'is_homepage', 'draft_config']),
             'pages' => $pages,
             'page_layouts' => app(BuildPageLayouts::class)->handle(),
+            'commerce_hydration' => $this->commerceHydrator->hydrate($tenant, $currentPage->draft_config ?? []),
             'urls' => [
                 'dashboard' => '/dashboard',
                 'logout' => "{$protocol}://{$centralHost}/logout",

@@ -1,8 +1,32 @@
 <script setup lang="ts">
-defineProps<{ nodeId?: string; blockProps: Record<string, any> }>();
+import { computed } from 'vue';
+import { useCommerceBlock } from '@/lib/commerce';
+import type { CommerceCollection } from '@/types/commerce';
+
+const props = defineProps<{
+    nodeId?: string;
+    blockProps: Record<string, any>;
+}>();
+const hydratedBlock = useCommerceBlock<{
+    collections: CommerceCollection[];
+}>(props.nodeId);
+const collections = computed(() => {
+    if (hydratedBlock.value?.status === 'ready') {
+        return hydratedBlock.value.data?.collections || [];
+    }
+
+    return props.blockProps.collections || [];
+});
 </script>
 <template>
     <section>
+        <div
+            v-if="hydratedBlock?.status === 'unavailable'"
+            class="connection-note"
+            role="status"
+        >
+            {{ hydratedBlock.message }} Showing editable fallback collections.
+        </div>
         <div class="heading">
             <div>
                 <p>{{ blockProps.eyebrow }}</p>
@@ -11,8 +35,8 @@ defineProps<{ nodeId?: string; blockProps: Record<string, any> }>();
         </div>
         <div class="grid">
             <a
-                v-for="item in blockProps.collections || []"
-                :key="item.title"
+                v-for="item in collections"
+                :key="item.id || item.handle || item.title"
                 :href="item.url || '#'"
                 ><div class="media">
                     <img
@@ -30,6 +54,12 @@ defineProps<{ nodeId?: string; blockProps: Record<string, any> }>();
 <style scoped>
 section {
     font-family: var(--theme-font-body);
+}
+.connection-note {
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid color-mix(in srgb, var(--theme-text) 18%, transparent);
+    font-size: 0.8rem;
 }
 .heading {
     margin-bottom: 2rem;

@@ -283,12 +283,12 @@ return [
                 $heroBlock('retail-home-hero', 'Objects with a life beyond the season', 'A considered edit of useful, beautiful pieces for home and daily ritual.'),
                 $imageBlock('retail-home-campaign', 'Replace with a full-width seasonal campaign image', '560px'),
                 $buttonBlock('retail-home-shop-button', 'Shop the current edit', '/shop'),
-                $storeBlock('retail-home-collections', 'CollectionListBlock', ['eyebrow' => 'Shop by collection', 'heading' => 'Find your everyday favorites', 'collections' => [
+                $storeBlock('retail-home-collections', 'CollectionListBlock', ['eyebrow' => 'Shop by collection', 'heading' => 'Find your everyday favorites', 'bindingVersion' => 1, 'sourceKey' => 'featured', 'collections' => [
                     ['title' => 'Home', 'subtitle' => 'Objects for considered rooms', 'imageSrc' => '', 'imageAlt' => 'Replace with a home collection image', 'url' => '/shop'],
                     ['title' => 'Wear', 'subtitle' => 'Useful pieces made to last', 'imageSrc' => '', 'imageAlt' => 'Replace with a wear collection image', 'url' => '/shop'],
                     ['title' => 'Gift', 'subtitle' => 'Thoughtful finds for giving', 'imageSrc' => '', 'imageAlt' => 'Replace with a gift collection image', 'url' => '/shop'],
                 ]]),
-                $storeBlock('retail-home-products', 'ProductGridBlock', ['eyebrow' => 'Curated selection', 'heading' => 'The current edit', 'sourceKey' => 'featured', 'columns' => 4, 'viewAllLabel' => 'View all', 'viewAllUrl' => '/shop', 'products' => $starterProducts]),
+                $storeBlock('retail-home-products', 'ProductGridBlock', ['eyebrow' => 'Curated selection', 'heading' => 'The current edit', 'bindingVersion' => 1, 'sourceKey' => 'featured', 'limit' => 4, 'columns' => 4, 'viewAllLabel' => 'View all', 'viewAllUrl' => '/shop', 'products' => $starterProducts]),
                 $storeBlock('retail-home-story', 'ImageWithTextBlock', ['eyebrow' => 'Our point of view', 'heading' => 'Fewer, better things', 'body' => 'We select honest materials, enduring forms, and pieces that become more familiar with use.', 'imageSrc' => '', 'imageAlt' => 'Replace with a maker or studio image', 'imagePosition' => 'left', 'linkLabel' => 'Read our story', 'linkUrl' => '/about'], 0),
                 $storeBlock('retail-home-values', 'TrustValuesBlock', ['items' => [['title' => 'Considered sourcing', 'body' => 'Materials and makers selected with care.'], ['title' => 'Personal service', 'body' => 'Helpful guidance from real people.'], ['title' => 'Secure checkout', 'body' => 'Ready for your connected store experience.']]]),
                 $storeBlock('retail-home-newsletter', 'NewsletterBlock', ['eyebrow' => 'Stay in touch', 'heading' => 'Notes from the shop', 'body' => 'New collections and thoughtful stories, occasionally.', 'placeholder' => 'Email address', 'buttonLabel' => 'Subscribe'], 0),
@@ -302,7 +302,7 @@ return [
                 $storeBlock('retail-shop-announcement', 'AnnouncementBlock', ['text' => 'The current collection · selected in small runs'], 0),
                 $heroBlock('retail-shop-hero', 'Shop the collection', 'Browse an editorial catalog ready to be hydrated by your connected products and collections.'),
                 $imageBlock('retail-shop-campaign', 'Replace with a shop or collection campaign image', '420px'),
-                $storeBlock('retail-shop-grid', 'ProductGridBlock', ['eyebrow' => 'All products', 'heading' => 'Objects for everyday life', 'sourceKey' => 'all', 'columns' => 4, 'viewAllLabel' => '', 'viewAllUrl' => '', 'products' => $starterProducts]),
+                $storeBlock('retail-shop-grid', 'ProductGridBlock', ['eyebrow' => 'All products', 'heading' => 'Objects for everyday life', 'bindingVersion' => 1, 'sourceKey' => 'all', 'limit' => 12, 'columns' => 4, 'viewAllLabel' => '', 'viewAllUrl' => '', 'products' => $starterProducts]),
                 $storeBlock('retail-shop-values', 'TrustValuesBlock', ['items' => [['title' => 'Small-run selection', 'body' => 'A focused assortment rather than endless inventory.'], ['title' => 'Material clarity', 'body' => 'Make care, origin, and materials easy to understand.'], ['title' => 'Human support', 'body' => 'Invite questions before and after purchase.']]]),
                 $richTextBlock('retail-shop-notice', '<p>This starter storefront is presentation-ready. Product keys provide a stable future hydration boundary; live inventory and checkout require a connected commerce provider.</p>'),
             ],
@@ -310,9 +310,9 @@ return [
         'retail-product' => [
             'label' => 'Retail Product', 'page_type' => 'product', 'industry' => 'retail',
             'blocks' => [
-                $storeBlock('retail-product-detail', 'ProductDetailBlock', ['sourceKey' => 'linen-throw', 'vendor' => 'Independent maker', 'title' => 'Linen throw', 'priceLabel' => '$48.00', 'description' => 'A tactile everyday layer made with considered materials and a relaxed, lived-in finish.', 'options' => ['Natural', 'Charcoal'], 'images' => [['src' => '', 'alt' => 'Replace with the main product image'], ['src' => '', 'alt' => 'Replace with a product detail image']], 'buttonLabel' => 'Add to cart', 'meta' => 'Taxes, inventory, and checkout will be supplied by the connected store.']),
+                $storeBlock('retail-product-detail', 'ProductDetailBlock', ['bindingVersion' => 1, 'sourceKey' => 'linen-throw', 'vendor' => 'Independent maker', 'title' => 'Linen throw', 'priceLabel' => '$48.00', 'description' => 'A tactile everyday layer made with considered materials and a relaxed, lived-in finish.', 'options' => ['Natural', 'Charcoal'], 'images' => [['src' => '', 'alt' => 'Replace with the main product image'], ['src' => '', 'alt' => 'Replace with a product detail image']], 'buttonLabel' => 'Add to cart', 'meta' => 'Taxes, inventory, and checkout will be supplied by the connected store.']),
                 $imageBlock('retail-product-lifestyle', 'Replace with a full-width product lifestyle image', '520px'),
-                $storeBlock('retail-product-related', 'ProductGridBlock', ['eyebrow' => 'Complete the edit', 'heading' => 'You may also like', 'sourceKey' => 'related', 'columns' => 4, 'viewAllLabel' => 'View collection', 'viewAllUrl' => '/shop', 'products' => $starterProducts]),
+                $storeBlock('retail-product-related', 'ProductGridBlock', ['eyebrow' => 'Complete the edit', 'heading' => 'You may also like', 'bindingVersion' => 1, 'sourceKey' => 'related', 'limit' => 4, 'columns' => 4, 'viewAllLabel' => 'View collection', 'viewAllUrl' => '/shop', 'products' => $starterProducts]),
                 $storeBlock('retail-product-newsletter', 'NewsletterBlock', ['eyebrow' => 'Stay in touch', 'heading' => 'Notes from the shop', 'body' => 'New collections and thoughtful stories, occasionally.', 'placeholder' => 'Email address', 'buttonLabel' => 'Subscribe'], 0),
             ],
         ],

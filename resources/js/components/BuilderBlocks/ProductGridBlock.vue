@@ -1,18 +1,44 @@
 <script setup lang="ts">
-import { computed, inject } from 'vue';
+import { computed } from 'vue';
+import { useCommerceBlock } from '@/lib/commerce';
+import type { CommerceProduct } from '@/types/commerce';
+
 const props = defineProps<{
     nodeId?: string;
     blockProps: Record<string, any>;
 }>();
-const commerceContext = inject<any>('commerceContext', null);
-const products = computed(() =>
-    commerceContext?.products?.length
-        ? commerceContext.products
-        : props.blockProps.products || [],
+
+const hydratedBlock = useCommerceBlock<{ products: CommerceProduct[] }>(
+    props.nodeId,
 );
+const products = computed(() => {
+    if (hydratedBlock.value?.status === 'ready') {
+        return hydratedBlock.value.data?.products || [];
+    }
+
+    return props.blockProps.products || [];
+});
+
+const imageFor = (product: CommerceProduct & Record<string, any>): string =>
+    product.images?.[0]?.src || product.imageSrc || '';
+const imageAltFor = (product: CommerceProduct & Record<string, any>): string =>
+    product.images?.[0]?.alt || product.imageAlt || product.title;
+const priceFor = (product: CommerceProduct & Record<string, any>): string =>
+    product.price?.formatted || product.priceLabel || '';
+const comparePriceFor = (
+    product: CommerceProduct & Record<string, any>,
+): string => product.compareAtPrice?.formatted || product.compareAtLabel || '';
 </script>
+
 <template>
     <section>
+        <div
+            v-if="hydratedBlock?.status === 'unavailable'"
+            class="connection-note"
+            role="status"
+        >
+            {{ hydratedBlock.message }} Showing editable fallback products.
+        </div>
         <header>
             <div>
                 <p>{{ blockProps.eyebrow }}</p>
@@ -27,32 +53,45 @@ const products = computed(() =>
         <div class="grid" :style="{ '--columns': blockProps.columns || 4 }">
             <a
                 v-for="product in products"
-                :key="product.key || product.title"
+                :key="product.id || product.key || product.title"
                 :href="product.url || '#'"
                 ><div class="media">
                     <span v-if="product.badge" class="badge">{{
                         product.badge
                     }}</span
                     ><img
-                        v-if="product.imageSrc"
-                        :src="product.imageSrc"
-                        :alt="product.imageAlt || product.title"
+                        v-if="imageFor(product)"
+                        :src="imageFor(product)"
+                        :alt="imageAltFor(product)"
                     />
+                    <span v-else class="media-placeholder" aria-hidden="true"
+                        >Product image</span
+                    >
                 </div>
                 <h3>{{ product.title }}</h3>
                 <div class="price">
-                    <span>{{ product.priceLabel }}</span
-                    ><del v-if="product.compareAtLabel">{{
-                        product.compareAtLabel
+                    <span>{{ priceFor(product) }}</span
+                    ><del v-if="comparePriceFor(product)">{{
+                        comparePriceFor(product)
                     }}</del>
-                </div></a
+                </div>
+                <span v-if="product.available === false" class="sold-out"
+                    >Unavailable</span
+                ></a
             >
         </div>
     </section>
 </template>
+
 <style scoped>
 section {
     font-family: var(--theme-font-body);
+}
+.connection-note {
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid color-mix(in srgb, var(--theme-text) 18%, transparent);
+    font-size: 0.8rem;
 }
 header {
     display: flex;
@@ -67,7 +106,7 @@ header p {
 }
 h2 {
     margin: 0.4rem 0;
-    font: 600 clamp(2rem, 4vw, 3.4rem)/1.1 var(--theme-font-heading);
+    font: 600 clamp(2rem, 4vw, 3.4rem) / 1.1 var(--theme-font-heading);
 }
 header a {
     color: var(--theme-text);
@@ -84,11 +123,13 @@ header a {
 }
 .media {
     position: relative;
+    display: grid;
     aspect-ratio: 4/5;
+    place-items: center;
     overflow: hidden;
     background: color-mix(in srgb, var(--theme-text) 8%, transparent);
 }
-img {
+.media img {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -97,39 +138,48 @@ img {
 .media:hover img {
     transform: scale(1.025);
 }
+.media-placeholder {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    opacity: 0.35;
+    text-transform: uppercase;
+}
 .badge {
     position: absolute;
     z-index: 1;
-    top: 0.7rem;
-    left: 0.7rem;
-    padding: 0.35rem 0.55rem;
+    top: 0.75rem;
+    left: 0.75rem;
+    padding: 0.3rem 0.55rem;
     background: var(--theme-bg);
     font-size: 0.68rem;
+    text-transform: uppercase;
 }
 h3 {
-    margin: 0.8rem 0 0.35rem;
+    margin: 0.9rem 0 0.25rem;
     font: 500 1rem var(--theme-font-heading);
 }
 .price {
     display: flex;
-    gap: 0.6rem;
-    font-size: 0.86rem;
+    gap: 0.5rem;
+    font-size: 0.85rem;
 }
 .price del {
-    opacity: 0.45;
+    opacity: 0.5;
 }
-@container (max-width:780px) {
+.sold-out {
+    font-size: 0.72rem;
+    opacity: 0.6;
+}
+@container (max-width: 780px) {
     .grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
-@container (max-width:420px) {
+@container (max-width: 420px) {
     header {
         align-items: start;
-        gap: 1rem;
-    }
-    .grid {
-        gap: 0.7rem;
+        flex-direction: column;
+        gap: 0.75rem;
     }
 }
 </style>
