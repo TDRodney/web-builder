@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\CentralAuthenticatedSessionController;
 use App\Http\Controllers\Auth\CentralRegisteredUserController;
+use App\Http\Controllers\CommerceTemplateController;
 use App\Http\Controllers\TenantContactController;
 use App\Http\Controllers\TenantDesignLibraryController;
 use App\Http\Controllers\TenantEditorController;
@@ -87,6 +88,12 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
 
             // Theme Settings
             Route::patch('/theme', [TenantThemeController::class, 'update'])->name('tenant.theme.update');
+
+            Route::prefix('commerce/templates')->group(function () {
+                Route::get('/{commerceTemplate}/edit', [CommerceTemplateController::class, 'edit'])->name('tenant.commerce.templates.edit');
+                Route::put('/{commerceTemplate}', [CommerceTemplateController::class, 'update'])->name('tenant.commerce.templates.update');
+                Route::post('/{commerceTemplate}/publish', [CommerceTemplateController::class, 'publish'])->name('tenant.commerce.templates.publish');
+            });
 
             // State 1: Authed Tenant Owner modifying their workspace canvas
             Route::prefix('editor')->group(function () {

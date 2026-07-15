@@ -509,5 +509,5 @@ Implemented test coverage includes:
 # Commerce implementation
 
 - Normalized commerce contracts and isolated persistence are present.
-- The production provider, section editor, hydration, cart UI, and hosted checkout remain milestone work.
+- The production provider, storefront hydration, cart UI, and hosted checkout remain milestone work. The isolated section editor and registry are implemented.
 - Existing pages, block JSON, rendering, and publishing are not migrated.

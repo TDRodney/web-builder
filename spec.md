@@ -706,3 +706,5 @@ Implementation status: the catalog contract, validation foundation, three styles
 Commerce is an optional tenant capability beside the existing page builder. `CommerceConnection` stores administrator-provisioned provider identity and encrypted credentials. `CommerceTemplate` stores independently publishable commerce section trees without altering Page configuration or the legacy renderer.
 
 Commerce templates use `{ schemaVersion: 1, sections: CommerceSectionNode[] }`. Sections have a unique ID, registered type, settings, ordered blocks, and a disabled flag. Provider adapters normalize products, variants, money, collections, facets, carts, and checkout sessions before they reach storefront components.
+
+Commerce editing uses dedicated authenticated template routes and a separate Inertia editor. Its registry contains announcement, hero, image/text, rich text, collection, product, newsletter, and trust sections. Draft saves and publishing never call the existing page editor endpoints.
