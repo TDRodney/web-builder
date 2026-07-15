@@ -708,3 +708,5 @@ Commerce is an optional tenant capability beside the existing page builder. `Com
 Commerce templates use `{ schemaVersion: 1, sections: CommerceSectionNode[] }`. Sections have a unique ID, registered type, settings, ordered blocks, and a disabled flag. Provider adapters normalize products, variants, money, collections, facets, carts, and checkout sessions before they reach storefront components.
 
 Commerce editing uses dedicated authenticated template routes and a separate Inertia editor. Its registry contains announcement, hero, image/text, rich text, collection, product, newsletter, and trust sections. Draft saves and publishing never call the existing page editor endpoints.
+
+Published commerce templates render through dedicated `/collections/{handle}`, `/products/{handle}`, and `/cart` routes. Provider reads are normalized and cached per tenant. A failed live read may use a stale cache only with purchasing disabled; the legacy CMS wildcard route remains unchanged and last in route precedence.

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\CentralAuthenticatedSessionController;
 use App\Http\Controllers\Auth\CentralRegisteredUserController;
 use App\Http\Controllers\CommerceTemplateController;
+use App\Http\Controllers\CommerceStorefrontController;
 use App\Http\Controllers\TenantContactController;
 use App\Http\Controllers\TenantDesignLibraryController;
 use App\Http\Controllers\TenantEditorController;
@@ -116,6 +117,10 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
 
         // Contact Form Submission
         Route::post('/contact', [TenantContactController::class, 'store'])->name('tenant.contact.store');
+
+        Route::get('/collections/{handle}', [CommerceStorefrontController::class, 'collection'])->name('tenant.commerce.collection');
+        Route::get('/products/{handle}', [CommerceStorefrontController::class, 'product'])->name('tenant.commerce.product');
+        Route::get('/cart', [CommerceStorefrontController::class, 'cart'])->name('tenant.commerce.cart');
 
         // State 2: Public User visiting the live published site
         Route::get('/{slug?}', [TenantPublicSiteController::class, 'show'])
