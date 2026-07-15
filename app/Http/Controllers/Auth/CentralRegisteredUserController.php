@@ -62,49 +62,12 @@ class CentralRegisteredUserController extends Controller
         $tenant = Tenant::create([
             'user_id' => $user->id,
             'subdomain' => strtolower($request->subdomain),
-        ]);
-
-        // Create default home page for the tenant
-        $tenant->pages()->create([
-            'slug' => 'home',
-            'title' => 'Home',
-            'is_homepage' => true,
-            'draft_config' => [
-                [
-                    'id' => 'hero-1',
-                    'type' => 'HeroBlock',
-                    'props' => [
-                        'padding' => 40,
-                        'backgroundColor' => '#ffffff',
-                        'headline' => 'Welcome to your Site',
-                        'subheadline' => 'Built with our engine.',
-                    ],
-                    'children' => [],
-                ],
-            ],
-            'published_config' => [
-                [
-                    'id' => 'hero-1',
-                    'type' => 'HeroBlock',
-                    'props' => [
-                        'padding' => 40,
-                        'backgroundColor' => '#ffffff',
-                        'headline' => 'Welcome to your Site',
-                        'subheadline' => 'Built with our engine.',
-                    ],
-                    'children' => [],
-                ],
-            ],
+            'site_setup_completed_at' => null,
         ]);
 
         Auth::login($user);
 
-        // Redirect to the tenant workspace editor (cross-domain)
-        $scheme = $request->getScheme();
-        $domain = config('app.central_domain', 'domain.localhost');
-        $port = $request->getPort();
-        $portSuffix = ($port && ! in_array($port, [80, 443])) ? ":{$port}" : '';
-        $url = "{$scheme}://{$tenant->subdomain}.{$domain}{$portSuffix}/editor";
+        $url = route('dashboard', ['tenant' => $tenant->subdomain]);
 
         return Inertia::location($url);
     }

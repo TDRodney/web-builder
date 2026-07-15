@@ -46,6 +46,17 @@ The previously identified navigation propagation regression is resolved: saved n
 
 These are defects in features currently described as implemented, rather than new product capabilities.
 
+### P0 — Cross-Subdomain Dashboard Account Actions [Resolved]
+
+The tenant dashboard now treats central-domain account actions as document-level browser transitions instead of cross-origin Inertia requests.
+
+Verified behavior:
+
+- account settings uses a full navigation to the central profile route;
+- logout submits a native POST form to the central logout route with the current CSRF token;
+- the existing central authentication and settings routes remain unchanged;
+- dashboard response coverage verifies the absolute central URLs and CSRF-token contract.
+
 ### P0 — Navigation Configuration Propagation [Resolved]
 
 `TenantEditorController` and `TenantPublicSiteController` now include `navigation_config` in the tenant prop expected by `Editor.vue` and `PublicPage.vue`.
@@ -354,9 +365,9 @@ page_revisions
 
 Current verified baseline on 2026-07-14:
 
-- **93 tests passed**;
+- **132 tests passed**;
 - **1 test skipped**;
-- **313 assertions**;
+- **573 assertions**;
 - production Vite build completed successfully;
 - the build emitted only third-party Rolldown annotation warnings from a nested VueUse dependency.
 
@@ -374,7 +385,9 @@ Implemented test coverage includes:
 - navigation API authorization and persistence;
 - media validation, ownership, isolation, and deletion;
 - contact submissions, validation, and rate limiting;
-- dashboard and profile/security settings.
+- dashboard and profile/security settings;
+- site kit application (transactional creation, ID regeneration, safety guards, rollback, isolation);
+- start-from-scratch escape hatch (eligibility, idempotency, empty workspace preservation).
 
 ### Important Missing Tests
 
@@ -399,6 +412,34 @@ Implemented test coverage includes:
 ---
 
 ## Updated Implementation Roadmap
+
+### Phase 0 — Design Catalog Foundation [Complete]
+
+- [x] Define the additive catalog contract for styles, shared page layouts, and site kits.
+- [x] Confirm that shared layouts are cloned into independent `Page::draft_config` block trees rather than live-linked templates.
+- [x] Limit the first content release to three explicitly approved professional industry kits.
+- [x] Add the configuration-backed catalog and structural validation tests.
+- [x] Confirm Restaurant, Retail, and Hotel as the first three kit identities.
+- [x] Confirm their page inventories, enquiry-only functional scope, copy direction, visual direction, and editable media-placeholder strategy.
+- [x] Author three styles, twelve reusable page layouts, and three site-kit manifests through the existing block and theme schemas.
+
+### Phase 1 — Safe Dashboard Selection [Complete]
+
+- [x] Add a dedicated dashboard design-library entry point and catalog browsing screen.
+- [x] Add preview data and responsive previews through the existing public block renderer.
+- [x] Add an explicit server-side workspace-setup marker with historical tenants safely backfilled as completed.
+- [x] Require a pending marker, zero pages, and null theme/navigation data for initial-kit eligibility.
+- [x] Create new registrations as empty pending workspaces and redirect direct editor access to the design library.
+- [x] Permanently complete setup after successful page, theme, or navigation mutations.
+
+### Phase 2 — Transactional Kit Application [Complete]
+
+- [x] Deep-clone selected layouts and regenerate all block IDs.
+- [x] Create ordinary tenant pages and write cloned blocks only to `draft_config`.
+- [x] Apply the kit style/navigation defaults only when doing so cannot overwrite existing work.
+- [x] Wrap the complete operation in a database transaction and test rollback, retries, tenant isolation, and duplicate application.
+- [x] Route successful setup into the existing editor for normal customization and publishing.
+- [x] Add a "Start from scratch" escape hatch that marks setup complete without creating content.
 
 ### Phase A — Correctness and Integration
 
@@ -448,6 +489,7 @@ Implemented test coverage includes:
 | Header/footer outside the page block tree | Correctly models site-wide chrome |
 | Tenant scope plus explicit ownership guards | Provides defense in depth for tenant isolation |
 | Presets as cloned block trees | Reuses the same schema and renderer as normal blocks |
+| Shared page layouts and site kits as cloned catalog data | Enables reusable professional designs without creating live template coupling or a second infrastructure stack |
 | Curated fonts before arbitrary font search | Keeps validation and loading predictable |
 
 ---
@@ -464,3 +506,11 @@ Implemented test coverage includes:
 | SQLite write contention | Adequate for local development | Use PostgreSQL/MySQL in production |
 | Cross-subdomain/custom-domain sessions | Wildcard cookie for central domain | Design a separate custom-domain authentication strategy |
 | SEO depends on runtime rendering mode | Inertia `<Head>` metadata is available client-side | Validate and operate production SSR if crawl-time HTML is required |
+
+## Storefront hydration
+
+- The Retail kit is a six-page, block-composed storefront editable in the original visual editor, including an ordinary Cart page.
+- Product and collection blocks are hydrated at request time through a block-ID-keyed provider envelope. `COMMERCE_DRIVER=fixture` supplies development data and `COMMERCE_DRIVER=null` exercises the disconnected fallback.
+- Fixture mode implements filters, sorting, pagination, variant availability, tenant-isolated cart mutations, cart drawer/page, and a simulated hosted-checkout handoff. It never collects payment or places orders.
+- Live platform authentication, tenant connection storage, cache policy, dynamic product/collection routes, provider cart tokens, customer identity, payment, order placement, and real hosted checkout remain deferred until the platform contract is assessed.
+- Cart, live inventory, authoritative pricing, and checkout remain deferred instead of using a parallel renderer.

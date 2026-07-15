@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Tenant;
 use Laravel\Fortify\Features;
 
 beforeEach(function () {
@@ -22,9 +23,15 @@ test('new users can register', function () {
     ]);
 
     $this->assertAuthenticated();
-    $port = parse_url(config('app.url'), PHP_URL_PORT);
-    $portSuffix = ($port && ! in_array($port, [80, 443])) ? ":{$port}" : '';
-    $response->assertRedirect("http://test-user.domain.localhost{$portSuffix}/editor");
+    $response->assertRedirect(route('dashboard', ['tenant' => 'test-user']));
+
+    $tenant = Tenant::query()->where('subdomain', 'test-user')->firstOrFail();
+
+    expect($tenant->site_setup_completed_at)->toBeNull()
+        ->and($tenant->theme_config)->toBeNull()
+        ->and($tenant->navigation_config)->toBeNull()
+        ->and($tenant->pages()->count())->toBe(0)
+        ->and($tenant->isEligibleForInitialSiteKit())->toBeTrue();
 });
 
 test('new users cannot register with a reserved subdomain', function () {

@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Commerce\Contracts\CommerceProvider;
+use App\Commerce\FixtureCommerceProvider;
+use App\Commerce\NullCommerceProvider;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +18,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(CommerceProvider::class, function (): CommerceProvider {
+            return match (config('commerce.driver')) {
+                'fixture' => new FixtureCommerceProvider,
+                default => new NullCommerceProvider,
+            };
+        });
     }
 
     /**
