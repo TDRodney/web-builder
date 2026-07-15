@@ -45,6 +45,11 @@ Route::domain(config('app.central_domain', 'domain.localhost'))->group(function 
 
             return Inertia::render('CentralDashboard', [
                 'tenant' => null,
+                'central_navigation' => [
+                    'account_settings_url' => route('profile.edit'),
+                    'logout_url' => route('logout'),
+                    'csrf_token' => csrf_token(),
+                ],
             ]);
         })->name('central.dashboard');
     });
@@ -68,10 +73,17 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
                     'tenant' => $tenant->only(['id', 'subdomain']),
                     'theme_config' => $tenant->theme_config,
                     'can_apply_site_kit' => $tenant->isEligibleForInitialSiteKit(),
+                    'central_navigation' => [
+                        'account_settings_url' => route('profile.edit'),
+                        'logout_url' => route('logout'),
+                        'csrf_token' => csrf_token(),
+                    ],
                 ]);
             })->name('dashboard');
 
             Route::get('/designs', [TenantDesignLibraryController::class, 'index'])->name('tenant.designs.index');
+            Route::post('/designs/site-kits/{kit}/apply', [TenantDesignLibraryController::class, 'store'])->name('tenant.designs.apply-kit');
+            Route::post('/designs/start-from-scratch', [TenantDesignLibraryController::class, 'startFromScratch'])->name('tenant.designs.start-from-scratch');
 
             // Theme Settings
             Route::patch('/theme', [TenantThemeController::class, 'update'])->name('tenant.theme.update');

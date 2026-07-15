@@ -21,8 +21,6 @@ import {
 import { computed } from 'vue';
 import { Toaster, toast } from 'vue-sonner';
 
-import { logout } from '@/routes';
-import { edit as editProfile } from '@/routes/profile';
 import { index as designLibrary } from '@/routes/tenant/designs';
 
 defineOptions({ layout: [] });
@@ -66,6 +64,11 @@ const props = defineProps<{
     } | null;
     theme_config?: ThemeConfig | null;
     can_apply_site_kit?: boolean;
+    central_navigation: {
+        account_settings_url: string;
+        logout_url: string;
+        csrf_token: string;
+    };
 }>();
 
 const page = usePage();
@@ -283,16 +286,21 @@ const workspaceHost = computed(() => {
                     <ExternalLink :size="13" />
                 </a>
 
-                <Link
-                    :href="logout()"
-                    method="post"
-                    as="button"
-                    class="inline-flex size-[30px] items-center justify-center rounded-[5px] border border-[#303033] bg-[#171719] text-zinc-400 transition hover:bg-[#29292c] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300"
-                    title="Log out"
-                    aria-label="Log out"
-                >
-                    <LogOut :size="14" />
-                </Link>
+                <form :action="central_navigation.logout_url" method="post">
+                    <input
+                        type="hidden"
+                        name="_token"
+                        :value="central_navigation.csrf_token"
+                    />
+                    <button
+                        type="submit"
+                        class="inline-flex size-[30px] items-center justify-center rounded-[5px] border border-[#303033] bg-[#171719] text-zinc-400 transition hover:bg-[#29292c] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300"
+                        title="Log out"
+                        aria-label="Log out"
+                    >
+                        <LogOut :size="14" />
+                    </button>
+                </form>
             </div>
         </header>
 
@@ -377,13 +385,13 @@ const workspaceHost = computed(() => {
                                 </small>
                             </div>
                         </div>
-                        <Link
-                            :href="editProfile()"
+                        <a
+                            :href="central_navigation.account_settings_url"
                             class="mt-3 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-[4px] border border-[#303033] bg-[#202023] text-[10px] font-semibold text-zinc-300 transition hover:bg-[#29292c] hover:text-white"
                         >
                             <Settings :size="12" />
                             Account settings
-                        </Link>
+                        </a>
                     </div>
 
                     <div class="mt-auto border-t border-[#29292c] pt-3">

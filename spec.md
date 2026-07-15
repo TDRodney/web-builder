@@ -91,6 +91,8 @@ SESSION_DOMAIN=.domain.localhost
 
 This allows `domain.localhost` and `*.domain.localhost` to share the same session, enabling a user logged in on the central domain to be recognized on tenant subdomains without re-authentication.
 
+Account settings and logout remain central-domain actions. Tenant dashboards receive their absolute central URLs and the current CSRF token as Inertia props, then use full browser navigation for settings and a native POST form for logout. These cross-subdomain transitions must not use Inertia visits because an Inertia visit is an XHR tied to the current origin.
+
 ### 1.6 Inertia Page Layout Resolution
 
 Defined in [app.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/app.ts):
@@ -326,6 +328,8 @@ All routes protected by [IdentifyTenant](file:///c:/Users/Z.BOOK/Desktop/things/
 |---|---|---|---|---|---|---|
 | `GET` | `/dashboard` | `dashboard` | Closure → Inertia `CentralDashboard` (with tenant + theme_config props) | auth | Tenant-scoped dashboard |
 | `GET` | `/designs` | `tenant.designs.index` | `TenantDesignLibraryController::index` | auth | Browse site kits and render homepage previews through the shared public block renderer |
+| `POST` | `/designs/site-kits/{kit}/apply` | `tenant.designs.apply-kit` | `TenantDesignLibraryController::store` | auth | Apply a site kit to an eligible workspace (transactional: creates pages, applies style, completes setup) |
+| `POST` | `/designs/start-from-scratch` | `tenant.designs.start-from-scratch` | `TenantDesignLibraryController::startFromScratch` | auth | Opt out of the kit flow and mark setup complete without creating content |
 | `PATCH` | `/theme` | `tenant.theme.update` | [TenantThemeController::update](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantThemeController.php#L22) | auth | Save theme settings (colors, typography, borderRadius) |
 | `GET` | `/editor` | `tenant.editor` | [TenantEditorController::edit](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantEditorController.php#L10) | auth | Canvas editor (accepts optional `?page={slug}`, resolves active or homepage, passes pages + urls props) |
 | `POST` | `/editor/save` | `tenant.page.save` | [TenantPageSaveController::store](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageSaveController.php#L12) | auth | Save draft_config (JSON endpoint) |
@@ -394,7 +398,7 @@ sequenceDiagram
     Tenant->>User: Inertia render CentralDashboard with site-kit eligibility
 ```
 
-New registrations intentionally create no pages, theme configuration, or navigation configuration. They remain eligible for an initial site kit until one is applied or a successful page/theme/navigation mutation marks setup complete. Direct editor access by an eligible empty tenant redirects to `/designs` instead of creating content during a GET request.
+New registrations intentionally create no pages, theme configuration, or navigation configuration. They remain eligible for an initial site kit until one is applied, a "Start from scratch" action completes setup, or a successful page/theme/navigation mutation marks setup complete. Direct editor access by an eligible empty tenant redirects to `/designs` instead of creating content during a GET request. The `/designs` page offers two exit paths: "Use this design" applies the selected kit transactionally, and "Start from scratch" marks setup complete with an empty workspace so the user can create pages in the editor.
 
 ### 4.2 Editor Auto-Save Flow (Draft Persistence)
 
@@ -696,4 +700,4 @@ Workspace eligibility is stored as nullable `tenants.site_setup_completed_at` an
 
 The `/designs` Inertia page receives validated kit summaries and only each kit's homepage block tree for preview. It renders that tree with the existing `RenderPublicNode`, block registry, theme composable, header, and footer. Desktop, tablet, and mobile modes resize the same preview runtime. Empty kit images use the existing `ImageBlock` with a preview-only placeholder flag; public pages still render nothing for an empty source.
 
-Implementation status: the catalog contract, validation foundation, three styles, twelve page layouts, three site-kit manifests, dashboard design library, shared-renderer responsive previews, and server eligibility lifecycle are implemented. Transactional kit application remains staged work.
+Implementation status: the catalog contract, validation foundation, three styles, twelve page layouts, three site-kit manifests, dashboard design library, shared-renderer responsive previews, server eligibility lifecycle, transactional kit application (deep-clone ID regeneration, draft-only pages, style/navigation application, DB transaction with rollback), and the "Start from scratch" escape hatch are all implemented.

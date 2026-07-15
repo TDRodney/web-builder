@@ -46,6 +46,17 @@ The previously identified navigation propagation regression is resolved: saved n
 
 These are defects in features currently described as implemented, rather than new product capabilities.
 
+### P0 — Cross-Subdomain Dashboard Account Actions [Resolved]
+
+The tenant dashboard now treats central-domain account actions as document-level browser transitions instead of cross-origin Inertia requests.
+
+Verified behavior:
+
+- account settings uses a full navigation to the central profile route;
+- logout submits a native POST form to the central logout route with the current CSRF token;
+- the existing central authentication and settings routes remain unchanged;
+- dashboard response coverage verifies the absolute central URLs and CSRF-token contract.
+
 ### P0 — Navigation Configuration Propagation [Resolved]
 
 `TenantEditorController` and `TenantPublicSiteController` now include `navigation_config` in the tenant prop expected by `Editor.vue` and `PublicPage.vue`.
@@ -354,9 +365,9 @@ page_revisions
 
 Current verified baseline on 2026-07-14:
 
-- **93 tests passed**;
+- **132 tests passed**;
 - **1 test skipped**;
-- **313 assertions**;
+- **573 assertions**;
 - production Vite build completed successfully;
 - the build emitted only third-party Rolldown annotation warnings from a nested VueUse dependency.
 
@@ -374,7 +385,9 @@ Implemented test coverage includes:
 - navigation API authorization and persistence;
 - media validation, ownership, isolation, and deletion;
 - contact submissions, validation, and rate limiting;
-- dashboard and profile/security settings.
+- dashboard and profile/security settings;
+- site kit application (transactional creation, ID regeneration, safety guards, rollback, isolation);
+- start-from-scratch escape hatch (eligibility, idempotency, empty workspace preservation).
 
 ### Important Missing Tests
 
@@ -419,13 +432,14 @@ Implemented test coverage includes:
 - [x] Create new registrations as empty pending workspaces and redirect direct editor access to the design library.
 - [x] Permanently complete setup after successful page, theme, or navigation mutations.
 
-### Phase 2 — Transactional Kit Application
+### Phase 2 — Transactional Kit Application [Complete]
 
-- [ ] Deep-clone selected layouts and regenerate all block IDs.
-- [ ] Create ordinary tenant pages and write cloned blocks only to `draft_config`.
-- [ ] Apply the kit style/navigation defaults only when doing so cannot overwrite existing work.
-- [ ] Wrap the complete operation in a database transaction and test rollback, retries, tenant isolation, and duplicate application.
-- [ ] Route successful setup into the existing editor for normal customization and publishing.
+- [x] Deep-clone selected layouts and regenerate all block IDs.
+- [x] Create ordinary tenant pages and write cloned blocks only to `draft_config`.
+- [x] Apply the kit style/navigation defaults only when doing so cannot overwrite existing work.
+- [x] Wrap the complete operation in a database transaction and test rollback, retries, tenant isolation, and duplicate application.
+- [x] Route successful setup into the existing editor for normal customization and publishing.
+- [x] Add a "Start from scratch" escape hatch that marks setup complete without creating content.
 
 ### Phase A — Correctness and Integration
 

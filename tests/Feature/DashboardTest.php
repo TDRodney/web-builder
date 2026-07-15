@@ -42,6 +42,9 @@ test('authenticated users can visit the dashboard', function () {
             ->where('tenant.subdomain', 'test-tenant')
             ->where('theme_config', $themeConfig)
             ->where('can_apply_site_kit', false)
+            ->where('central_navigation.account_settings_url', route('profile.edit'))
+            ->where('central_navigation.logout_url', route('logout'))
+            ->where('central_navigation.csrf_token', fn (mixed $token): bool => is_string($token) && strlen($token) === 40)
         );
 });
 

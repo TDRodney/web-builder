@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router, useHttp } from '@inertiajs/vue3';
 import {
     ArrowLeft,
     Check,
@@ -7,11 +7,13 @@ import {
     Eye,
     ImageIcon,
     Laptop,
+    Loader2,
     LockKeyhole,
     Monitor,
     Smartphone,
 } from '@lucide/vue';
 import { computed, provide, ref } from 'vue';
+import { toast } from 'vue-sonner';
 
 import RenderPublicNode from '@/components/BuilderBlocks/RenderPublicNode.vue';
 import SiteFooter from '@/components/SiteFooter.vue';
@@ -102,6 +104,42 @@ const { cssVars, fontUrl } = useTheme(() => selectedKit.value?.theme_config);
 provide('blockRegistry', blockComponents);
 provide('isEditable', false);
 provide('showMediaPlaceholders', true);
+
+const applyHttp = useHttp();
+const scratchHttp = useHttp();
+
+const extractHttpError = (error: unknown): string => {
+    const err = error as { response?: { data?: { message?: string } }; message?: string };
+    return err?.response?.data?.message || err?.message || 'An unknown error occurred';
+};
+
+const applyKit = async () => {
+    const kitKey = selectedKitKey.value;
+    if (!kitKey) return;
+    const loadingToast = toast.loading('Applying site kit…');
+    try {
+        const res = await applyHttp.post(`/designs/site-kits/${kitKey}/apply`);
+        if (res && res.status === 'success') {
+            toast.success('Site kit applied!', { id: loadingToast });
+            router.visit(`/editor?page=${res.homepage_slug}`);
+        }
+    } catch (err) {
+        toast.error(extractHttpError(err), { id: loadingToast });
+    }
+};
+
+const startFromScratch = async () => {
+    const loadingToast = toast.loading('Preparing workspace…');
+    try {
+        const res = await scratchHttp.post('/designs/start-from-scratch');
+        if (res && res.status === 'success') {
+            toast.success('Workspace ready — create your first page.', { id: loadingToast });
+            router.visit('/editor');
+        }
+    } catch (err) {
+        toast.error(extractHttpError(err), { id: loadingToast });
+    }
+};
 </script>
 
 <template>
@@ -245,7 +283,7 @@ provide('showMediaPlaceholders', true);
                             :size="15"
                             class="mt-0.5 shrink-0 text-amber-300"
                         />
-                        <div>
+                        <div class="min-w-0 flex-1">
                             <strong
                                 class="block text-[10px] font-semibold"
                                 :class="
@@ -263,11 +301,48 @@ provide('showMediaPlaceholders', true);
                             <p class="mt-1 text-[9px] leading-4 text-zinc-500">
                                 {{
                                     props.can_apply_site_kit
-                                        ? 'Applying the selected kit is the next staged operation.'
+                                        ? 'Applying the selected kit will create your starting pages and brand style.'
                                         : 'You can preview kits, but they cannot replace your current site.'
                                 }}
                             </p>
                         </div>
+                    </div>
+
+                    <div v-if="props.can_apply_site_kit" class="mt-4 flex flex-col gap-2">
+                        <button
+                            type="button"
+                            :disabled="!selectedKitKey || applyHttp.processing"
+                            class="inline-flex h-9 w-full items-center justify-center gap-2 rounded-[5px] bg-emerald-600 px-3 text-[10px] font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+                            @click="applyKit"
+                        >
+                            <Loader2
+                                v-if="applyHttp.processing"
+                                :size="13"
+                                class="animate-spin"
+                            />
+                            {{
+                                applyHttp.processing
+                                    ? 'Applying…'
+                                    : 'Use this design'
+                            }}
+                        </button>
+                        <button
+                            type="button"
+                            :disabled="scratchHttp.processing"
+                            class="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-[5px] border border-[#303033] bg-[#151517] px-3 text-[9px] font-medium text-zinc-400 transition hover:border-[#3c3c41] hover:bg-[#19191c] hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+                            @click="startFromScratch"
+                        >
+                            <Loader2
+                                v-if="scratchHttp.processing"
+                                :size="11"
+                                class="animate-spin"
+                            />
+                            {{
+                                scratchHttp.processing
+                                    ? 'Preparing…'
+                                    : 'Start from scratch'
+                            }}
+                        </button>
                     </div>
                 </div>
             </aside>
