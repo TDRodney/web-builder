@@ -703,6 +703,8 @@ The `/designs` Inertia page receives validated kit summaries and only each kit's
 Implementation status: the catalog contract, validation foundation, three styles, twelve page layouts, three site-kit manifests, dashboard design library, shared-renderer responsive previews, server eligibility lifecycle, transactional kit application (deep-clone ID regeneration, draft-only pages, style/navigation application, DB transaction with rollback), and the "Start from scratch" escape hatch are all implemented.
 # Additive Commerce Architecture
 
+Retail kit application returns its default commerce-home template and opens that storefront builder immediately. The dashboard exposes storefront editing and `/store`; the editor switches among Home, Collection, and Product templates and renders visual commerce-section previews.
+
 The 2026-07-15 compatibility audit confirms that commerce uses additive tables, models, routes, templates, and renderer entrypoints. Existing Page JSON, block definitions, editor routes, publish semantics, and the public CMS fallback remain unchanged.
 
 The Retail kit creates three draft-only commerce templates (story-led storefront, collection, and product) alongside its unchanged legacy pages. Cart mutations remain provider-owned and checkout redirects to the provider-issued hosted URL.

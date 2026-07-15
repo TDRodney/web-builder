@@ -20,6 +20,10 @@ class CommerceTemplateController extends Controller
         return Inertia::render('Tenant/CommerceTemplateEditor', [
             'tenant' => app('currentTenant')->only(['id', 'subdomain', 'theme_config']),
             'template' => $commerceTemplate,
+            'templates' => app('currentTenant')->commerceTemplates()
+                ->select(['id', 'type', 'key', 'label', 'is_default', 'published_config'])
+                ->orderBy('type')
+                ->get(),
             'sectionDefinitions' => config('commerce_sections.definitions'),
             'previewResource' => $request->string('preview')->toString() ?: null,
         ]);

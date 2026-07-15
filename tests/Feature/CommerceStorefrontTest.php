@@ -45,8 +45,9 @@ test('cart is provider owned and redirects to hosted checkout', function () {
 test('retail kit adds draft commerce templates without publishing or changing legacy pages', function () {
     $user = User::factory()->create();
     $tenant = Tenant::factory()->awaitingSiteSetup()->create(['user_id' => $user->id, 'subdomain' => 'retail-commerce-kit']);
-    $this->actingAs($user)->postJson(route('tenant.designs.apply-kit', ['tenant' => $tenant->subdomain, 'kit' => 'retail']))->assertOk();
+    $response = $this->actingAs($user)->postJson(route('tenant.designs.apply-kit', ['tenant' => $tenant->subdomain, 'kit' => 'retail']))->assertOk();
     expect($tenant->commerceTemplates()->count())->toBe(3)
         ->and($tenant->commerceTemplates()->whereNotNull('published_config')->count())->toBe(0)
         ->and($tenant->pages()->count())->toBe(4);
+    $response->assertJsonPath('commerce_template_id', $tenant->commerceTemplates()->where('type', 'home')->value('id'));
 });

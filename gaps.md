@@ -508,6 +508,8 @@ Implemented test coverage includes:
 | SEO depends on runtime rendering mode | Inertia `<Head>` metadata is available client-side | Validate and operate production SSR if crawl-time HTML is required |
 # Commerce implementation
 
+- Retail onboarding is integrated: applying the kit opens its storefront editor, dashboard shortcuts expose the builder/live store, and all resource templates are switchable in the editor.
+
 ## Compatibility audit — 2026-07-15
 
 - Commits `2dca80c`, `750c9d2`, `74877bb`, and `9bcd132` respectively add isolated persistence/contracts, the commerce editor, provider hydration, and the Retail purchase experience.

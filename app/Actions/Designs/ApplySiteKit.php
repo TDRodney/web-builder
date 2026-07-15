@@ -16,7 +16,7 @@ class ApplySiteKit
      * the kit's style as theme and navigation defaults, and marks setup
      * complete. The entire operation runs inside a database transaction.
      *
-     * @return array{status: string, homepage_slug: string}
+     * @return array{status: string, homepage_slug: string, commerce_template_id: ?int}
      */
     public function handle(Tenant $tenant, string $kitKey): array
     {
@@ -81,6 +81,10 @@ class ApplySiteKit
         return [
             'status' => 'success',
             'homepage_slug' => $homepageSlug,
+            'commerce_template_id' => $tenant->commerceTemplates()
+                ->where('type', 'home')
+                ->where('is_default', true)
+                ->value('id'),
         ];
     }
 }

@@ -10,7 +10,7 @@ test('tenant owner can edit a commerce template without entering the page editor
     $tenant = Tenant::factory()->create(['user_id' => $user->id, 'subdomain' => 'commerce-editor']);
     $template = CommerceTemplate::factory()->for($tenant)->create();
     $this->actingAs($user)->get(route('tenant.commerce.templates.edit', ['tenant' => $tenant->subdomain, 'commerceTemplate' => $template]))
-        ->assertOk()->assertInertia(fn (Assert $page) => $page->component('Tenant/CommerceTemplateEditor')->where('template.id', $template->id)->has('sectionDefinitions', 11));
+        ->assertOk()->assertInertia(fn (Assert $page) => $page->component('Tenant/CommerceTemplateEditor')->where('template.id', $template->id)->has('templates', 1)->has('sectionDefinitions', 11));
 });
 
 test('owner can save and publish valid commerce sections independently', function () {

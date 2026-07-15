@@ -75,6 +75,10 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
                     'tenant' => $tenant->only(['id', 'subdomain']),
                     'theme_config' => $tenant->theme_config,
                     'can_apply_site_kit' => $tenant->isEligibleForInitialSiteKit(),
+                    'commerce_templates' => $tenant->commerceTemplates()
+                        ->select(['id', 'type', 'key', 'label', 'is_default', 'published_config'])
+                        ->orderBy('type')
+                        ->get(),
                     'central_navigation' => [
                         'account_settings_url' => route('profile.edit'),
                         'logout_url' => route('logout'),
