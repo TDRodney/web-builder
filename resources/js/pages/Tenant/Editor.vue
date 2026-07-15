@@ -642,6 +642,41 @@ const publishPage = async () => {
     }
 };
 
+const isPublishingAll = ref(false);
+const publishAllHttp = useHttp({});
+
+const publishAll = async () => {
+    isPublishingAll.value = true;
+
+    try {
+        toast.loading('Publishing all pages...', { id: 'publish-all-toast' });
+
+        const res = await publishAllHttp.post(`/editor/publish-all`);
+
+        if (res && res.status === 'success') {
+            toast.success(
+                res.message || 'All pages published.',
+                { id: 'publish-all-toast' },
+            );
+            router.reload({ only: ['pages', 'page'] });
+        } else {
+            toast.error('Publish all returned an unexpected response', {
+                id: 'publish-all-toast',
+            });
+        }
+    } catch (err) {
+        const message = extractHttpError(err);
+
+        if (message !== null) {
+            toast.error(`Failed to publish all pages: ${message}`, {
+                id: 'publish-all-toast',
+            });
+        }
+    } finally {
+        isPublishingAll.value = false;
+    }
+};
+
 // Page Management Functions
 const showCreateModal = ref(false);
 const showRenameModal = ref(false);
@@ -807,6 +842,7 @@ const onMediaSelected = (item) => {
                     :logout-url="urls.logout"
                     :live-url="urls.live"
                     :is-publishing="isPublishing"
+                    :is-publishing-all="isPublishingAll"
                     :is-saving="http.processing"
                     :save-error="saveError"
                     @create-page="showCreateModal = true"
@@ -818,6 +854,7 @@ const onMediaSelected = (item) => {
                     @add-block="addBlock"
                     @add-preset="addPreset"
                     @publish="publishPage"
+                    @publish-all="publishAll"
                 />
             </div>
 

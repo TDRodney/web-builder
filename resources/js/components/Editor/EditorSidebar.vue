@@ -5,6 +5,7 @@ import {
     ExternalLink,
     FileText,
     Home,
+    Layers,
     LogOut,
     PanelTop,
     Pencil,
@@ -42,6 +43,7 @@ const props = defineProps({
     logoutUrl: { type: String, required: true },
     liveUrl: { type: String, required: true },
     isPublishing: { type: Boolean, default: false },
+    isPublishingAll: { type: Boolean, default: false },
     isSaving: { type: Boolean, default: false },
     saveError: { type: String, default: '' },
 });
@@ -56,6 +58,7 @@ const emit = defineEmits([
     'add-block',
     'add-preset',
     'publish',
+    'publish-all',
 ]);
 
 const { safeNavigate } = useSafeNavigate();
@@ -279,6 +282,20 @@ watch(
 
             <button
                 type="button"
+                class="publish-all-button"
+                :disabled="
+                    isPublishingAll || isPublishing || isSaving || !!saveError
+                "
+                @click="emit('publish-all')"
+            >
+                <Layers :size="15" />
+                <span>{{
+                    isPublishingAll ? 'Publishing all…' : 'Publish all pages'
+                }}</span>
+            </button>
+
+            <button
+                type="button"
                 class="publish-button"
                 :disabled="isPublishing || isSaving || !!saveError"
                 @click="emit('publish')"
@@ -323,6 +340,7 @@ watch(
 .page-select,
 .page-actions,
 .publish-button,
+.publish-all-button,
 .create-page-button,
 .heading-action,
 .sidebar-live-link {
@@ -605,6 +623,35 @@ watch(
     background: #ffffff;
 }
 .publish-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+.publish-all-button {
+    width: 100%;
+    height: 38px;
+    margin-bottom: 8px;
+    justify-content: center;
+    gap: 8px;
+    color: #d4d4d8;
+    font-size: 11px;
+    font-weight: 650;
+    background: #1c1c1f;
+    border: 1px solid #343438;
+    border-radius: 5px;
+    cursor: pointer;
+    transition:
+        color 150ms ease,
+        border-color 150ms ease,
+        background 150ms ease;
+}
+
+.publish-all-button:hover:not(:disabled) {
+    color: #ffffff;
+    border-color: #52525b;
+    background: #232327;
+}
+.publish-all-button:disabled {
     cursor: not-allowed;
     opacity: 0.45;
 }

@@ -201,6 +201,107 @@ test('tenant owners can publish page draft configuration', function () {
     expect($page->published_config)->toBe($draftData);
 });
 
+test('tenant owners can publish all page drafts in one action', function () {
+    $user = User::factory()->create();
+    $tenant = Tenant::create([
+        'user_id' => $user->id,
+        'subdomain' => 'publish-all-tenant',
+    ]);
+
+    $homeDraft = [['id' => 'hero-1', 'type' => 'HeroBlock', 'props' => ['headline' => 'Home draft']]];
+    $aboutDraft = [['id' => 'hero-2', 'type' => 'HeroBlock', 'props' => ['headline' => 'About draft']]];
+
+    $tenant->pages()->createMany([
+        ['slug' => 'home', 'is_homepage' => true, 'sort_order' => 0, 'draft_config' => $homeDraft, 'published_config' => null],
+        ['slug' => 'about', 'is_homepage' => false, 'sort_order' => 1, 'draft_config' => $aboutDraft, 'published_config' => null],
+    ]);
+
+    $this->actingAs($user);
+
+    $response = $this->postJson('http://publish-all-tenant.domain.localhost/editor/publish-all');
+
+    $response->assertOk()
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('published_count', 2)
+        ->assertJsonPath('skipped_count', 0)
+        ->assertJsonPath('total_count', 2);
+
+    $tenant->pages->each(function (Page $page) {
+        $page->refresh();
+        expect($page->published_config)->toBe($page->draft_config)
+            ->and($page->is_published)->toBeTrue();
+    });
+});
+
+test('publish-all skips pages with no draft config', function () {
+    $user = User::factory()->create();
+    $tenant = Tenant::create([
+        'user_id' => $user->id,
+        'subdomain' => 'publish-all-skip',
+    ]);
+
+    $tenant->pages()->createMany([
+        ['slug' => 'home', 'is_homepage' => true, 'sort_order' => 0, 'draft_config' => [['id' => 'hero-1', 'type' => 'HeroBlock', 'props' => ['headline' => 'Home']]], 'published_config' => null],
+        ['slug' => 'empty', 'is_homepage' => false, 'sort_order' => 1, 'draft_config' => [], 'published_config' => null],
+    ]);
+
+    $this->actingAs($user);
+
+    $response = $this->postJson('http://publish-all-skip.domain.localhost/editor/publish-all');
+
+    $response->assertOk()
+        ->assertJsonPath('published_count', 1)
+        ->assertJsonPath('skipped_count', 1);
+
+    $empty = $tenant->pages()->where('slug', 'empty')->first();
+    expect($empty->refresh()->published_config)->toBeNull();
+});
+
+test('non-owners cannot publish all pages', function () {
+    $owner = User::factory()->create();
+    $tenant = Tenant::create([
+        'user_id' => $owner->id,
+        'subdomain' => 'publish-all-authz',
+    ]);
+    $tenant->pages()->create([
+        'slug' => 'home',
+        'draft_config' => [['id' => 'hero-1', 'type' => 'HeroBlock', 'props' => ['headline' => 'Home']]],
+        'published_config' => null,
+    ]);
+
+    $otherUser = User::factory()->create();
+
+    $this->actingAs($otherUser)
+        ->postJson('http://publish-all-authz.domain.localhost/editor/publish-all')
+        ->assertForbidden();
+});
+
+test('publish-all cannot reach another tenant pages', function () {
+    $ownerA = User::factory()->create();
+    $tenantA = Tenant::create([
+        'user_id' => $ownerA->id,
+        'subdomain' => 'publish-all-tenant-a',
+    ]);
+    $tenantA->pages()->create([
+        'slug' => 'home',
+        'draft_config' => [['id' => 'hero-a', 'type' => 'HeroBlock', 'props' => ['headline' => 'A']]],
+        'published_config' => null,
+    ]);
+
+    $ownerB = User::factory()->create();
+    $tenantB = Tenant::create([
+        'user_id' => $ownerB->id,
+        'subdomain' => 'publish-all-tenant-b',
+    ]);
+
+    $this->actingAs($ownerB)
+        ->postJson('http://publish-all-tenant-a.domain.localhost/editor/publish-all')
+        ->assertForbidden();
+
+    $pageA = $tenantA->pages()->first();
+    expect($pageA->refresh()->published_config)->toBeNull();
+});
+
 test('public pages are accessible and render published configuration', function () {
     $user = User::factory()->create();
     $tenant = Tenant::create([
