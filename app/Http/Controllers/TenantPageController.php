@@ -127,6 +127,44 @@ class TenantPageController extends Controller
     }
 
     /**
+     * Toggle a page's public visibility (list / unlist) without deleting it.
+     */
+    public function updateVisibility(Request $request, Page $page): JsonResponse
+    {
+        $tenant = app('currentTenant');
+
+        if (auth()->id() !== $tenant->user_id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if ($page->tenant_id !== $tenant->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // The homepage is the public entry point and must stay listed.
+        if ($page->is_homepage) {
+            return response()->json([
+                'error' => 'The homepage cannot be unlisted.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'is_published' => ['required', 'boolean'],
+        ]);
+
+        $page->update(['is_published' => $validated['is_published']]);
+        $tenant->markSiteSetupCompleted();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => $validated['is_published']
+                ? 'Page is now live.'
+                : 'Page has been unlisted.',
+            'page' => $page,
+        ]);
+    }
+
+    /**
      * Remove the specified resource from storage.
      */
     public function destroy(Page $page): JsonResponse

@@ -2,6 +2,8 @@
 import { Link } from '@inertiajs/vue3';
 import {
     Blocks,
+    Eye,
+    EyeOff,
     ExternalLink,
     FileText,
     Home,
@@ -54,6 +56,7 @@ const emit = defineEmits([
     'rename-page',
     'set-homepage',
     'delete-page',
+    'toggle-visibility',
     'open-media-picker',
     'add-block',
     'add-preset',
@@ -217,6 +220,25 @@ watch(
                         </button>
 
                         <div class="page-actions">
+                            <button
+                                v-if="!page.is_homepage"
+                                type="button"
+                                :class="{ 'muted-action': !page.is_published }"
+                                :title="
+                                    page.is_published
+                                        ? 'Unlist from public site'
+                                        : 'Re-list on public site'
+                                "
+                                :aria-label="
+                                    page.is_published
+                                        ? 'Unlist from public site'
+                                        : 'Re-list on public site'
+                                "
+                                @click="emit('toggle-visibility', page)"
+                            >
+                                <Eye v-if="page.is_published" :size="13" />
+                                <EyeOff v-else :size="13" />
+                            </button>
                             <button
                                 v-if="!page.is_homepage"
                                 type="button"
@@ -563,6 +585,9 @@ watch(
 .page-actions .danger-action:hover {
     color: #fca5a5;
     background: rgb(127 29 29 / 25%);
+}
+.page-actions .muted-action {
+    color: #52525b;
 }
 
 .create-page-button {

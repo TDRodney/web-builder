@@ -100,6 +100,7 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
                 Route::get('/pages', [TenantPageController::class, 'index'])->name('tenant.pages.index');
                 Route::post('/pages', [TenantPageController::class, 'store'])->name('tenant.pages.store');
                 Route::patch('/pages/{page}', [TenantPageController::class, 'update'])->name('tenant.pages.update');
+                Route::patch('/pages/{page}/visibility', [TenantPageController::class, 'updateVisibility'])->name('tenant.pages.visibility');
                 Route::delete('/pages/{page}', [TenantPageController::class, 'destroy'])->name('tenant.pages.destroy');
 
                 Route::get('/media', [TenantMediaController::class, 'index'])->name('tenant.media.index');

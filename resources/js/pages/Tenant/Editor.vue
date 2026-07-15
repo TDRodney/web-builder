@@ -684,6 +684,7 @@ const pageToRename = ref(null);
 
 const deleteHttp = useHttp({});
 const setHomepageHttp = useHttp({});
+const visibilityHttp = useHttp({});
 
 const pageActionError = ref('');
 
@@ -773,6 +774,37 @@ const handleSetHomepage = async (page) => {
         }
     }
 };
+
+const handleToggleVisibility = async (page) => {
+    pageActionError.value = '';
+    const next = !page.is_published;
+    const loadingToast = toast.loading(
+        next ? 'Re-listing page...' : 'Unlisting page...',
+    );
+    try {
+        const res = await visibilityHttp.patch(
+            `/editor/pages/${page.id}/visibility`,
+            { is_published: next },
+        );
+
+        if (res && res.status === 'success') {
+            toast.success(res.message || 'Page visibility updated', {
+                id: loadingToast,
+            });
+            router.reload({ only: ['pages', 'page'] });
+        }
+    } catch (err) {
+        const message = extractHttpError(err);
+        if (message !== null) {
+            pageActionError.value = message;
+            toast.error(`Failed to update visibility: ${message}`, {
+                id: loadingToast,
+            });
+        } else {
+            toast.dismiss(loadingToast);
+        }
+    }
+};
 // Media picker state
 const showMediaPicker = ref(false);
 const mediaPickerFieldKey = ref('');
@@ -850,6 +882,7 @@ const onMediaSelected = (item) => {
                     @rename-page="openRenameModal"
                     @set-homepage="handleSetHomepage"
                     @delete-page="handleDeletePage"
+                    @toggle-visibility="handleToggleVisibility"
                     @open-media-picker="openMediaPicker"
                     @add-block="addBlock"
                     @add-preset="addPreset"
