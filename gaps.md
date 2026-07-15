@@ -506,3 +506,9 @@ Implemented test coverage includes:
 | SQLite write contention | Adequate for local development | Use PostgreSQL/MySQL in production |
 | Cross-subdomain/custom-domain sessions | Wildcard cookie for central domain | Design a separate custom-domain authentication strategy |
 | SEO depends on runtime rendering mode | Inertia `<Head>` metadata is available client-side | Validate and operate production SSR if crawl-time HTML is required |
+
+## Storefront hydration
+
+- The Retail kit is a five-page, block-composed storefront editable in the original visual editor.
+- Product and collection blocks are presentational until a provider maps resources into stable source keys.
+- Cart, live inventory, authoritative pricing, and checkout remain deferred instead of using a parallel renderer.

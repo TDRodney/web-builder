@@ -78,6 +78,7 @@ return [
             'allowedChildren' => [
                 'HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock', 'ImageBlock',
                 'RichTextBlock', 'VideoEmbedBlock', 'FAQBlock', 'TestimonialBlock', 'PricingTableBlock', 'ContactFormBlock',
+                'AnnouncementBlock', 'ImageWithTextBlock', 'CollectionListBlock', 'ProductGridBlock', 'ProductDetailBlock', 'NewsletterBlock', 'TrustValuesBlock',
             ],
         ],
         'LayoutColumn' => [
@@ -104,6 +105,7 @@ return [
             'allowedChildren' => [
                 'HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock', 'ImageBlock',
                 'RichTextBlock', 'VideoEmbedBlock', 'FAQBlock', 'TestimonialBlock', 'PricingTableBlock', 'ContactFormBlock',
+                'AnnouncementBlock', 'ImageWithTextBlock', 'CollectionListBlock', 'ProductGridBlock', 'ProductDetailBlock', 'NewsletterBlock', 'TrustValuesBlock',
             ],
         ],
         'ButtonBlock' => [
@@ -352,15 +354,70 @@ return [
                 ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
             ],
         ],
+        'AnnouncementBlock' => [
+            'type' => 'AnnouncementBlock', 'label' => 'Store Announcement', 'category' => 'content', 'icon' => 'megaphone',
+            'defaultProps' => ['text' => 'Complimentary delivery on selected orders', 'padding' => 0, 'backgroundColor' => 'transparent'],
+            'inspectorFields' => [['key' => 'text', 'label' => 'Announcement', 'type' => 'text']],
+        ],
+        'ImageWithTextBlock' => [
+            'type' => 'ImageWithTextBlock', 'label' => 'Image with Text', 'category' => 'content', 'icon' => 'panel-left',
+            'defaultProps' => ['eyebrow' => 'Our story', 'heading' => 'Made to be lived with', 'body' => 'Add an editorial story about the collection.', 'imageSrc' => '', 'imageAlt' => '', 'imagePosition' => 'left', 'linkLabel' => 'Learn more', 'linkUrl' => '/about', 'padding' => 0, 'backgroundColor' => 'transparent'],
+            'inspectorFields' => [
+                ['key' => 'eyebrow', 'label' => 'Eyebrow', 'type' => 'text'], ['key' => 'heading', 'label' => 'Heading', 'type' => 'text'], ['key' => 'body', 'label' => 'Body', 'type' => 'text'],
+                ['key' => 'imageSrc', 'label' => 'Image', 'type' => 'media'], ['key' => 'imageAlt', 'label' => 'Image Alt', 'type' => 'text'],
+                ['key' => 'imagePosition', 'label' => 'Image Position', 'type' => 'select', 'options' => [['label' => 'Left', 'value' => 'left'], ['label' => 'Right', 'value' => 'right']]],
+                ['key' => 'linkLabel', 'label' => 'Link Label', 'type' => 'text'], ['key' => 'linkUrl', 'label' => 'Link URL', 'type' => 'text'],
+            ],
+        ],
+        'CollectionListBlock' => [
+            'type' => 'CollectionListBlock', 'label' => 'Collection List', 'category' => 'content', 'icon' => 'gallery-horizontal',
+            'defaultProps' => ['eyebrow' => 'Shop by collection', 'heading' => 'Find your everyday favorites', 'collections' => [
+                ['title' => 'Home', 'subtitle' => 'Objects for considered rooms', 'imageSrc' => '', 'imageAlt' => '', 'url' => '/shop'],
+                ['title' => 'Wear', 'subtitle' => 'Useful pieces made to last', 'imageSrc' => '', 'imageAlt' => '', 'url' => '/shop'],
+                ['title' => 'Gift', 'subtitle' => 'Thoughtful finds for giving', 'imageSrc' => '', 'imageAlt' => '', 'url' => '/shop'],
+            ], 'padding' => 40, 'backgroundColor' => 'transparent'],
+            'inspectorFields' => [['key' => 'eyebrow', 'label' => 'Eyebrow', 'type' => 'text'], ['key' => 'heading', 'label' => 'Heading', 'type' => 'text'], ['key' => 'collections', 'label' => 'Collections', 'type' => 'repeater', 'subFields' => [
+                ['key' => 'title', 'label' => 'Title', 'type' => 'text'], ['key' => 'subtitle', 'label' => 'Subtitle', 'type' => 'text'], ['key' => 'imageSrc', 'label' => 'Image', 'type' => 'media'], ['key' => 'imageAlt', 'label' => 'Image Alt', 'type' => 'text'], ['key' => 'url', 'label' => 'URL', 'type' => 'text'],
+            ]]],
+        ],
+        'ProductGridBlock' => [
+            'type' => 'ProductGridBlock', 'label' => 'Product Grid', 'category' => 'content', 'icon' => 'shopping-bag',
+            'defaultProps' => ['eyebrow' => 'Curated selection', 'heading' => 'The current edit', 'sourceKey' => '', 'columns' => 4, 'viewAllLabel' => 'View all', 'viewAllUrl' => '/shop', 'products' => [
+                ['key' => 'linen-throw', 'title' => 'Linen throw', 'priceLabel' => '$48.00', 'compareAtLabel' => '', 'badge' => 'New', 'imageSrc' => '', 'imageAlt' => '', 'url' => '#'],
+                ['key' => 'stoneware-cup', 'title' => 'Stoneware cup', 'priceLabel' => '$24.00', 'compareAtLabel' => '', 'badge' => '', 'imageSrc' => '', 'imageAlt' => '', 'url' => '#'],
+                ['key' => 'canvas-tote', 'title' => 'Canvas tote', 'priceLabel' => '$36.00', 'compareAtLabel' => '', 'badge' => '', 'imageSrc' => '', 'imageAlt' => '', 'url' => '#'],
+                ['key' => 'cedar-candle', 'title' => 'Cedar candle', 'priceLabel' => '$32.00', 'compareAtLabel' => '$40.00', 'badge' => 'Sale', 'imageSrc' => '', 'imageAlt' => '', 'url' => '#'],
+            ], 'padding' => 40, 'backgroundColor' => 'transparent'],
+            'inspectorFields' => [['key' => 'eyebrow', 'label' => 'Eyebrow', 'type' => 'text'], ['key' => 'heading', 'label' => 'Heading', 'type' => 'text'], ['key' => 'sourceKey', 'label' => 'Future Collection Key', 'type' => 'text'], ['key' => 'columns', 'label' => 'Columns', 'type' => 'number', 'min' => 2, 'max' => 6], ['key' => 'viewAllLabel', 'label' => 'View All Label', 'type' => 'text'], ['key' => 'viewAllUrl', 'label' => 'View All URL', 'type' => 'text'], ['key' => 'products', 'label' => 'Products', 'type' => 'repeater', 'subFields' => [
+                ['key' => 'key', 'label' => 'Stable Key', 'type' => 'text'], ['key' => 'title', 'label' => 'Title', 'type' => 'text'], ['key' => 'priceLabel', 'label' => 'Price', 'type' => 'text'], ['key' => 'compareAtLabel', 'label' => 'Compare Price', 'type' => 'text'], ['key' => 'badge', 'label' => 'Badge', 'type' => 'text'], ['key' => 'imageSrc', 'label' => 'Image', 'type' => 'media'], ['key' => 'imageAlt', 'label' => 'Image Alt', 'type' => 'text'], ['key' => 'url', 'label' => 'URL', 'type' => 'text'],
+            ]]],
+        ],
+        'ProductDetailBlock' => [
+            'type' => 'ProductDetailBlock', 'label' => 'Product Detail', 'category' => 'interactive', 'icon' => 'package',
+            'defaultProps' => ['sourceKey' => '', 'vendor' => 'Independent maker', 'title' => 'Linen throw', 'priceLabel' => '$48.00', 'description' => 'A tactile everyday layer made with considered materials.', 'options' => ['Natural', 'Charcoal'], 'images' => [['src' => '', 'alt' => 'Product image'], ['src' => '', 'alt' => 'Product detail']], 'buttonLabel' => 'Add to cart', 'meta' => 'Taxes and shipping are calculated by the connected store.', 'padding' => 40, 'backgroundColor' => 'transparent'],
+            'inspectorFields' => [['key' => 'sourceKey', 'label' => 'Future Product Key', 'type' => 'text'], ['key' => 'vendor', 'label' => 'Vendor', 'type' => 'text'], ['key' => 'title', 'label' => 'Title', 'type' => 'text'], ['key' => 'priceLabel', 'label' => 'Price', 'type' => 'text'], ['key' => 'description', 'label' => 'Description', 'type' => 'text'], ['key' => 'buttonLabel', 'label' => 'Button Label', 'type' => 'text'], ['key' => 'meta', 'label' => 'Supporting Text', 'type' => 'text'], ['key' => 'images', 'label' => 'Images', 'type' => 'repeater', 'subFields' => [['key' => 'src', 'label' => 'Image', 'type' => 'media'], ['key' => 'alt', 'label' => 'Alt', 'type' => 'text']]]],
+        ],
+        'NewsletterBlock' => [
+            'type' => 'NewsletterBlock', 'label' => 'Store Newsletter', 'category' => 'interactive', 'icon' => 'send',
+            'defaultProps' => ['eyebrow' => 'Stay in touch', 'heading' => 'Notes from the shop', 'body' => 'New collections and thoughtful stories, occasionally.', 'placeholder' => 'Email address', 'buttonLabel' => 'Subscribe', 'padding' => 0, 'backgroundColor' => 'transparent'],
+            'inspectorFields' => [['key' => 'eyebrow', 'label' => 'Eyebrow', 'type' => 'text'], ['key' => 'heading', 'label' => 'Heading', 'type' => 'text'], ['key' => 'body', 'label' => 'Body', 'type' => 'text'], ['key' => 'placeholder', 'label' => 'Placeholder', 'type' => 'text'], ['key' => 'buttonLabel', 'label' => 'Button Label', 'type' => 'text']],
+        ],
+        'TrustValuesBlock' => [
+            'type' => 'TrustValuesBlock', 'label' => 'Store Values', 'category' => 'content', 'icon' => 'shield-check',
+            'defaultProps' => ['items' => [['title' => 'Considered sourcing', 'body' => 'Materials and makers selected with care.'], ['title' => 'Personal service', 'body' => 'Helpful guidance from real people.'], ['title' => 'Secure checkout', 'body' => 'Purchasing is handled by your connected store.']], 'padding' => 40, 'backgroundColor' => 'transparent'],
+            'inspectorFields' => [['key' => 'items', 'label' => 'Values', 'type' => 'repeater', 'subFields' => [['key' => 'title', 'label' => 'Title', 'type' => 'text'], ['key' => 'body', 'label' => 'Body', 'type' => 'text']]]],
+        ],
     ],
     'nesting' => [
         'LayoutGrid' => [
             'HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock', 'ImageBlock',
             'RichTextBlock', 'VideoEmbedBlock', 'FAQBlock', 'TestimonialBlock', 'PricingTableBlock', 'ContactFormBlock',
+            'AnnouncementBlock', 'ImageWithTextBlock', 'CollectionListBlock', 'ProductGridBlock', 'ProductDetailBlock', 'NewsletterBlock', 'TrustValuesBlock',
         ],
         'LayoutColumn' => [
             'HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock', 'ImageBlock',
             'RichTextBlock', 'VideoEmbedBlock', 'FAQBlock', 'TestimonialBlock', 'PricingTableBlock', 'ContactFormBlock',
+            'AnnouncementBlock', 'ImageWithTextBlock', 'CollectionListBlock', 'ProductGridBlock', 'ProductDetailBlock', 'NewsletterBlock', 'TrustValuesBlock',
         ],
     ],
 ];

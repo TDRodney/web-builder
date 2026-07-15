@@ -365,4 +365,8 @@ The editor has a two-step save model:
 - Canvas `container-type: inline-size` lets blocks respond with `@container` queries
 
 
+## Storefront Block Compatibility
+
+Storefront design uses ordinary registered blocks inside `Page::draft_config` and `Page::published_config`. Do not introduce separate commerce templates, editors, renderers, or publish routes. `sourceKey` and product `key` fields are hydration boundaries; manual block props remain the editor fallback.
+
 </laravel-boost-guidelines>
