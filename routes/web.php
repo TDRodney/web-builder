@@ -2,9 +2,11 @@
 
 use App\Http\Controllers\Auth\CentralAuthenticatedSessionController;
 use App\Http\Controllers\Auth\CentralRegisteredUserController;
+use App\Http\Controllers\TenantCommerceCartController;
 use App\Http\Controllers\TenantContactController;
 use App\Http\Controllers\TenantDesignLibraryController;
 use App\Http\Controllers\TenantEditorController;
+use App\Http\Controllers\TenantFixtureCheckoutController;
 use App\Http\Controllers\TenantMediaController;
 use App\Http\Controllers\TenantNavigationController;
 use App\Http\Controllers\TenantPageController;
@@ -109,6 +111,15 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
 
         // Contact Form Submission
         Route::post('/contact', [TenantContactController::class, 'store'])->name('tenant.contact.store');
+
+        Route::prefix('commerce')->group(function () {
+            Route::get('/cart', [TenantCommerceCartController::class, 'show'])->name('tenant.commerce.cart.show');
+            Route::post('/cart/lines', [TenantCommerceCartController::class, 'store'])->name('tenant.commerce.cart.lines.store');
+            Route::patch('/cart/lines/{variantId}', [TenantCommerceCartController::class, 'update'])->name('tenant.commerce.cart.lines.update');
+            Route::delete('/cart/lines/{variantId}', [TenantCommerceCartController::class, 'destroy'])->name('tenant.commerce.cart.lines.destroy');
+            Route::post('/checkout', [TenantCommerceCartController::class, 'checkout'])->name('tenant.commerce.checkout');
+            Route::get('/fixture-checkout', [TenantFixtureCheckoutController::class, 'show'])->name('tenant.commerce.fixture-checkout');
+        });
 
         // State 2: Public User visiting the live published site
         Route::get('/{slug?}', [TenantPublicSiteController::class, 'show'])

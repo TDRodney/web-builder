@@ -10,7 +10,7 @@ const blocks = defineModel('blocks', {
     required: true,
 });
 
-defineProps({
+const props = defineProps({
     navigationConfig: { type: Object, required: true },
     pages: { type: Array, required: true },
     tenantName: { type: String, default: 'My Workspace' },
@@ -19,7 +19,37 @@ defineProps({
     viewMode: { type: String, required: true },
 });
 
-const emit = defineEmits(['drag-start', 'drag-end']);
+const emit = defineEmits(['drag-start', 'drag-end', 'navigate-page']);
+
+const handleCanvasLink = (event: MouseEvent) => {
+    const target = event.target;
+
+    if (!(target instanceof Element)) {
+        return;
+    }
+
+    const anchor = target.closest('a');
+
+    if (!anchor || !anchor.href || anchor.target === '_blank') {
+        return;
+    }
+
+    const url = new URL(anchor.href, window.location.origin);
+
+    if (url.origin !== window.location.origin) {
+        return;
+    }
+
+    const slug = url.pathname.replace(/^\/+|\/+$/g, '') || 'home';
+
+    if (!props.pages.some((page) => page.slug === slug)) {
+        return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    emit('navigate-page', slug);
+};
 </script>
 
 <template>
@@ -32,6 +62,7 @@ const emit = defineEmits(['drag-start', 'drag-end']);
             >
                 <div
                     class="canvas-runtime"
+                    @click.capture="handleCanvasLink"
                     :style="[
                         themeVars,
                         {
@@ -45,6 +76,7 @@ const emit = defineEmits(['drag-start', 'drag-end']);
                         :pages="pages"
                         :tenant-name="tenantName"
                         :is-editable="true"
+                        @navigate-page="emit('navigate-page', $event)"
                     />
 
                     <draggable

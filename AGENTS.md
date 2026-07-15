@@ -365,4 +365,14 @@ The editor has a two-step save model:
 - Canvas `container-type: inline-size` lets blocks respond with `@container` queries
 
 
+## Storefront Block Compatibility
+
+Storefront design uses ordinary registered blocks inside `Page::draft_config` and `Page::published_config`. Do not introduce separate commerce templates, editors, renderers, or publish routes. Version 1 `sourceKey`/`dataBinding` values are presentation bindings; manual block props remain the editor fallback.
+
+Commerce data is resolved per request through `CommerceProvider` and returned in a separate envelope keyed by block UUID. Never persist fixture, preview, provider, price, stock, cart, or checkout data into a page block tree. New providers must preserve normalized money/variant/availability shapes, receive the current tenant explicitly, and return an unavailable state instead of inventing authoritative values.
+
+Fixture cart state is server-side session data namespaced by tenant ID and provider key. Storefront clients send only variant IDs and quantities; providers validate availability and return totals. Do not calculate live-provider prices, discounts, stock, or totals in Vue. Preview selection is request-only and must never trigger a page save. The fixture checkout page is a handoff simulator and must never be described as payment or order placement.
+
+Editor-internal navigation from the topbar, header, or canvas links must call the editor's save-before-switch operation. Never navigate directly away from the editor with an internal anchor because that can discard unsaved draft state. Public links still target ordinary page slugs and require the destination page to be published.
+
 </laravel-boost-guidelines>

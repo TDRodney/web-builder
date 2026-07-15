@@ -10,6 +10,7 @@ import EditorSidebar from '@/components/Editor/EditorSidebar.vue';
 import EditorTopbar from '@/components/Editor/EditorTopbar.vue';
 import { getBlockDefinition, blockComponents } from '@/lib/blockRegistry';
 import { blockPresets } from '@/lib/blockPresets';
+import { commerceHydrationKey, emptyCommerceHydration } from '@/lib/commerce';
 import { useTheme } from '@/lib/theme';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'vue-sonner';
@@ -21,8 +22,15 @@ const props = defineProps({
     page: Object,
     pages: Array,
     page_layouts: { type: Array, default: () => [] },
+    commerce_hydration: { type: Object, default: () => emptyCommerceHydration },
+    commerce_preview: { type: Object, default: () => ({}) },
     urls: Object,
 });
+
+provide(
+    commerceHydrationKey,
+    computed(() => props.commerce_hydration || emptyCommerceHydration),
+);
 
 const { cssVars: themeVars, fontUrl } = useTheme(
     () => props.tenant?.theme_config,
@@ -119,6 +127,22 @@ const canvasMaxWidth = computed(() => {
             return '100%';
     }
 });
+
+const updateCommercePreview = (source) => {
+    router.get(
+        window.location.pathname,
+        {
+            page: props.page.slug,
+            commerce_preview: source || undefined,
+        },
+        {
+            only: ['commerce_hydration', 'commerce_preview'],
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        },
+    );
+};
 
 // History management state
 const undoStack = ref([]);
@@ -746,10 +770,15 @@ const onMediaSelected = (item) => {
             :can-undo="undoStack.length > 0"
             :can-redo="redoStack.length > 0"
             :save-state="saveState"
+            :commerce-preview="props.commerce_preview"
+            :pages="props.pages"
+            :current-page-slug="props.page.slug"
             @toggle-sidebar="sidebarOpen = !sidebarOpen"
             @update:view-mode="viewMode = $event"
             @undo="undo"
             @redo="redo"
+            @update:commerce-preview="updateCommercePreview"
+            @switch-page="switchPage"
         />
 
         <div class="editor-body">
@@ -805,6 +834,7 @@ const onMediaSelected = (item) => {
                     isDragging = false;
                     forceSave();
                 "
+                @navigate-page="switchPage"
             />
         </div>
 

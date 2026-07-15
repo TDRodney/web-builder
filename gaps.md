@@ -506,3 +506,11 @@ Implemented test coverage includes:
 | SQLite write contention | Adequate for local development | Use PostgreSQL/MySQL in production |
 | Cross-subdomain/custom-domain sessions | Wildcard cookie for central domain | Design a separate custom-domain authentication strategy |
 | SEO depends on runtime rendering mode | Inertia `<Head>` metadata is available client-side | Validate and operate production SSR if crawl-time HTML is required |
+
+## Storefront hydration
+
+- The Retail kit is a six-page, block-composed storefront editable in the original visual editor, including an ordinary Cart page.
+- Product and collection blocks are hydrated at request time through a block-ID-keyed provider envelope. `COMMERCE_DRIVER=fixture` supplies development data and `COMMERCE_DRIVER=null` exercises the disconnected fallback.
+- Fixture mode implements filters, sorting, pagination, variant availability, tenant-isolated cart mutations, cart drawer/page, and a simulated hosted-checkout handoff. It never collects payment or places orders.
+- Live platform authentication, tenant connection storage, cache policy, dynamic product/collection routes, provider cart tokens, customer identity, payment, order placement, and real hosted checkout remain deferred until the platform contract is assessed.
+- Cart, live inventory, authoritative pricing, and checkout remain deferred instead of using a parallel renderer.

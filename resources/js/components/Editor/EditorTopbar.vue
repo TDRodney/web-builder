@@ -10,8 +10,9 @@ import {
     Tablet,
     Undo2,
 } from '@lucide/vue';
+import { computed } from 'vue';
 
-defineProps({
+const props = defineProps({
     dashboardUrl: { type: String, required: true },
     liveUrl: { type: String, required: true },
     pageTitle: { type: String, default: 'Untitled page' },
@@ -20,6 +21,9 @@ defineProps({
     canUndo: { type: Boolean, default: false },
     canRedo: { type: Boolean, default: false },
     saveState: { type: String, default: 'saved' },
+    commercePreview: { type: Object, default: () => ({}) },
+    pages: { type: Array, default: () => [] },
+    currentPageSlug: { type: String, default: '' },
 });
 
 const emit = defineEmits([
@@ -27,7 +31,15 @@ const emit = defineEmits([
     'update:view-mode',
     'undo',
     'redo',
+    'update:commerce-preview',
+    'switch-page',
 ]);
+
+const productPreviewOptions = computed(() =>
+    (props.commercePreview?.options || []).filter(
+        (option: Record<string, string>) => option.resource === 'product',
+    ),
+);
 
 const viewModes = [
     { value: 'desktop', label: 'Desktop view', icon: Monitor },
@@ -55,25 +67,69 @@ const viewModes = [
 
             <div class="builder-title">
                 <span class="builder-kicker">Visual builder</span>
-                <span class="builder-page"
-                    >{{ tenantName }} / {{ pageTitle }}</span
-                >
+                <label class="builder-page-select">
+                    <span class="sr-only">Edit page</span>
+                    <select
+                        :value="currentPageSlug"
+                        aria-label="Edit page"
+                        @change="
+                            emit(
+                                'switch-page',
+                                ($event.target as HTMLSelectElement).value,
+                            )
+                        "
+                    >
+                        <option
+                            v-for="page in pages"
+                            :key="page.id"
+                            :value="page.slug"
+                        >
+                            {{ tenantName }} / {{ page.title
+                            }}{{ page.is_homepage ? ' · Homepage' : '' }}
+                        </option>
+                    </select>
+                </label>
             </div>
         </div>
 
-        <div class="viewport-switcher" aria-label="Preview size">
-            <button
-                v-for="mode in viewModes"
-                :key="mode.value"
-                type="button"
-                class="viewport-button"
-                :class="{ 'viewport-button-active': viewMode === mode.value }"
-                :aria-pressed="viewMode === mode.value"
-                @click="emit('update:view-mode', mode.value)"
-            >
-                <component :is="mode.icon" :size="14" />
-                <span>{{ mode.label }}</span>
-            </button>
+        <div class="preview-tools">
+            <label v-if="productPreviewOptions.length" class="resource-preview">
+                <span>Fixture product</span>
+                <select
+                    :value="commercePreview?.selected || ''"
+                    @change="
+                        emit(
+                            'update:commerce-preview',
+                            ($event.target as HTMLSelectElement).value,
+                        )
+                    "
+                >
+                    <option value="">Page binding</option>
+                    <option
+                        v-for="option in productPreviewOptions"
+                        :key="option.source"
+                        :value="option.source"
+                    >
+                        {{ option.label }}
+                    </option>
+                </select>
+            </label>
+            <div class="viewport-switcher" aria-label="Preview size">
+                <button
+                    v-for="mode in viewModes"
+                    :key="mode.value"
+                    type="button"
+                    class="viewport-button"
+                    :class="{
+                        'viewport-button-active': viewMode === mode.value,
+                    }"
+                    :aria-pressed="viewMode === mode.value"
+                    @click="emit('update:view-mode', mode.value)"
+                >
+                    <component :is="mode.icon" :size="14" />
+                    <span>{{ mode.label }}</span>
+                </button>
+            </div>
         </div>
 
         <div class="topbar-actions">
@@ -147,6 +203,7 @@ const viewModes = [
 .topbar-actions,
 .history-actions,
 .viewport-switcher,
+.preview-tools,
 .back-link,
 .live-link,
 .save-state {
@@ -213,22 +270,63 @@ const viewModes = [
     text-transform: uppercase;
 }
 
-.builder-page {
+.builder-page-select select {
     max-width: 240px;
-    overflow: hidden;
+    padding: 0;
     color: #9ca3af;
+    background: transparent;
+    border: 0;
     font-size: 10px;
-    text-overflow: ellipsis;
+    cursor: pointer;
+}
+
+.builder-page-select select:focus-visible {
+    outline: 1px solid #93c5fd;
+    outline-offset: 2px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
     white-space: nowrap;
+    border: 0;
 }
 
 .viewport-switcher {
-    justify-self: center;
     padding: 3px;
     gap: 2px;
     background: #171719;
     border: 1px solid #2d2d30;
     border-radius: 6px;
+}
+.preview-tools {
+    justify-self: center;
+    gap: 8px;
+}
+.resource-preview {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #7c8eae;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.resource-preview select {
+    max-width: 150px;
+    height: 30px;
+    padding: 0 8px;
+    color: #d1d5db;
+    background: #171719;
+    border: 1px solid #303033;
+    border-radius: 5px;
+    font-size: 10px;
 }
 
 .viewport-button {
@@ -369,7 +467,7 @@ a:focus-visible {
         grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
     }
 
-    .builder-page,
+    .builder-page-select,
     .save-state {
         display: none;
     }
@@ -403,6 +501,10 @@ a:focus-visible {
         position: absolute;
         left: 50%;
         transform: translateX(-50%);
+    }
+
+    .resource-preview {
+        display: none;
     }
 
     .live-link span {
