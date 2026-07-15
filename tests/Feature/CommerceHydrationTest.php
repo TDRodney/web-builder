@@ -1,7 +1,6 @@
 <?php
 
 use App\Commerce\CommerceHydrator;
-use App\Commerce\Contracts\CommerceProvider;
 use App\Commerce\FixtureCommerceProvider;
 use App\Commerce\NullCommerceProvider;
 use App\Models\Tenant;
@@ -68,7 +67,7 @@ test('the null provider returns an explicit safe unavailable state', function ()
 });
 
 test('provider resolution always receives the current tenant', function () {
-    $provider = new class implements CommerceProvider
+    $provider = new class extends NullCommerceProvider
     {
         public array $tenantIds = [];
 

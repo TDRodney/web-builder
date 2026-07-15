@@ -40,7 +40,7 @@ $product = static function (
             'title' => $option,
             'options' => ['Style' => $option],
             'price' => $money($amountMinor, $formatted),
-            'available' => $available && $index !== count($options) - 1,
+            'available' => $available && (count($options) === 1 || $index !== count($options) - 1),
         ])->all(),
     ];
 };

@@ -23,6 +23,7 @@ const props = defineProps({
     pages: Array,
     page_layouts: { type: Array, default: () => [] },
     commerce_hydration: { type: Object, default: () => emptyCommerceHydration },
+    commerce_preview: { type: Object, default: () => ({}) },
     urls: Object,
 });
 
@@ -126,6 +127,22 @@ const canvasMaxWidth = computed(() => {
             return '100%';
     }
 });
+
+const updateCommercePreview = (source) => {
+    router.get(
+        window.location.pathname,
+        {
+            page: props.page.slug,
+            commerce_preview: source || undefined,
+        },
+        {
+            only: ['commerce_hydration', 'commerce_preview'],
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        },
+    );
+};
 
 // History management state
 const undoStack = ref([]);
@@ -753,10 +770,12 @@ const onMediaSelected = (item) => {
             :can-undo="undoStack.length > 0"
             :can-redo="redoStack.length > 0"
             :save-state="saveState"
+            :commerce-preview="props.commerce_preview"
             @toggle-sidebar="sidebarOpen = !sidebarOpen"
             @update:view-mode="viewMode = $event"
             @undo="undo"
             @redo="redo"
+            @update:commerce-preview="updateCommercePreview"
         />
 
         <div class="editor-body">

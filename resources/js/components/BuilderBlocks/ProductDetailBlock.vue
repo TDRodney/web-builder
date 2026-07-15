@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, inject, ref, watch } from 'vue';
 import { useCommerceBlock } from '@/lib/commerce';
+import { useCommerceCart } from '@/lib/commerceCart';
 import type { CommerceProduct, CommerceVariant } from '@/types/commerce';
 
 const props = defineProps<{
@@ -8,6 +9,9 @@ const props = defineProps<{
     blockProps: Record<string, any>;
 }>();
 const hydratedBlock = useCommerceBlock<CommerceProduct>(props.nodeId);
+const commerceCart = useCommerceCart();
+const isEditable = inject('isEditable', false);
+const addStatus = ref('');
 const product = computed<Record<string, any>>(() => {
     if (hydratedBlock.value?.status === 'ready' && hydratedBlock.value.data) {
         return hydratedBlock.value.data;
@@ -49,6 +53,16 @@ const canPurchase = computed(
         (variants.value.length === 0 ||
             selectedVariant.value?.available === true),
 );
+
+const addToCart = async (): Promise<void> => {
+    if (isEditable || !commerceCart || !selectedVariant.value) {
+        return;
+    }
+
+    addStatus.value = '';
+    const added = await commerceCart.add(selectedVariant.value.id, 1);
+    addStatus.value = added ? 'Added to your bag.' : commerceCart.error.value;
+};
 
 watch(
     variants,
@@ -100,15 +114,26 @@ watch(
                         }}{{ option.available ? '' : ' — Unavailable' }}
                     </option>
                 </select></label
-            ><button type="button" :disabled="!canPurchase">
+            ><button
+                type="button"
+                :disabled="
+                    !canPurchase || isEditable || commerceCart?.isBusy.value
+                "
+                @click="addToCart"
+            >
                 {{
-                    product.available === false
-                        ? 'Unavailable'
-                        : product.buttonLabel ||
-                          blockProps.buttonLabel ||
-                          'Add to cart'
+                    isEditable
+                        ? 'Add to cart · preview only'
+                        : product.available === false
+                          ? 'Unavailable'
+                          : product.buttonLabel ||
+                            blockProps.buttonLabel ||
+                            'Add to cart'
                 }}
             </button>
+            <p v-if="addStatus" class="add-status" role="status">
+                {{ addStatus }}
+            </p>
             <div class="meta">{{ product.meta || blockProps.meta }}</div>
         </div>
     </section>
@@ -168,10 +193,14 @@ h1 {
     font-size: 1.15rem;
 }
 .description,
-.meta {
+.meta,
+.add-status {
     margin-top: 1.5rem;
     line-height: 1.7;
     opacity: 0.7;
+}
+.add-status {
+    font-size: 0.8rem;
 }
 label {
     display: grid;

@@ -64,3 +64,27 @@ export interface CommerceHydrationEnvelope {
     provider: string;
     blocks: Record<string, CommerceHydratedBlock>;
 }
+
+export interface CommerceCartLine {
+    id: string;
+    variantId: string;
+    productId: string;
+    title: string;
+    variantTitle: string;
+    quantity: number;
+    image: CommerceImage | null;
+    unitPrice: CommerceMoney;
+    lineTotal: CommerceMoney;
+    available: boolean;
+}
+
+export interface CommerceCart {
+    id: string;
+    provider: string;
+    currency: string;
+    lines: CommerceCartLine[];
+    itemCount: number;
+    subtotal: CommerceMoney;
+    total: CommerceMoney;
+    checkoutAvailable: boolean;
+}

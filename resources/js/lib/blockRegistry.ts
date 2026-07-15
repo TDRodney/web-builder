@@ -1,6 +1,7 @@
 import { usePage } from '@inertiajs/vue3';
 import AtomicText from '@/components/BuilderBlocks/AtomicText.vue';
 import ButtonBlock from '@/components/BuilderBlocks/ButtonBlock.vue';
+import CartBlock from '@/components/BuilderBlocks/CartBlock.vue';
 import DividerBlock from '@/components/BuilderBlocks/DividerBlock.vue';
 import FeatureBlock from '@/components/BuilderBlocks/FeatureBlock.vue';
 import HeroBlock from '@/components/BuilderBlocks/HeroBlock.vue';
@@ -29,6 +30,7 @@ export const blockComponents: Record<string, any> = {
     LayoutColumn,
     AtomicText,
     ButtonBlock,
+    CartBlock,
     DividerBlock,
     SpacerBlock,
     ImageBlock,

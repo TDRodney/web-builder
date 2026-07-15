@@ -1,14 +1,18 @@
 <script setup>
 import { computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import { ArrowRight, Phone } from '@lucide/vue';
+import { ArrowRight, Phone, ShoppingBag } from '@lucide/vue';
 
 const props = defineProps({
     navigationConfig: { type: Object, default: () => ({}) },
     pages: { type: Array, default: () => [] },
     tenantName: { type: String, default: 'My Workspace' },
     isEditable: { type: Boolean, default: false },
+    showCart: { type: Boolean, default: false },
+    cartCount: { type: Number, default: 0 },
 });
+
+const emit = defineEmits(['open-cart']);
 
 const page = usePage();
 
@@ -103,8 +107,26 @@ const isItemActive = (item) => {
                 </ul>
             </nav>
 
-            <div v-if="ctaButton.show" class="header-actions">
+            <div v-if="ctaButton.show || showCart" class="header-actions">
+                <button
+                    v-if="showCart"
+                    type="button"
+                    class="action-button contact-action cart-action"
+                    :aria-label="`Open shopping bag with ${cartCount} items`"
+                    title="Shopping bag"
+                    @click="emit('open-cart')"
+                >
+                    <ShoppingBag
+                        :size="25"
+                        :stroke-width="1.8"
+                        aria-hidden="true"
+                    />
+                    <span v-if="cartCount" class="cart-count">{{
+                        cartCount
+                    }}</span>
+                </button>
                 <component
+                    v-if="ctaButton.show"
                     :is="isEditable ? 'span' : Link"
                     :href="getPageUrl(ctaButton.slug)"
                     class="action-button contact-action"
@@ -115,6 +137,7 @@ const isItemActive = (item) => {
                 </component>
 
                 <component
+                    v-if="ctaButton.show"
                     :is="isEditable ? 'span' : Link"
                     :href="getPageUrl(ctaButton.slug)"
                     class="action-button primary-action"
@@ -254,6 +277,23 @@ const isItemActive = (item) => {
     transition:
         filter 180ms ease,
         transform 180ms ease;
+}
+.cart-action {
+    position: relative;
+}
+.cart-count {
+    position: absolute;
+    top: -0.25rem;
+    right: -0.25rem;
+    display: grid;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.2rem;
+    place-items: center;
+    color: var(--theme-bg, #fff);
+    background: var(--theme-primary, #4f46e5);
+    border-radius: 9999px;
+    font-size: 0.65rem;
 }
 
 .action-button:hover {

@@ -22,11 +22,11 @@ class CommerceHydrator
      * @param  array<int, array<string, mixed>>  $blocks
      * @return array{schemaVersion: int, provider: string, blocks: array<string, array<string, mixed>>}
      */
-    public function hydrate(Tenant $tenant, array $blocks): array
+    public function hydrate(Tenant $tenant, array $blocks, array $sourceOverrides = []): array
     {
         $hydratedBlocks = [];
 
-        $this->hydrateNodes($tenant, $blocks, $hydratedBlocks);
+        $this->hydrateNodes($tenant, $blocks, $hydratedBlocks, $sourceOverrides);
 
         return [
             'schemaVersion' => 1,
@@ -39,13 +39,14 @@ class CommerceHydrator
      * @param  array<int, array<string, mixed>>  $nodes
      * @param  array<string, array<string, mixed>>  $hydratedBlocks
      */
-    private function hydrateNodes(Tenant $tenant, array $nodes, array &$hydratedBlocks): void
+    private function hydrateNodes(Tenant $tenant, array $nodes, array &$hydratedBlocks, array $sourceOverrides): void
     {
         foreach ($nodes as $node) {
             $binding = $this->bindingFor($node);
             $nodeId = $node['id'] ?? null;
 
             if ($binding !== null && is_string($nodeId) && $nodeId !== '') {
+                $binding['source'] = $sourceOverrides[$binding['resource']] ?? $binding['source'];
                 $hydratedBlocks[$nodeId] = [
                     'binding' => $binding,
                     ...$this->provider->resolve(
@@ -60,7 +61,7 @@ class CommerceHydrator
             $children = $node['children'] ?? [];
 
             if (is_array($children)) {
-                $this->hydrateNodes($tenant, $children, $hydratedBlocks);
+                $this->hydrateNodes($tenant, $children, $hydratedBlocks, $sourceOverrides);
             }
         }
     }

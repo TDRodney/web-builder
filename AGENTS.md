@@ -371,4 +371,6 @@ Storefront design uses ordinary registered blocks inside `Page::draft_config` an
 
 Commerce data is resolved per request through `CommerceProvider` and returned in a separate envelope keyed by block UUID. Never persist fixture, preview, provider, price, stock, cart, or checkout data into a page block tree. New providers must preserve normalized money/variant/availability shapes, receive the current tenant explicitly, and return an unavailable state instead of inventing authoritative values.
 
+Fixture cart state is server-side session data namespaced by tenant ID and provider key. Storefront clients send only variant IDs and quantities; providers validate availability and return totals. Do not calculate live-provider prices, discounts, stock, or totals in Vue. Preview selection is request-only and must never trigger a page save. The fixture checkout page is a handoff simulator and must never be described as payment or order placement.
+
 </laravel-boost-guidelines>

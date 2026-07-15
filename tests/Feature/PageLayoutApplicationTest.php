@@ -220,7 +220,7 @@ test('build page layouts action returns lightweight gallery data', function () {
     $builder = app(BuildPageLayouts::class);
     $layouts = $builder->handle();
 
-    expect($layouts)->toHaveCount(13);
+    expect($layouts)->toHaveCount(14);
 
     foreach ($layouts as $layout) {
         expect($layout)->toHaveKey('key')

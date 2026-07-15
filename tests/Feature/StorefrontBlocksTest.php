@@ -9,7 +9,7 @@ function flattenStorefrontNodes(array $nodes): array
 }
 
 test('storefront blocks are registered for both layout parents and backend nesting', function () {
-    $types = ['AnnouncementBlock', 'ImageWithTextBlock', 'CollectionListBlock', 'ProductGridBlock', 'ProductDetailBlock', 'NewsletterBlock', 'TrustValuesBlock'];
+    $types = ['AnnouncementBlock', 'ImageWithTextBlock', 'CollectionListBlock', 'ProductGridBlock', 'ProductDetailBlock', 'CartBlock', 'NewsletterBlock', 'TrustValuesBlock'];
 
     foreach ($types as $type) {
         expect(config("blocks.definitions.{$type}.type"))->toBe($type)
@@ -22,12 +22,12 @@ test('storefront blocks are registered for both layout parents and backend nesti
 
 test('retail layouts form a complete editable storefront in the ordinary block schema', function () {
     $layouts = config('designs.page_layouts');
-    $types = collect(['retail-home', 'retail-shop', 'retail-product'])
+    $types = collect(['retail-home', 'retail-shop', 'retail-product', 'retail-cart'])
         ->flatMap(fn (string $key) => collect(flattenStorefrontNodes($layouts[$key]['blocks']))->pluck('type'));
 
-    expect($types)->toContain('CollectionListBlock', 'ProductGridBlock', 'ProductDetailBlock', 'NewsletterBlock', 'TrustValuesBlock');
+    expect($types)->toContain('CollectionListBlock', 'ProductGridBlock', 'ProductDetailBlock', 'CartBlock', 'NewsletterBlock', 'TrustValuesBlock');
 
-    foreach (['retail-home', 'retail-shop', 'retail-product'] as $key) {
+    foreach (['retail-home', 'retail-shop', 'retail-product', 'retail-cart'] as $key) {
         expect(Validator::make(['blocks' => $layouts[$key]['blocks']], ['blocks' => ['required', 'array', new ValidatesBlockSchema]])->passes())->toBeTrue();
     }
 });

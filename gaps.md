@@ -509,7 +509,8 @@ Implemented test coverage includes:
 
 ## Storefront hydration
 
-- The Retail kit is a five-page, block-composed storefront editable in the original visual editor.
+- The Retail kit is a six-page, block-composed storefront editable in the original visual editor, including an ordinary Cart page.
 - Product and collection blocks are hydrated at request time through a block-ID-keyed provider envelope. `COMMERCE_DRIVER=fixture` supplies development data and `COMMERCE_DRIVER=null` exercises the disconnected fallback.
-- Live platform authentication, tenant connection storage, cache policy, dynamic product/collection routing, authoritative cart mutations, and hosted checkout remain deferred until the platform contract is assessed.
+- Fixture mode implements filters, sorting, pagination, variant availability, tenant-isolated cart mutations, cart drawer/page, and a simulated hosted-checkout handoff. It never collects payment or places orders.
+- Live platform authentication, tenant connection storage, cache policy, dynamic product/collection routes, provider cart tokens, customer identity, payment, order placement, and real hosted checkout remain deferred until the platform contract is assessed.
 - Cart, live inventory, authoritative pricing, and checkout remain deferred instead of using a parallel renderer.

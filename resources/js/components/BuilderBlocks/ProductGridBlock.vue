@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useCommerceBlock } from '@/lib/commerce';
 import type { CommerceProduct } from '@/types/commerce';
+
+type DisplayProduct = CommerceProduct & Record<string, any>;
 
 const props = defineProps<{
     nodeId?: string;
@@ -11,23 +13,87 @@ const props = defineProps<{
 const hydratedBlock = useCommerceBlock<{ products: CommerceProduct[] }>(
     props.nodeId,
 );
-const products = computed(() => {
+const products = computed<DisplayProduct[]>(() => {
     if (hydratedBlock.value?.status === 'ready') {
-        return hydratedBlock.value.data?.products || [];
+        return (hydratedBlock.value.data?.products || []) as DisplayProduct[];
     }
 
-    return props.blockProps.products || [];
+    return (props.blockProps.products || []) as DisplayProduct[];
+});
+const selectedCategory = ref('all');
+const selectedSort = ref('featured');
+const currentPage = ref(1);
+const categories = computed(() => [
+    ...new Set(
+        products.value
+            .map((product: DisplayProduct) => String(product.category || ''))
+            .filter(Boolean),
+    ),
+]);
+const filteredProducts = computed(() => {
+    const filtered =
+        selectedCategory.value === 'all'
+            ? [...products.value]
+            : products.value.filter(
+                  (product: DisplayProduct) =>
+                      product.category === selectedCategory.value,
+              );
+
+    if (selectedSort.value === 'price-low') {
+        return filtered.sort(
+            (first, second) =>
+                (first.price?.amountMinor || 0) -
+                (second.price?.amountMinor || 0),
+        );
+    }
+
+    if (selectedSort.value === 'price-high') {
+        return filtered.sort(
+            (first, second) =>
+                (second.price?.amountMinor || 0) -
+                (first.price?.amountMinor || 0),
+        );
+    }
+
+    if (selectedSort.value === 'title') {
+        return filtered.sort((first, second) =>
+            String(first.title).localeCompare(String(second.title)),
+        );
+    }
+
+    return filtered;
+});
+const pageSize = computed(() => Math.max(1, props.blockProps.pageSize || 4));
+const controlsVisible = computed(
+    () =>
+        props.blockProps.showControls === true ||
+        props.blockProps.showControls === 'yes',
+);
+const pageCount = computed(() =>
+    Math.max(1, Math.ceil(filteredProducts.value.length / pageSize.value)),
+);
+const visibleProducts = computed(() => {
+    if (!controlsVisible.value) {
+        return filteredProducts.value;
+    }
+
+    const start = (currentPage.value - 1) * pageSize.value;
+
+    return filteredProducts.value.slice(start, start + pageSize.value);
 });
 
-const imageFor = (product: CommerceProduct & Record<string, any>): string =>
+watch([selectedCategory, selectedSort], () => {
+    currentPage.value = 1;
+});
+
+const imageFor = (product: DisplayProduct): string =>
     product.images?.[0]?.src || product.imageSrc || '';
-const imageAltFor = (product: CommerceProduct & Record<string, any>): string =>
+const imageAltFor = (product: DisplayProduct): string =>
     product.images?.[0]?.alt || product.imageAlt || product.title;
-const priceFor = (product: CommerceProduct & Record<string, any>): string =>
+const priceFor = (product: DisplayProduct): string =>
     product.price?.formatted || product.priceLabel || '';
-const comparePriceFor = (
-    product: CommerceProduct & Record<string, any>,
-): string => product.compareAtPrice?.formatted || product.compareAtLabel || '';
+const comparePriceFor = (product: DisplayProduct): string =>
+    product.compareAtPrice?.formatted || product.compareAtLabel || '';
 </script>
 
 <template>
@@ -50,9 +116,30 @@ const comparePriceFor = (
                 >{{ blockProps.viewAllLabel }}</a
             >
         </header>
+        <div v-if="controlsVisible" class="catalog-controls">
+            <label>
+                Category
+                <select v-model="selectedCategory">
+                    <option value="all">All categories</option>
+                    <option v-for="category in categories" :key="category">
+                        {{ category }}
+                    </option>
+                </select>
+            </label>
+            <label>
+                Sort
+                <select v-model="selectedSort">
+                    <option value="featured">Featured</option>
+                    <option value="price-low">Price: low to high</option>
+                    <option value="price-high">Price: high to low</option>
+                    <option value="title">Title</option>
+                </select>
+            </label>
+            <span>{{ filteredProducts.length }} products</span>
+        </div>
         <div class="grid" :style="{ '--columns': blockProps.columns || 4 }">
             <a
-                v-for="product in products"
+                v-for="product in visibleProducts"
                 :key="product.id || product.key || product.title"
                 :href="product.url || '#'"
                 ><div class="media">
@@ -80,6 +167,30 @@ const comparePriceFor = (
                 ></a
             >
         </div>
+        <p v-if="!visibleProducts.length" class="empty-results">
+            No products match this selection.
+        </p>
+        <nav
+            v-if="controlsVisible && pageCount > 1"
+            class="pagination"
+            aria-label="Product pages"
+        >
+            <button
+                type="button"
+                :disabled="currentPage === 1"
+                @click="currentPage--"
+            >
+                Previous
+            </button>
+            <span>Page {{ currentPage }} of {{ pageCount }}</span>
+            <button
+                type="button"
+                :disabled="currentPage === pageCount"
+                @click="currentPage++"
+            >
+                Next
+            </button>
+        </nav>
     </section>
 </template>
 
@@ -111,6 +222,32 @@ h2 {
 header a {
     color: var(--theme-text);
     font-size: 0.85rem;
+}
+.catalog-controls {
+    display: flex;
+    align-items: end;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+}
+.catalog-controls label {
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.catalog-controls select {
+    min-width: 11rem;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid color-mix(in srgb, var(--theme-text) 18%, transparent);
+    border-radius: var(--theme-border-radius);
+    color: inherit;
+    background: var(--theme-bg);
+}
+.catalog-controls > span {
+    margin-left: auto;
+    font-size: 0.8rem;
+    opacity: 0.6;
 }
 .grid {
     display: grid;
@@ -170,6 +307,30 @@ h3 {
     font-size: 0.72rem;
     opacity: 0.6;
 }
+.empty-results {
+    padding: 3rem;
+    text-align: center;
+    opacity: 0.6;
+}
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2rem;
+    gap: 1rem;
+    font-size: 0.8rem;
+}
+.pagination button {
+    padding: 0.6rem 0.9rem;
+    border: 1px solid color-mix(in srgb, var(--theme-text) 18%, transparent);
+    color: inherit;
+    background: transparent;
+    cursor: pointer;
+}
+.pagination button:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+}
 @container (max-width: 780px) {
     .grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -180,6 +341,13 @@ h3 {
         align-items: start;
         flex-direction: column;
         gap: 0.75rem;
+    }
+    .catalog-controls {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .catalog-controls > span {
+        margin-left: 0;
     }
 }
 </style>

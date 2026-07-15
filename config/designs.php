@@ -180,6 +180,7 @@ return [
                     'ctaButton' => ['show' => true, 'label' => 'Contact', 'slug' => 'contact'],
                 ],
                 'footer' => ['copyright' => ''],
+                'commerce' => ['enabled' => true, 'cart_slug' => 'cart', 'product_slug' => 'product'],
             ],
         ],
         'hotel-refined' => [
@@ -302,7 +303,7 @@ return [
                 $storeBlock('retail-shop-announcement', 'AnnouncementBlock', ['text' => 'The current collection · selected in small runs'], 0),
                 $heroBlock('retail-shop-hero', 'Shop the collection', 'Browse an editorial catalog ready to be hydrated by your connected products and collections.'),
                 $imageBlock('retail-shop-campaign', 'Replace with a shop or collection campaign image', '420px'),
-                $storeBlock('retail-shop-grid', 'ProductGridBlock', ['eyebrow' => 'All products', 'heading' => 'Objects for everyday life', 'bindingVersion' => 1, 'sourceKey' => 'all', 'limit' => 12, 'columns' => 4, 'viewAllLabel' => '', 'viewAllUrl' => '', 'products' => $starterProducts]),
+                $storeBlock('retail-shop-grid', 'ProductGridBlock', ['eyebrow' => 'All products', 'heading' => 'Objects for everyday life', 'bindingVersion' => 1, 'sourceKey' => 'all', 'limit' => 12, 'columns' => 4, 'showControls' => true, 'pageSize' => 4, 'viewAllLabel' => '', 'viewAllUrl' => '', 'products' => $starterProducts]),
                 $storeBlock('retail-shop-values', 'TrustValuesBlock', ['items' => [['title' => 'Small-run selection', 'body' => 'A focused assortment rather than endless inventory.'], ['title' => 'Material clarity', 'body' => 'Make care, origin, and materials easy to understand.'], ['title' => 'Human support', 'body' => 'Invite questions before and after purchase.']]]),
                 $richTextBlock('retail-shop-notice', '<p>This starter storefront is presentation-ready. Product keys provide a stable future hydration boundary; live inventory and checkout require a connected commerce provider.</p>'),
             ],
@@ -314,6 +315,14 @@ return [
                 $imageBlock('retail-product-lifestyle', 'Replace with a full-width product lifestyle image', '520px'),
                 $storeBlock('retail-product-related', 'ProductGridBlock', ['eyebrow' => 'Complete the edit', 'heading' => 'You may also like', 'bindingVersion' => 1, 'sourceKey' => 'related', 'limit' => 4, 'columns' => 4, 'viewAllLabel' => 'View collection', 'viewAllUrl' => '/shop', 'products' => $starterProducts]),
                 $storeBlock('retail-product-newsletter', 'NewsletterBlock', ['eyebrow' => 'Stay in touch', 'heading' => 'Notes from the shop', 'body' => 'New collections and thoughtful stories, occasionally.', 'placeholder' => 'Email address', 'buttonLabel' => 'Subscribe'], 0),
+            ],
+        ],
+        'retail-cart' => [
+            'label' => 'Retail — Cart', 'page_type' => 'cart', 'industry' => 'Retail',
+            'blocks' => [
+                $storeBlock('retail-cart-main', 'CartBlock', ['eyebrow' => 'Your selection', 'heading' => 'Shopping bag', 'body' => 'Review your items before continuing to the provider-owned checkout.', 'emptyHeading' => 'Your bag is empty', 'emptyBody' => 'Explore the current collection and find something considered.', 'continueUrl' => '/shop', 'checkoutLabel' => 'Continue to fixture checkout']),
+                $storeBlock('retail-cart-values', 'TrustValuesBlock', ['items' => [['title' => 'Authoritative totals', 'body' => 'Prices and totals come from the active provider.'], ['title' => 'Availability checked', 'body' => 'Variant availability is checked before checkout.'], ['title' => 'Hosted checkout', 'body' => 'Payment remains outside the page builder.']]]),
+                $imageBlock('retail-cart-editorial', 'Replace with a customer service or packaging image', '360px'),
             ],
         ],
         'retail-about' => [
@@ -425,12 +434,13 @@ return [
         'retail' => [
             'label' => 'Retail',
             'industry' => 'Retail and Commerce',
-            'description' => 'A clean editorial showcase for collections, brand story, and product enquiries.',
+            'description' => 'A modifiable editorial storefront with fixture-backed catalog, product, cart, and checkout previews.',
             'style_key' => 'retail-editorial',
             'pages' => [
                 ['title' => 'Home', 'slug' => 'home', 'layout_key' => 'retail-home', 'is_homepage' => true],
                 ['title' => 'Shop', 'slug' => 'shop', 'layout_key' => 'retail-shop', 'is_homepage' => false],
                 ['title' => 'Product', 'slug' => 'product', 'layout_key' => 'retail-product', 'is_homepage' => false],
+                ['title' => 'Cart', 'slug' => 'cart', 'layout_key' => 'retail-cart', 'is_homepage' => false],
                 ['title' => 'About', 'slug' => 'about', 'layout_key' => 'retail-about', 'is_homepage' => false],
                 ['title' => 'Contact', 'slug' => 'contact', 'layout_key' => 'retail-contact', 'is_homepage' => false],
             ],

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Commerce\CommerceCartManager;
 use App\Commerce\CommerceHydrator;
 use App\Models\Page;
 use Inertia\Inertia;
@@ -9,7 +10,10 @@ use Inertia\Response;
 
 class TenantPublicSiteController extends Controller
 {
-    public function __construct(private CommerceHydrator $commerceHydrator) {}
+    public function __construct(
+        private CommerceHydrator $commerceHydrator,
+        private CommerceCartManager $cartManager,
+    ) {}
 
     public function show(?string $slug = null): Response
     {
@@ -33,10 +37,18 @@ class TenantPublicSiteController extends Controller
             abort(404, 'This page has not been published yet.');
         }
 
+        $requestedProduct = request()->string('commerce_product')->toString();
+        $sourceOverrides = preg_match('/^[A-Za-z0-9._-]{1,100}$/', $requestedProduct) === 1
+            ? ['product' => $requestedProduct]
+            : [];
+        $commerceEnabled = (bool) data_get($tenant->navigation_config, 'commerce.enabled', false);
+
         return Inertia::render('Tenant/PublicPage', [
             'tenant' => $tenant->only(['id', 'subdomain', 'theme_config', 'navigation_config']),
             'page' => $page,
-            'commerce_hydration' => $this->commerceHydrator->hydrate($tenant, $page->published_config),
+            'commerce_hydration' => $this->commerceHydrator->hydrate($tenant, $page->published_config, $sourceOverrides),
+            'commerce_cart' => $commerceEnabled ? $this->cartManager->current($tenant)['cart'] : null,
+            'commerce_enabled' => $commerceEnabled,
         ]);
     }
 }

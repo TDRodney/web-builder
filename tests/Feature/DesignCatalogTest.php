@@ -86,7 +86,7 @@ test('the catalog contains only the three approved initial kits and page invento
 
     expect(array_keys($siteKits))->toBe(['restaurant', 'retail', 'hotel'])
         ->and(array_column($siteKits['restaurant']['pages'], 'slug'))->toBe(['home', 'menu', 'about', 'reservations'])
-        ->and(array_column($siteKits['retail']['pages'], 'slug'))->toBe(['home', 'shop', 'product', 'about', 'contact'])
+        ->and(array_column($siteKits['retail']['pages'], 'slug'))->toBe(['home', 'shop', 'product', 'cart', 'about', 'contact'])
         ->and(array_column($siteKits['hotel']['pages'], 'slug'))->toBe(['home', 'rooms', 'amenities', 'contact']);
 });
 
