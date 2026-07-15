@@ -20,6 +20,7 @@ import { computed, ref, watch } from 'vue';
 import BlockLibrary from '@/components/Editor/BlockLibrary.vue';
 import ContentInspector from '@/components/Editor/ContentInspector.vue';
 import NavigationSettings from '@/components/Editor/NavigationSettings.vue';
+import { useSafeNavigate } from '@/composables/useSafeNavigate';
 
 type PageSummary = {
     id: number | string;
@@ -56,6 +57,8 @@ const emit = defineEmits([
     'add-preset',
     'publish',
 ]);
+
+const { safeNavigate } = useSafeNavigate();
 
 const activeSection = ref('content');
 
@@ -287,7 +290,13 @@ watch(
             </button>
 
             <div class="sidebar-account-actions">
-                <Link :href="dashboardUrl">Exit to dashboard</Link>
+                <button
+                    type="button"
+                    class="exit-dashboard"
+                    @click="safeNavigate(dashboardUrl)"
+                >
+                    Exit to dashboard
+                </button>
                 <Link :href="logoutUrl" method="post" as="button">
                     <LogOut :size="12" />
                     <span>Log out</span>

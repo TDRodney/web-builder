@@ -3,6 +3,8 @@ import { useHttp, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 
+import { useSafeNavigate } from '@/composables/useSafeNavigate';
+
 const props = defineProps({
   show: Boolean,
   page: Object,
@@ -10,6 +12,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close']);
+
+const { safeNavigate } = useSafeNavigate();
 
 const renameForm = useHttp({
   title: '',
@@ -48,7 +52,7 @@ const submitRenamePage = async () => {
       emit('close');
 
       if (props.page.slug === props.currentPageSlug) {
-        router.visit(`/editor?page=${res.page.slug}`);
+        await safeNavigate(`/editor?page=${res.page.slug}`);
       } else {
         router.reload({ only: ['pages'] });
       }

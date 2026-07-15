@@ -1,10 +1,11 @@
 <script setup>
-import { useHttp, router } from '@inertiajs/vue3';
+import { useHttp } from '@inertiajs/vue3';
 import { Check, ChevronLeft, FilePlus2, LayoutTemplate, X } from '@lucide/vue';
 import { computed, provide, ref } from 'vue';
 import { toast } from 'vue-sonner';
 
 import RenderPublicNode from '@/components/BuilderBlocks/RenderPublicNode.vue';
+import { useSafeNavigate } from '@/composables/useSafeNavigate';
 import { blockComponents } from '@/lib/blockRegistry';
 
 const props = defineProps({
@@ -13,6 +14,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close']);
+
+const { safeNavigate } = useSafeNavigate();
 
 // Modal steps: 'mode' (blank vs layout) -> 'layout' (grid) -> 'details' (title/slug)
 const step = ref('mode');
@@ -114,7 +117,7 @@ const submitCreatePage = async () => {
             createForm.reset();
             resetModal();
             emit('close');
-            router.visit(`/editor?page=${res.page.slug}`);
+            await safeNavigate(`/editor?page=${res.page.slug}`);
         }
     } catch (err) {
         const message = extractHttpError(err);

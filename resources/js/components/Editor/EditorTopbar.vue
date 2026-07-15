@@ -1,16 +1,8 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import {
-    ArrowLeft,
-    ExternalLink,
-    Monitor,
-    PanelLeft,
-    Redo2,
-    Smartphone,
-    Tablet,
-    Undo2,
-} from '@lucide/vue';
+import { ExternalLink, Monitor, PanelLeft, Redo2, Smartphone, Tablet, Undo2, ArrowLeft } from '@lucide/vue';
 import { computed } from 'vue';
+
+import { useSafeNavigate } from '@/composables/useSafeNavigate';
 
 const props = defineProps({
     dashboardUrl: { type: String, required: true },
@@ -34,6 +26,8 @@ const emit = defineEmits([
     'update:commerce-preview',
     'switch-page',
 ]);
+
+const { safeNavigate } = useSafeNavigate();
 
 const productPreviewOptions = computed(() =>
     (props.commercePreview?.options || []).filter(
@@ -60,10 +54,14 @@ const viewModes = [
                 <PanelLeft :size="16" />
             </button>
 
-            <Link :href="dashboardUrl" class="back-link">
+            <button
+                type="button"
+                class="back-link"
+                @click="safeNavigate(dashboardUrl)"
+            >
                 <ArrowLeft :size="14" />
                 <span>Back</span>
-            </Link>
+            </button>
 
             <div class="builder-title">
                 <span class="builder-kicker">Visual builder</span>
