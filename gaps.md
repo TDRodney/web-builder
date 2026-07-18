@@ -30,7 +30,7 @@ The previously identified navigation propagation regression is resolved: saved n
 
 | Area | Status | Summary |
 |---|---|---|
-| Multi-page management | Complete | CRUD, switching, metadata, homepage selection, and deletion guard are implemented |
+| Multi-page management | Complete | CRUD, switching, metadata, homepage selection, deletion guard, per-page public visibility toggle, and bulk publish-all are implemented |
 | Block editor | Mostly complete | 15 block types, presets, toolbar, schema validation, and TipTap are implemented; 6 specialized blocks remain |
 | Media pipeline | Core complete | Upload, tenant isolation, thumbnails, picker, and deletion work; production optimization features remain |
 | Theming | Core complete | Theme persistence, dashboard controls, CSS variables, and curated Google Fonts work |
@@ -92,9 +92,12 @@ Required work:
 Implemented:
 
 - tenant-scoped page listing, creation, update, and deletion endpoints;
-- `title`, `is_homepage`, and `sort_order` page metadata;
+- `title`, `is_homepage`, `sort_order`, and `is_published` page metadata;
+- per-page public visibility toggle (`PATCH /editor/pages/{page}/visibility`);
+- homepage permanently listed (cannot be unlisted);
+- `POST /editor/publish-all` bulk publish across all tenant pages in a single transaction (skips empty drafts);
 - page selector and page-management controls in the editor;
-- force-save before switching pages;
+- force-save before switching pages (via `useSafeNavigate` composable);
 - configurable homepage resolution on the public site;
 - automatic unsetting of the previous homepage;
 - backend guard preventing deletion of the homepage;
@@ -154,9 +157,11 @@ The previous statement that `RichTextBlock` only had a raw HTML textarea is obso
 - recursive backend schema and nesting validation;
 - drag-and-drop nesting enforcement;
 - duplicate, delete, move, copy, paste, and wrap actions;
+- `useSafeNavigate` composable for editor-internal navigation (flushes draft before Inertia visit, does not navigate on failure);
 - three presets: Hero with CTA, Features Grid, and FAQ Accordion Row;
 - editor and public block-level error boundaries;
-- desktop, tablet, and mobile preview modes.
+- desktop, tablet, and mobile preview modes;
+- ButtonBlock distinguishes internal (in-tab) vs external (new tab) link targets.
 
 ### Remaining Editor Improvements
 
@@ -293,6 +298,7 @@ Implemented:
 
 - public pages use the same Vue block components as the editor;
 - published configuration is isolated from drafts;
+- per-page `is_published` gate: public access requires both `is_published = true` AND `published_config !== null`;
 - full-width public layout without the old card wrapper;
 - responsive layouts and container-aware blocks;
 - `<html lang>` is provided by the root Inertia Blade template;
@@ -365,9 +371,9 @@ page_revisions
 
 Current verified baseline on 2026-07-14:
 
-- **132 tests passed**;
+- **135 tests passed**;
 - **1 test skipped**;
-- **573 assertions**;
+- **~580 assertions**;
 - production Vite build completed successfully;
 - the build emitted only third-party Rolldown annotation warnings from a nested VueUse dependency.
 
@@ -383,6 +389,8 @@ Implemented test coverage includes:
 - multi-page CRUD and homepage behavior;
 - theme settings;
 - navigation API authorization and persistence;
+- page visibility toggle (list/unlist, homepage guard, authorization, cross-tenant isolation);
+- bulk publish-all (counts, empty-draft skipping, authorization, cross-tenant isolation);
 - media validation, ownership, isolation, and deletion;
 - contact submissions, validation, and rate limiting;
 - dashboard and profile/security settings;

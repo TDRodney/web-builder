@@ -683,8 +683,8 @@ const showRenameModal = ref(false);
 const pageToRename = ref(null);
 
 const deleteHttp = useHttp({});
-const setHomepageHttp = useHttp({});
-const visibilityHttp = useHttp({});
+const setHomepageHttp = useHttp({ is_homepage: true });
+const visibilityHttp = useHttp({ is_published: false });
 
 const pageActionError = ref('');
 
@@ -752,9 +752,8 @@ const handleSetHomepage = async (page) => {
     pageActionError.value = '';
     const loadingToast = toast.loading('Setting homepage...');
     try {
-        const res = await setHomepageHttp.patch(`/editor/pages/${page.id}`, {
-            is_homepage: true,
-        });
+        setHomepageHttp.is_homepage = true;
+        const res = await setHomepageHttp.patch(`/editor/pages/${page.id}`);
 
         if (res && res.status === 'success') {
             toast.success(`"${page.title}" is now the homepage`, {
@@ -782,9 +781,9 @@ const handleToggleVisibility = async (page) => {
         next ? 'Re-listing page...' : 'Unlisting page...',
     );
     try {
+        visibilityHttp.is_published = next;
         const res = await visibilityHttp.patch(
             `/editor/pages/${page.id}/visibility`,
-            { is_published: next },
         );
 
         if (res && res.status === 'success') {
