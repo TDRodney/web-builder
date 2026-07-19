@@ -58,12 +58,15 @@ export interface InspectorField {
     label: string;
     type:
         | 'text'
+        | 'textarea'
+        | 'toggle'
         | 'number'
         | 'color'
         | 'theme-color'
         | 'font-size'
         | 'range'
         | 'select'
+        | 'columns'
         | 'media'
         | 'repeater';
     min?: number;

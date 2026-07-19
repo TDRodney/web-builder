@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/block-lang -->
 <script setup>
-import { GripVertical } from '@lucide/vue';
+import { GripVertical, Search } from '@lucide/vue';
 import { computed, inject, ref } from 'vue';
 import draggable from 'vuedraggable';
 import PresetThumbnail from '@/components/Editor/PresetThumbnail.vue';
@@ -20,9 +20,40 @@ const props = defineProps({
 const emit = defineEmits(['add-block', 'add-preset']);
 
 const activeLibraryTab = ref('blocks');
+const searchQuery = ref('');
 const canvasDrag = inject('canvasDrag', null);
 
-const presetGroups = computed(() => groupBlockPresets(props.blockPresets));
+const filteredBlockDefinitions = computed(() => {
+    const q = searchQuery.value.trim().toLowerCase();
+
+    if (!q) {
+        return props.blockDefinitions;
+    }
+
+    return props.blockDefinitions.filter(
+        (def) =>
+            def.label?.toLowerCase().includes(q) ||
+            def.category?.toLowerCase().includes(q) ||
+            def.type?.toLowerCase().includes(q),
+    );
+});
+
+const filteredBlockPresets = computed(() => {
+    const q = searchQuery.value.trim().toLowerCase();
+
+    if (!q) {
+        return props.blockPresets;
+    }
+
+    return props.blockPresets.filter(
+        (preset) =>
+            preset.title?.toLowerCase().includes(q) ||
+            preset.category?.toLowerCase().includes(q) ||
+            preset.description?.toLowerCase().includes(q),
+    );
+});
+
+const presetGroups = computed(() => groupBlockPresets(filteredBlockPresets.value));
 
 const layoutColumn = (suffix) => ({
     id: `layoutcolumn-${Date.now()}-${suffix}-${Math.random().toString(36).slice(2, 6)}`,
@@ -94,10 +125,20 @@ const addPreset = (preset) => {
             </button>
         </div>
 
+        <div class="relative mb-3">
+            <Search class="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-500" />
+            <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="Search blocks or presets..."
+                class="w-full rounded border border-slate-700/60 bg-slate-800/80 py-1.5 pl-8 pr-3 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+            />
+        </div>
+
         <Transition name="panel-switch" mode="out-in">
             <div v-if="activeLibraryTab === 'blocks'" key="blocks">
                 <draggable
-                    :list="blockDefinitions"
+                    :list="filteredBlockDefinitions"
                     item-key="type"
                     :sort="false"
                     :clone="cloneBlockDefinition"

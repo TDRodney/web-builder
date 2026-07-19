@@ -1,7 +1,8 @@
 <!-- eslint-disable vue/block-lang -->
 <script setup>
 /* eslint-disable vue/no-mutating-props */
-import { Color, TextStyle } from '@tiptap/extension-text-style';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { Color } from '@tiptap/extension-color';
 import StarterKit from '@tiptap/starter-kit';
 import { EditorContent, useEditor } from '@tiptap/vue-3';
 import { computed, inject, onBeforeUnmount, onMounted, onUnmounted, ref, watch } from 'vue';

@@ -501,7 +501,8 @@ The [RenderNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/res
 - Wraps block instances in interactive outlines, hover drag handles (the entire [BlockToolbar](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/BlockToolbar.vue) area doubles as the `.drag-handle`), and nests child structures in `vuedraggable` templates.
 - Renders a floating [BlockToolbar](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/BlockToolbar.vue) on hover/select with actions: duplicate, delete (two-click confirmation), move up/down, copy to clipboard, paste, wrap in container. All actions are provided via `provide('blockActions', ...)` from `Editor.vue`.
 - Employs a Vue `onErrorCaptured` error boundary that intercepts dynamic rendering crashes, logs diagnostics to the console, and displays a localized block-level placeholder box to ensure editor stability.
-- Directs `Editor.vue` to render dynamic inspector controls (color, sliders, ranges, fields) dynamically based on the active block definition in the registry.
+- Directs `Editor.vue` to render dynamic inspector controls (`text`, `textarea`, `toggle`, `color`, `theme-color`, `font-size`, `columns`, `range`, `number`, `select`, `media`, `repeater`) dynamically based on the active block definition in the registry.
+- Applies universal design wrapper properties (`opacity`, `marginTop`, `marginBottom`, `borderRadius`) in the wrapper style binding, cascading to `RenderPublicNode.vue` for identical published page rendering.
 
 The [RenderPublicNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderPublicNode.vue) component drives the public layout page:
 - Uses the same `<component :is>` mapping to resolve the exact same block component files.

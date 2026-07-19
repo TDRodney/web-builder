@@ -52,6 +52,10 @@ const surfaceStacksOnNarrow = computed(() =>
         :style="{
             padding: (node.props?.padding ?? 0) + 'px',
             backgroundColor: node.props?.backgroundColor ?? 'transparent',
+            marginTop: node.props?.marginTop !== undefined ? node.props.marginTop + 'px' : undefined,
+            marginBottom: node.props?.marginBottom !== undefined ? node.props.marginBottom + 'px' : undefined,
+            opacity: node.props?.opacity !== undefined ? node.props.opacity / 100 : undefined,
+            borderRadius: node.props?.borderRadius ? node.props.borderRadius : undefined,
         }"
         class="public-block-node transition-[background-color]"
     >

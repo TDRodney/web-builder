@@ -519,7 +519,9 @@ Implemented test coverage includes:
 | Shared page layouts and site kits as cloned catalog data | Enables reusable professional designs without creating live template coupling or a second infrastructure stack |
 | Scroll-reveal as optional `reveal`/`revealDelay` block props | Adds public-site entrance animation without new block types, backend schema changes, or editor-canvas motion; kit media stays placeholder-based with theme-derived styling |
 | Editable `MenuBlock` (flat `items` grouped by category) | Adds a restaurant menu section reusing the existing repeater/inline-edit UI and block schema instead of a bespoke menu data model or renderer |
-| `theme-color`/`font-size`/`columns` inspector field types | Gives users real color (theme tokens + palette + custom hex), font-size, and 1/2/3/4/6 grid controls through the shared field-rendering pipeline rather than free-text inputs |
+| `theme-color`/`font-size`/`columns`/`textarea`/`toggle` inspector field types | Gives users real color, font-size, 1/2/3/4/6 grid, multi-line text, and toggle switch controls through the shared field-rendering pipeline rather than raw free-text inputs |
+| Universal design wrapper props (`opacity`, `marginTop`, `marginBottom`, `borderRadius`) | Centralizes spacing, transparency, and corner roundness handling inside `RenderNode.vue` and `RenderPublicNode.vue` `:style` bindings across all block types |
+| Block library search filter | Provides instant live filtering of block definitions and section presets by keyword, category, or title |
 | One-click theme palettes in the Theme workspace | Applies a full primary/secondary/background/text set (including kit-aligned presets) with hover preview before save |
 | Rich text per-selection color via TipTap Color | Stores inline `style="color"` spans in ordinary `RichTextBlock` HTML — finer than block-level color without a new schema |
 | `VideoEmbedBlock` lite-embed (thumbnail-first) | Improves LCP and avoids loading third-party iframes until a visitor clicks, using a derived YouTube poster or optional override with no new asset system |

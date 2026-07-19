@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/block-lang -->
 <script setup>
 /* eslint-disable vue/no-mutating-props */
-import { inject } from 'vue';
+import { inject, watch } from 'vue';
 import FontSizeControl from '@/components/Editor/FontSizeControl.vue';
 import ProductGridInspector from '@/components/Editor/ProductGridInspector.vue';
 import SectionPatternInspector from '@/components/Editor/SectionPatternInspector.vue';
@@ -19,6 +19,54 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['open-media-picker']);
+
+const ensureDefaultProps = () => {
+    if (!props.selectedBlock || !props.selectedBlock.props) {
+        return;
+    }
+
+    const defaults = props.activeBlockDefinition?.defaultProps || {};
+    const fields = props.activeBlockDefinition?.inspectorFields || [];
+
+    fields.forEach((field) => {
+        if (props.selectedBlock.props[field.key] === undefined) {
+            let fallback = defaults[field.key];
+
+            if (fallback === undefined) {
+                if (field.type === 'select') {
+                    fallback = field.options?.[0]?.value ?? '';
+                } else if (field.type === 'toggle') {
+                    fallback = false;
+                } else if (field.type === 'range' || field.type === 'number') {
+                    fallback = field.min ?? 0;
+                } else {
+                    fallback = '';
+                }
+            }
+
+            props.selectedBlock.props[field.key] = fallback;
+        }
+
+        if (field.type === 'toggle') {
+            const val = props.selectedBlock.props[field.key];
+
+            if (typeof val === 'string') {
+                props.selectedBlock.props[field.key] =
+                    val === 'yes' || val === 'true';
+            } else {
+                props.selectedBlock.props[field.key] = Boolean(val);
+            }
+        }
+    });
+};
+
+watch(
+    () => [props.selectedBlock?.id, props.activeBlockDefinition?.type],
+    () => {
+        ensureDefaultProps();
+    },
+    { immediate: true },
+);
 
 const revealOptions = [
     { label: 'None', value: '' },
@@ -61,8 +109,13 @@ const addRepeaterItem = (fieldKey, subFields) => {
 
     const newItem = {};
     subFields.forEach((sub) => {
-        newItem[sub.key] =
-            sub.type === 'select' ? sub.options?.[0]?.value || '' : '';
+        if (sub.type === 'select') {
+            newItem[sub.key] = sub.options?.[0]?.value || '';
+        } else if (sub.type === 'toggle') {
+            newItem[sub.key] = false;
+        } else {
+            newItem[sub.key] = '';
+        }
     });
     props.selectedBlock.props[fieldKey].push(newItem);
 
@@ -145,6 +198,29 @@ const moveRepeaterItem = (fieldKey, index, direction) => {
                         :max="field.max"
                         class="w-full accent-indigo-500"
                     />
+                    <textarea
+                        v-else-if="field.type === 'textarea'"
+                        v-model="selectedBlock.props[field.key]"
+                        rows="3"
+                        :placeholder="field.placeholder"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    ></textarea>
+                    <label
+                        v-else-if="field.type === 'toggle'"
+                        class="relative inline-flex cursor-pointer items-center py-1"
+                    >
+                        <input
+                            type="checkbox"
+                            v-model="selectedBlock.props[field.key]"
+                            class="peer sr-only"
+                        />
+                        <div
+                            class="peer h-5 w-9 rounded-full bg-slate-700 after:absolute after:top-[6px] after:left-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-indigo-600 peer-checked:after:translate-x-4 peer-focus:outline-none"
+                        ></div>
+                        <span class="ml-2.5 text-xs font-medium text-slate-300">
+                            {{ selectedBlock.props[field.key] ? 'On' : 'Off' }}
+                        </span>
+                    </label>
                     <input
                         v-else-if="field.type === 'number'"
                         v-model.number="selectedBlock.props[field.key]"
@@ -278,6 +354,33 @@ const moveRepeaterItem = (fieldKey, index, direction) => {
                         selectedBlock.props[field.key]
                     }}</span>
                 </div>
+
+                <!-- Textarea input -->
+                <textarea
+                    v-else-if="field.type === 'textarea'"
+                    v-model="selectedBlock.props[field.key]"
+                    rows="3"
+                    :placeholder="field.placeholder"
+                    class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                ></textarea>
+
+                <!-- Toggle switch input -->
+                <label
+                    v-else-if="field.type === 'toggle'"
+                    class="relative inline-flex cursor-pointer items-center py-1"
+                >
+                    <input
+                        type="checkbox"
+                        v-model="selectedBlock.props[field.key]"
+                        class="peer sr-only"
+                    />
+                    <div
+                        class="peer h-5 w-9 rounded-full bg-slate-700 after:absolute after:top-[6px] after:left-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-indigo-600 peer-checked:after:translate-x-4 peer-focus:outline-none"
+                    ></div>
+                    <span class="ml-2.5 text-xs font-medium text-slate-300">
+                        {{ selectedBlock.props[field.key] ? 'On' : 'Off' }}
+                    </span>
+                </label>
 
                 <!-- Number input -->
                 <input
