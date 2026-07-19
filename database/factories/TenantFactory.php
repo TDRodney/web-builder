@@ -21,7 +21,15 @@ class TenantFactory extends Factory
         return [
             'user_id' => User::factory(),
             'subdomain' => $this->faker->unique()->slug(2),
+            'site_setup_completed_at' => now(),
         ];
+    }
+
+    public function awaitingSiteSetup(): static
+    {
+        return $this->state(fn (): array => [
+            'site_setup_completed_at' => null,
+        ]);
     }
 
     /**

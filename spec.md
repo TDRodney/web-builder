@@ -91,6 +91,8 @@ SESSION_DOMAIN=.domain.localhost
 
 This allows `domain.localhost` and `*.domain.localhost` to share the same session, enabling a user logged in on the central domain to be recognized on tenant subdomains without re-authentication.
 
+Account settings and logout remain central-domain actions. Tenant dashboards receive their absolute central URLs and the current CSRF token as Inertia props, then use full browser navigation for settings and a native POST form for logout. These cross-subdomain transitions must not use Inertia visits because an Inertia visit is an XHR tied to the current origin.
+
 ### 1.6 Inertia Page Layout Resolution
 
 Defined in [app.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/app.ts):
@@ -151,6 +153,7 @@ erDiagram
         integer sort_order "default: 0"
         json draft_config "nullable"
         json published_config "nullable"
+        boolean is_published "default: true"
         timestamps created_at
         timestamps updated_at
     }
@@ -205,8 +208,8 @@ erDiagram
 #### [Page](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Models/Page.php)
 
 - Traits: `HasFactory`
-- Fillable: `tenant_id`, `slug`, `title`, `is_homepage`, `sort_order`, `draft_config`, `published_config`
-- Casts: `is_homepage` → boolean, `draft_config` → array, `published_config` → array
+- Fillable: `tenant_id`, `slug`, `title`, `is_homepage`, `sort_order`, `is_published`, `draft_config`, `published_config`
+- Casts: `is_homepage` → boolean, `is_published` → boolean, `draft_config` → array, `published_config` → array
 - Relationship: `belongsTo(Tenant)`
 - `ContactSubmission` defines the inverse `belongsTo(Page)` relationship, but `Page` does not currently define `hasMany(ContactSubmission)`
 - **Global Scope**: [TenantScope](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Models/Scopes/TenantScope.php) auto-filters all queries by `tenant_id` when `app('currentTenant')` is bound
@@ -325,13 +328,18 @@ All routes protected by [IdentifyTenant](file:///c:/Users/Z.BOOK/Desktop/things/
 | Method | Path | Name | Controller / Handler | Auth | Description |
 |---|---|---|---|---|---|---|
 | `GET` | `/dashboard` | `dashboard` | Closure → Inertia `CentralDashboard` (with tenant + theme_config props) | auth | Tenant-scoped dashboard |
+| `GET` | `/designs` | `tenant.designs.index` | `TenantDesignLibraryController::index` | auth | Browse site kits and render homepage previews through the shared public block renderer |
+| `POST` | `/designs/site-kits/{kit}/apply` | `tenant.designs.apply-kit` | `TenantDesignLibraryController::store` | auth | Apply a site kit to an eligible workspace (transactional: creates pages, applies style, completes setup) |
+| `POST` | `/designs/start-from-scratch` | `tenant.designs.start-from-scratch` | `TenantDesignLibraryController::startFromScratch` | auth | Opt out of the kit flow and mark setup complete without creating content |
 | `PATCH` | `/theme` | `tenant.theme.update` | [TenantThemeController::update](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantThemeController.php#L22) | auth | Save theme settings (colors, typography, borderRadius) |
 | `GET` | `/editor` | `tenant.editor` | [TenantEditorController::edit](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantEditorController.php#L10) | auth | Canvas editor (accepts optional `?page={slug}`, resolves active or homepage, passes pages + urls props) |
 | `POST` | `/editor/save` | `tenant.page.save` | [TenantPageSaveController::store](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageSaveController.php#L12) | auth | Save draft_config (JSON endpoint) |
-| `POST` | `/editor/publish` | `tenant.page.publish` | [TenantPageSaveController::publish](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageSaveController.php#L43) | auth | Promote draft → published (DB transaction) |
+| `POST` | `/editor/publish` | `tenant.page.publish` | [TenantPageSaveController::publish](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageSaveController.php#L43) | auth | Promote single page draft → published (DB transaction) |
+| `POST` | `/editor/publish-all` | `tenant.page.publish-all` | [TenantPageSaveController::publishAll](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageSaveController.php#L64) | auth | Promote all tenant pages' drafts → published in a DB transaction; skips pages with empty draft; auto-flags `is_published = true` |
 | `GET` | `/editor/pages` | `tenant.pages.index` | [TenantPageController::index](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageController.php#L10) | auth | List all tenant pages |
 | `POST` | `/editor/pages` | `tenant.pages.store` | [TenantPageController::store](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageController.php#L28) | auth | Create a new page |
 | `PATCH` | `/editor/pages/{page}` | `tenant.pages.update` | [TenantPageController::update](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageController.php#L62) | auth | Update page details (title, slug, homepage, sort) |
+| `PATCH` | `/editor/pages/{page}/visibility` | `tenant.pages.visibility` | [TenantPageController::updateVisibility](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageController.php#L129) | auth | Toggle page's public visibility (list/unlist); homepage cannot be unlisted |
 | `DELETE` | `/editor/pages/{page}` | `tenant.pages.destroy` | [TenantPageController::destroy](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageController.php#L105) | auth | Delete a page (enforces homepage protection) |
 | `GET` | `/editor/media` | `tenant.media.index` | [TenantMediaController::index](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantMediaController.php#L16) | auth | List all media for the tenant (newest first) |
 | `POST` | `/editor/media` | `tenant.media.store` | [TenantMediaController::store](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantMediaController.php#L32) | auth | Upload a media file (validates type, size) |
@@ -344,7 +352,7 @@ All routes protected by [IdentifyTenant](file:///c:/Users/Z.BOOK/Desktop/things/
 
 Authorization is **controller-level, not policy-based**:
 
-- **Editor Access, Page CRUD, Media CRUD, Navigation & Theme Settings**: `auth()->id() !== $tenant->user_id` → 403 for all authenticated tenant operations
+- **Editor Access, Page CRUD (incl. visibility toggle), Media CRUD, Navigation & Theme Settings**: `auth()->id() !== $tenant->user_id` → 403 for all authenticated tenant operations
 - **Save/Publish/CRUD**: Same ownership check + `TenantScope` on `Page::findOrFail()` / routing constraints ensures cross-tenant isolation
 - **Media Deletion**: Double-checks `$media->tenant_id !== $tenant->id` even after ownership gate
 - **Public Site**: No auth required; only reads `published_config`
@@ -359,6 +367,7 @@ Authorization is **controller-level, not policy-based**:
 | `POST /editor/publish` | `page_id`: required integer |
 | `POST /editor/pages` | `title`: required string max:255; `slug`: required lowercase alphanumeric+hyphens unique per tenant |
 | `PATCH /editor/pages/{page}` | `title`: sometimes required string max:255; `slug`: sometimes required lowercase alphanumeric+hyphens unique per tenant; `is_homepage`: sometimes required boolean; `sort_order`: sometimes required integer |
+| `PATCH /editor/pages/{page}/visibility` | `is_published`: required boolean; homepage unlisting returns 422 |
 | `PATCH /theme` | `colors.*`: regex `/^#[0-9a-fA-F]{6}$/`; `typography.*Font`: must be in curated Google Fonts list; `borderRadius`: must be in `['0px','4px','8px','16px','9999px']` |
 | `POST /editor/media` | `file`: required, file, image, max:5120 KB, mimes:jpeg,png,gif,webp,svg |
 | `PATCH /editor/navigation` | `navigation_config`: required array; `navigation_config.header`: required array; `navigation_config.footer`: required array |
@@ -385,14 +394,15 @@ sequenceDiagram
     User->>Central: POST /register {name, email, password, subdomain}
     Central->>Central: Validate (unique email, unique subdomain, reserved check)
     Central->>DB: INSERT users
-    Central->>DB: INSERT tenants (user_id, subdomain)
-    Central->>DB: INSERT pages (tenant_id, slug='home', draft_config=default_hero, published_config=default_hero)
+    Central->>DB: INSERT tenants (user_id, subdomain, site_setup_completed_at=null)
     Central->>Central: Auth::login(user)
-    Central->>User: Inertia::location → redirect to {subdomain}.domain.localhost/editor
-    User->>Tenant: GET /editor (shared session cookie)
+    Central->>User: Inertia::location → redirect to {subdomain}.domain.localhost/dashboard
+    User->>Tenant: GET /dashboard (shared session cookie)
     Tenant->>Tenant: IdentifyTenant middleware resolves tenant
-    Tenant->>User: Inertia render Editor.vue with page data
+    Tenant->>User: Inertia render CentralDashboard with site-kit eligibility
 ```
+
+New registrations intentionally create no pages, theme configuration, or navigation configuration. They remain eligible for an initial site kit until one is applied, a "Start from scratch" action completes setup, or a successful page/theme/navigation mutation marks setup complete. Direct editor access by an eligible empty tenant redirects to `/designs` instead of creating content during a GET request. The `/designs` page offers two exit paths: "Use this design" applies the selected kit transactionally, and "Start from scratch" marks setup complete with an empty workspace so the user can create pages in the editor.
 
 ### 4.2 Editor Auto-Save Flow (Draft Persistence)
 
@@ -419,6 +429,7 @@ sequenceDiagram
     Server->>Server: Validate {page_id: int, draft_config: array}
     Server->>DB: Page::findOrFail(page_id) — TenantScope applied
     Server->>DB: UPDATE pages SET draft_config = ? WHERE id = ? AND tenant_id = ?
+    Server->>DB: UPDATE tenants SET site_setup_completed_at = ? (first successful mutation only)
     Server->>Inertia: JSON {status: 'success'}
 ```
 
@@ -429,6 +440,8 @@ Key characteristics:
 - **Undo/Redo**: Client-side stack with state snapshots; undo/redo also triggers a queued save
 
 ### 4.3 Publish Flow (Draft → Live Promotion)
+
+#### 4.3.1 Single Page Publish
 
 ```mermaid
 sequenceDiagram
@@ -464,7 +477,7 @@ sequenceDiagram
     MW->>MW: Bind app('currentTenant')
     MW->>Controller: pass request
     Controller->>DB: Page::where('slug', $slug)->firstOrFail() — TenantScope auto-applied
-    Controller->>Controller: Check published_config !== null (else 404)
+    Controller->>Controller: Check is_published === true AND published_config !== null (else 404)
     Controller->>Vue: Inertia::render('Tenant/PublicPage', {tenant, page})
     Vue->>Vue: RenderPublicNode recursively renders block tree via <component :is>
     Vue->>Visitor: Inertia response; SSR HTML is produced only when the SSR build and server are running
@@ -472,6 +485,8 @@ sequenceDiagram
 
 > [!IMPORTANT]
 > Public sites are rendered via **Inertia** using the exact same Vue component definition tree as the editor (`RenderPublicNode.vue`). This eliminates the Blade/Vue block-template drift vector. The repository is configured for Inertia SSR, but production SSR output requires the SSR bundle and server process to be built, started, and monitored by the deployment environment.
+>
+> Public access requires **both** `is_published = true` AND `published_config !== null`. Either condition being false returns a 404. The homepage is permanently listed and cannot be unlisted via the visibility toggle.
 
 ### 4.5 Unified Rendering Architecture
 
@@ -594,6 +609,17 @@ Configured in [FortifyServiceProvider](file:///c:/Users/Z.BOOK/Desktop/things/co
 | CSRF | Standard Laravel CSRF via Inertia |
 | Reserved subdomains | Blocked at registration validation |
 
+#### 4.3.2 Bulk Publish All Pages
+
+A "Publish All" action (`POST /editor/publish-all` via `TenantPageSaveController::publishAll`) promotes every tenant page's draft to published in a single DB transaction:
+
+1. Iterates all tenant pages ordered by `sort_order`
+2. Skips pages with empty `draft_config`
+3. For each page with content: refreshes the model, copies `draft_config` → `published_config`, sets `is_published = true`
+4. Returns counts (`published_count`, `skipped_count`, `total_count`)
+
+The editor UI shows a "Publish all pages" button in the sidebar footer alongside the single-page publish button. Both buttons are disabled during any in-flight save or publish operation.
+
 ### 4.10 Page Switching & Settings Flow
 
 The multi-page lifecycle manages dynamic canvas reloading and metadata updates:
@@ -621,6 +647,33 @@ sequenceDiagram
     Server->>UI: JSON {status: 'success'}
     UI->>UI: router.reload({ only: ['pages', 'page'] })
 ```
+
+#### 4.10.1 Visibility Toggle
+
+Each non-homepage page can be listed or unlisted from the public site via an eye/eye-off icon in the Pages sidebar:
+
+- `PATCH /editor/pages/{page}/visibility` with `{is_published: boolean}`
+- The homepage is permanently listed — unlisting returns 422
+- Published config content is preserved during unlisting; only the access gate flips
+- The public site controller checks `is_published === true AND published_config !== null` before serving any page
+- Cross-tenant visibility tampering is prevented by ownership check + TenantScope
+
+#### 4.10.2 Safe Navigation (Draft Flush Before Exit)
+
+A `useSafeNavigate` composable wraps Inertia visits from editor-internal navigation (Back button, Exit to dashboard, Create/Rename page redirects):
+
+- Injects `forceSave` from the editor
+- Before navigating, attempts `await forceSave()` with a "Saving draft..." toast
+- On success, proceeds with `router.visit(url)`
+- On failure (save threw), shows an error toast and does NOT navigate — the user stays in the editor with their unsaved work
+- Used by: `EditorTopbar.vue` (Back), `EditorSidebar.vue` (Exit to dashboard), `CreatePageModal.vue` (redirect after create), `RenamePageModal.vue` (redirect after rename)
+
+#### 4.10.3 ButtonBlock Link Behavior
+
+The `ButtonBlock` component distinguishes internal vs external links:
+
+- **External**: Absolute URLs with a scheme (`https://...`, `mailto:`, `tel:`) → opens in a new tab (`target="_blank"`) with `rel="noopener noreferrer"`
+- **Internal**: Scheme-less or root-relative URLs (for page-to-page navigation within the tenant's site) → stays in the current tab (no `target`/`rel` attributes), preserving SPA navigation behavior
 
 Key characteristics:
 - **Save Guard**: Active modifications are fully flushed and persisted to the current page via `forceSave()` before transition, preventing user edits from being discarded.
@@ -655,3 +708,51 @@ The public contact form block submits to `POST /contact` (no auth required):
 1. **Rate Limited**: 5 attempts per minute per IP address (inlined in `TenantContactController`).
 2. **Storage**: Creates a `ContactSubmission` record with `tenant_id`, optional `page_id`, submitted `form_data` (array), and `ip_address`.
 3. **Response**: Returns JSON success with the submission record.
+
+### 4.14 Design Catalog, Shared Page Layouts, and Site Kits
+
+The design catalog is an additive composition layer over the existing page, block, theme, and navigation infrastructure. It must not introduce a second renderer, block registry, page model, or publishing workflow.
+
+The catalog is defined in `config/designs.php` and has three independently extensible collections:
+
+- **Styles** provide a named `theme_config` and optional `navigation_config` starting point.
+- **Shared page layouts** provide reusable page blueprints such as a standard About or Contact page. Each layout contains the same `{ id, type, props, children }` block AST already accepted by `Page::draft_config`.
+- **Site kits** combine one style with an ordered set of page definitions that reference shared page-layout keys. A site kit describes a complete starting site for an industry; it is not a new runtime entity.
+
+Applying a shared page layout or site kit always deep-clones its block tree and assigns fresh block IDs before persisting it to ordinary tenant pages. After application, every generated page is independent: editing a catalog definition cannot mutate existing tenant content, and editing one tenant page cannot affect another tenant or the source layout.
+
+The first content release is limited to exactly three professional industry site kits: **Restaurant**, **Retail**, and **Hotel**. Their page inventories, visual directions, copy, assets, and functional claims must be explicitly approved before catalog content is added. The schema itself must remain straightforward to extend with more kits and layouts later.
+
+The approved initial inventories are:
+
+- **Restaurant** — Home, Menu, About, and Reservations, with a warm editorial theme.
+- **Retail** — Home, Shop, About, and Contact, with a modern minimal editorial theme.
+- **Hotel** — Home, Rooms, Amenities, and Contact, with a refined hospitality theme.
+
+Restaurant reservations and Hotel stay requests use the existing contact-submission pipeline as enquiries; they do not promise live availability or confirmed bookings. Retail Shop is a presentation layout and does not provide inventory, cart, checkout, or payment behavior.
+
+Every initial page layout contains an `ImageBlock` with an empty `src` and descriptive replacement guidance. The editor displays the existing editable placeholder, and the block's existing media-picker integration lets users replace it with an uploaded image. No parallel asset source or image persistence path is introduced.
+
+Safety rules:
+
+1. Initial site-kit selection is available only to a new or explicitly verified empty workspace.
+2. Eligibility is decided on the server. The client must not infer safety from the current page payload.
+3. Applying a kit must occur in a database transaction and must never overwrite an existing non-empty workspace.
+4. Generated content is written to `draft_config`. It is not made public until the existing publish flow copies the draft to `published_config`.
+5. All catalog block trees must pass the same `ValidatesBlockSchema` rule used by editor saves.
+6. `spec.md`, `AGENTS.md`, and `gaps.md` must be updated whenever the catalog schema or application flow changes.
+
+Workspace eligibility is stored as nullable `tenants.site_setup_completed_at` and also requires that the tenant has no pages, `theme_config`, or `navigation_config`. Historical tenants are backfilled as completed. Successful page create/update/delete/save/publish, theme updates, and navigation updates permanently complete setup; media operations do not because kit application does not remove the media library.
+
+The `/designs` Inertia page receives validated kit summaries and only each kit's homepage block tree for preview. It renders that tree with the existing `RenderPublicNode`, block registry, theme composable, header, and footer. Desktop, tablet, and mobile modes resize the same preview runtime. Empty kit images use the existing `ImageBlock` with a preview-only placeholder flag; public pages still render nothing for an empty source.
+
+Implementation status: the catalog contract, validation foundation, three styles, fourteen page layouts, three site-kit manifests, dashboard design library, shared-renderer responsive previews, server eligibility lifecycle, transactional kit application (deep-clone ID regeneration, draft-only pages, style/navigation application, DB transaction with rollback), and the "Start from scratch" escape hatch are all implemented.
+## Storefront Blocks in the Standard Editor
+
+Retail storefront composition uses the ordinary page block AST and the existing editor/save/publish/public-rendering pipeline. The registered blocks are Announcement, Image with Text, Collection List, Product Grid, Product Detail, Newsletter, and Store Values. Product and collection blocks contain editable placeholder data plus versioned `sourceKey` bindings.
+
+Commerce hydration is request-time data, separate from page persistence. `CommerceHydrator` walks the selected draft or published block tree, resolves bound resources through `CommerceProvider`, and returns an envelope keyed by block UUID. The fixture provider supplies normalized development products, collections, variants, money, facets, and availability; the null provider returns explicit unavailable states. Neither provider modifies `draft_config` or `published_config`. A future platform integration implements the same provider contract and remains responsible for authoritative prices, inventory, cart totals, and checkout.
+
+The Retail kit contains six ordinary pages: Home, Shop, Product, Cart, About, and Contact. Fixture mode supports product preview selection in the original editor, client-side catalog filtering/sorting/pagination over provider results, variant selection, tenant-scoped server cart mutations, a cart drawer, the editable Cart block, and a non-payment fixture checkout handoff. Cart commands submit variant identifiers and quantities; normalized totals and availability are returned by the provider. Commerce interaction routes return 404 for tenants whose applied navigation configuration does not explicitly enable commerce.
+
+The editor topbar exposes the complete tenant page inventory. Selecting a page there, using the sidebar Pages panel, clicking editable header navigation, or clicking an internal link in the canvas all use the same save-before-switch operation. External links remain external. Public internal links resolve ordinary published pages; an unpublished destination continues to return 404.

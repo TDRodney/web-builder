@@ -37,6 +37,7 @@ class TenantPageSaveController extends Controller
         $page->update([
             'draft_config' => $validated['draft_config'],
         ]);
+        $tenant->markSiteSetupCompleted();
 
         return response()->json(['status' => 'success', 'message' => 'Draft saved safely.']);
     }
@@ -57,7 +58,45 @@ class TenantPageSaveController extends Controller
             $page->published_config = $page->draft_config;
             $page->save();
         });
+        $tenant->markSiteSetupCompleted();
 
         return response()->json(['status' => 'success', 'message' => 'Site published successfully!']);
+    }
+
+    public function publishAll(): JsonResponse
+    {
+        $tenant = app('currentTenant');
+        if (auth()->id() !== $tenant->user_id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $publishedCount = 0;
+        $skippedCount = 0;
+
+        // Auto-scoped via TenantScope, so only this tenant's pages are touched.
+        DB::transaction(function () use ($tenant, &$publishedCount, &$skippedCount) {
+            $tenant->pages()->orderBy('sort_order')->each(function (Page $page) use (&$publishedCount, &$skippedCount) {
+                if (empty($page->draft_config)) {
+                    $skippedCount++;
+
+                    return;
+                }
+
+                $page->refresh();
+                $page->published_config = $page->draft_config;
+                $page->is_published = true;
+                $page->save();
+                $publishedCount++;
+            });
+        });
+        $tenant->markSiteSetupCompleted();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "{$publishedCount} page(s) published.",
+            'published_count' => $publishedCount,
+            'skipped_count' => $skippedCount,
+            'total_count' => $publishedCount + $skippedCount,
+        ]);
     }
 }

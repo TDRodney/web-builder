@@ -12,11 +12,12 @@ class Tenant extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'subdomain', 'theme_config', 'navigation_config'];
+    protected $fillable = ['user_id', 'subdomain', 'theme_config', 'navigation_config', 'site_setup_completed_at'];
 
     protected $casts = [
         'theme_config' => 'array',
         'navigation_config' => 'array',
+        'site_setup_completed_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
@@ -37,6 +38,23 @@ class Tenant extends Model
     public function contactSubmissions(): HasMany
     {
         return $this->hasMany(ContactSubmission::class);
+    }
+
+    public function isEligibleForInitialSiteKit(): bool
+    {
+        return $this->site_setup_completed_at === null
+            && $this->theme_config === null
+            && $this->navigation_config === null
+            && $this->pages()->doesntExist();
+    }
+
+    public function markSiteSetupCompleted(): void
+    {
+        if ($this->site_setup_completed_at !== null) {
+            return;
+        }
+
+        $this->update(['site_setup_completed_at' => now()]);
     }
 
     /**

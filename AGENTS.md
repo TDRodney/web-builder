@@ -207,6 +207,30 @@ Vue components must have a single root element.
 
 === web-builder project rules ===
 
+# Design Catalog and Site Kit Checklist
+
+Site kits and shared page layouts are composition data for the existing page/block system. They must never create a parallel renderer, block schema, template engine, persistence model, or publish path.
+
+When adding or changing a design catalog entry:
+
+1. **`config/designs.php`** — define styles, shared page layouts, and site kits by stable string keys. Initial content is limited to the approved Restaurant, Retail, and Hotel kits.
+2. **Reuse the block AST** — every layout's `blocks` value must use the existing `{ id, type, props, children }` structure and only types/nesting allowed by `config/blocks.php`.
+3. **Reference shared layouts** — site-kit pages refer to a `page_layouts` key. Do not duplicate a shared block tree inside each kit.
+4. **Clone on apply** — applying a layout or kit must deep-clone the block tree, regenerate every block ID, and persist independent copies to ordinary `Page::draft_config` values. Catalog definitions are never live-linked to tenant pages.
+5. **Protect existing work** — initial site kits may only be applied to a new or server-verified empty workspace. Never overwrite non-empty tenant pages, theme, or navigation data. Perform multi-page application in a database transaction.
+6. **Preserve publishing semantics** — kit application creates drafts. Only the existing publish action may copy `draft_config` to `published_config`.
+7. **Validate and test** — run the design-catalog validation tests and add focused tests for new references, block trees, eligibility rules, cloning, rollback, and tenant isolation as those stages are implemented.
+8. **Keep documentation synchronized** — update `spec.md`, `AGENTS.md`, and `gaps.md` in the same change whenever the catalog schema or workflow changes.
+9. **Use the media pipeline** — starter images must be ordinary `ImageBlock` nodes. An editable placeholder uses an empty `src` plus useful alt/replacement guidance and is replaced through the existing media picker; do not add a separate kit-asset system.
+10. **Enforce server eligibility** — initial application requires `site_setup_completed_at === null`, no pages, and null theme/navigation configuration. Re-check this condition inside the application transaction (the `ApplySiteKit` action).
+11. **Complete setup on user work** — successful page create/update/delete/save/publish, theme updates, navigation updates, kit application, and "Start from scratch" permanently set `site_setup_completed_at`. Media operations do not. Never reset a completed tenant to pending.
+
+New registrations must remain empty and route to the dashboard. Pending empty tenants who directly request the editor are redirected to the design library; do not create starter content during an editor GET request. The `/designs` page offers two exit paths for eligible tenants: "Use this design" applies the selected kit via `POST /designs/site-kits/{kit}/apply`, and "Start from scratch" completes setup via `POST /designs/start-from-scratch` without creating content. Both re-check eligibility on the server and mark setup complete.
+
+The initial Restaurant reservation and Hotel contact layouts are enquiry experiences only. The initial Retail Shop layout is presentational only. Do not describe or implement booking confirmation, live availability, inventory, cart, checkout, or payments unless those capabilities are separately approved and built.
+
+If a kit identity, page inventory, content choice, or destructive behavior is ambiguous, stop and ask. Do not infer product decisions or workspace safety.
+
 # Block Installation Checklist
 
 When adding a new block type, ALL of these files must be updated. Missing any step will cause the block to fail silently on the public site (editor shows it locally, but saves fail and publish copies stale data).
@@ -340,5 +364,17 @@ The editor has a two-step save model:
 - Three modes: Desktop (full width), Tablet (768px), Mobile (375px)
 - Canvas `container-type: inline-size` lets blocks respond with `@container` queries
 
+
+## Storefront Block Compatibility
+
+Storefront design uses ordinary registered blocks inside `Page::draft_config` and `Page::published_config`. Do not introduce separate commerce templates, editors, renderers, or publish routes. Version 1 `sourceKey`/`dataBinding` values are presentation bindings; manual block props remain the editor fallback.
+
+Commerce data is resolved per request through `CommerceProvider` and returned in a separate envelope keyed by block UUID. Never persist fixture, preview, provider, price, stock, cart, or checkout data into a page block tree. New providers must preserve normalized money/variant/availability shapes, receive the current tenant explicitly, and return an unavailable state instead of inventing authoritative values.
+
+Fixture cart state is server-side session data namespaced by tenant ID and provider key. Storefront clients send only variant IDs and quantities; providers validate availability and return totals. Do not calculate live-provider prices, discounts, stock, or totals in Vue. Preview selection is request-only and must never trigger a page save. The fixture checkout page is a handoff simulator and must never be described as payment or order placement.
+
+Editor-internal navigation from the topbar, header, or canvas links must call the editor's save-before-switch operation (use the `useSafeNavigate` composable which injects `forceSave` and only navigates on success). Never navigate directly away from the editor with an internal anchor because that can discard unsaved draft state. Public links still target ordinary page slugs and require the destination page to be published (`is_published = true` AND `published_config !== null`).
+
+Bulk publish (`POST /editor/publish-all`) promotes all tenant page drafts to published in a single transaction. The per-page visibility toggle (`PATCH /editor/pages/{page}/visibility`) flips `is_published` while preserving `published_config` — a reversible unlist/re-list. The homepage is permanently listed and cannot be unlisted.
 
 </laravel-boost-guidelines>

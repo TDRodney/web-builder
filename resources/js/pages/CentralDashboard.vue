@@ -8,6 +8,7 @@ import {
     ExternalLink,
     FolderGit2,
     LayoutDashboard,
+    LayoutTemplate,
     LogOut,
     Monitor,
     Palette,
@@ -20,8 +21,7 @@ import {
 import { computed } from 'vue';
 import { Toaster, toast } from 'vue-sonner';
 
-import { logout } from '@/routes';
-import { edit as editProfile } from '@/routes/profile';
+import { index as designLibrary } from '@/routes/tenant/designs';
 
 defineOptions({ layout: [] });
 
@@ -63,6 +63,12 @@ const props = defineProps<{
         subdomain: string;
     } | null;
     theme_config?: ThemeConfig | null;
+    can_apply_site_kit?: boolean;
+    central_navigation: {
+        account_settings_url: string;
+        logout_url: string;
+        csrf_token: string;
+    };
 }>();
 
 const page = usePage();
@@ -280,16 +286,21 @@ const workspaceHost = computed(() => {
                     <ExternalLink :size="13" />
                 </a>
 
-                <Link
-                    :href="logout()"
-                    method="post"
-                    as="button"
-                    class="inline-flex size-[30px] items-center justify-center rounded-[5px] border border-[#303033] bg-[#171719] text-zinc-400 transition hover:bg-[#29292c] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300"
-                    title="Log out"
-                    aria-label="Log out"
-                >
-                    <LogOut :size="14" />
-                </Link>
+                <form :action="central_navigation.logout_url" method="post">
+                    <input
+                        type="hidden"
+                        name="_token"
+                        :value="central_navigation.csrf_token"
+                    />
+                    <button
+                        type="submit"
+                        class="inline-flex size-[30px] items-center justify-center rounded-[5px] border border-[#303033] bg-[#171719] text-zinc-400 transition hover:bg-[#29292c] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300"
+                        title="Log out"
+                        aria-label="Log out"
+                    >
+                        <LogOut :size="14" />
+                    </button>
+                </form>
             </div>
         </header>
 
@@ -317,7 +328,7 @@ const workspaceHost = computed(() => {
                 </div>
 
                 <nav
-                    class="grid grid-cols-2 border-b border-[#252527] min-[880px]:grid-cols-1 min-[880px]:border-b-0 min-[880px]:p-3"
+                    class="grid grid-cols-3 border-b border-[#252527] min-[880px]:grid-cols-1 min-[880px]:border-b-0 min-[880px]:p-3"
                     aria-label="Dashboard sections"
                 >
                     <a
@@ -334,6 +345,14 @@ const workspaceHost = computed(() => {
                         <Palette :size="14" />
                         Site theme
                     </a>
+                    <Link
+                        v-if="tenant"
+                        :href="designLibrary(tenant.subdomain)"
+                        class="flex h-11 items-center gap-2 px-4 text-[10px] font-bold tracking-[0.05em] text-zinc-500 uppercase transition hover:bg-[#151517] hover:text-zinc-200 min-[880px]:mt-1 min-[880px]:rounded-[5px]"
+                    >
+                        <LayoutTemplate :size="14" />
+                        Site kits
+                    </Link>
                 </nav>
 
                 <div
@@ -366,13 +385,13 @@ const workspaceHost = computed(() => {
                                 </small>
                             </div>
                         </div>
-                        <Link
-                            :href="editProfile()"
+                        <a
+                            :href="central_navigation.account_settings_url"
                             class="mt-3 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-[4px] border border-[#303033] bg-[#202023] text-[10px] font-semibold text-zinc-300 transition hover:bg-[#29292c] hover:text-white"
                         >
                             <Settings :size="12" />
                             Account settings
-                        </Link>
+                        </a>
                     </div>
 
                     <div class="mt-auto border-t border-[#29292c] pt-3">
@@ -495,11 +514,23 @@ const workspaceHost = computed(() => {
                                     <p
                                         class="mt-2 text-xs leading-5 text-zinc-400"
                                     >
-                                        Inspect the published experience in a
-                                        new tab.
+                                        Preview professional site kits or
+                                        inspect the published experience.
                                     </p>
                                 </div>
-                                <div class="grid">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <Link
+                                        v-if="tenant"
+                                        :href="designLibrary(tenant.subdomain)"
+                                        class="inline-flex h-9 items-center justify-center gap-1.5 rounded-[5px] border border-[#3f4652] bg-[#1b2028] text-[10px] font-semibold text-[#c4d2e8] transition hover:bg-[#252d38] hover:text-white"
+                                    >
+                                        <LayoutTemplate :size="12" />
+                                        {{
+                                            props.can_apply_site_kit
+                                                ? 'Choose kit'
+                                                : 'Browse kits'
+                                        }}
+                                    </Link>
                                     <a
                                         :href="tenantPublicUrl"
                                         target="_blank"

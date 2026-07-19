@@ -18,15 +18,16 @@ class TenantNavigationController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'navigation_config' => ['required', 'array'],
             'navigation_config.header' => ['required', 'array'],
             'navigation_config.footer' => ['required', 'array'],
         ]);
 
         $tenant->update([
-            'navigation_config' => $request->input('navigation_config'),
+            'navigation_config' => $validated['navigation_config'],
         ]);
+        $tenant->markSiteSetupCompleted();
 
         return response()->json([
             'status' => 'success',
