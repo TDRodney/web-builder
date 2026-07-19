@@ -8,6 +8,14 @@ const props = defineProps({
 
 const tag = computed(() => props.blockProps?.url ? 'a' : 'button');
 
+// Treat scheme-less / root-relative URLs as internal site links so they
+// stay in-tab on the published site (SPA navigation) and can be clicked
+// to switch pages in the editor. Only absolute external URLs open new tabs.
+const isExternal = computed(() => {
+  const url = props.blockProps?.url || '';
+  return /^[a-z]+:\/\//iu.test(url) || url.startsWith('mailto:') || url.startsWith('tel:');
+});
+
 const attrs = computed(() => {
   const v = props.blockProps?.variant || 'primary';
   const primary = 'var(--theme-primary)';
@@ -37,8 +45,8 @@ const sizeClasses = computed(() => {
     <component
       :is="tag"
       :href="tag === 'a' ? blockProps.url : undefined"
-      :target="tag === 'a' ? '_blank' : undefined"
-      :rel="tag === 'a' ? 'noopener noreferrer' : undefined"
+      :target="tag === 'a' && isExternal ? '_blank' : undefined"
+      :rel="tag === 'a' && isExternal ? 'noopener noreferrer' : undefined"
       :style="attrs"
       :class="['inline-block font-semibold transition-all text-center theme-btn', sizeClasses]"
     >

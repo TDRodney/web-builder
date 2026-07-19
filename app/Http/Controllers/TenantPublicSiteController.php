@@ -33,8 +33,8 @@ class TenantPublicSiteController extends Controller
             abort(404, 'Page not found.');
         }
 
-        if (! $page->published_config) {
-            abort(404, 'This page has not been published yet.');
+        if (! $page->is_published || ! $page->published_config) {
+            abort(404, 'This page is not available.');
         }
 
         $requestedProduct = request()->string('commerce_product')->toString();

@@ -153,6 +153,7 @@ erDiagram
         integer sort_order "default: 0"
         json draft_config "nullable"
         json published_config "nullable"
+        boolean is_published "default: true"
         timestamps created_at
         timestamps updated_at
     }
@@ -207,8 +208,8 @@ erDiagram
 #### [Page](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Models/Page.php)
 
 - Traits: `HasFactory`
-- Fillable: `tenant_id`, `slug`, `title`, `is_homepage`, `sort_order`, `draft_config`, `published_config`
-- Casts: `is_homepage` → boolean, `draft_config` → array, `published_config` → array
+- Fillable: `tenant_id`, `slug`, `title`, `is_homepage`, `sort_order`, `is_published`, `draft_config`, `published_config`
+- Casts: `is_homepage` → boolean, `is_published` → boolean, `draft_config` → array, `published_config` → array
 - Relationship: `belongsTo(Tenant)`
 - `ContactSubmission` defines the inverse `belongsTo(Page)` relationship, but `Page` does not currently define `hasMany(ContactSubmission)`
 - **Global Scope**: [TenantScope](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Models/Scopes/TenantScope.php) auto-filters all queries by `tenant_id` when `app('currentTenant')` is bound
@@ -333,10 +334,12 @@ All routes protected by [IdentifyTenant](file:///c:/Users/Z.BOOK/Desktop/things/
 | `PATCH` | `/theme` | `tenant.theme.update` | [TenantThemeController::update](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantThemeController.php#L22) | auth | Save theme settings (colors, typography, borderRadius) |
 | `GET` | `/editor` | `tenant.editor` | [TenantEditorController::edit](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantEditorController.php#L10) | auth | Canvas editor (accepts optional `?page={slug}`, resolves active or homepage, passes pages + urls props) |
 | `POST` | `/editor/save` | `tenant.page.save` | [TenantPageSaveController::store](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageSaveController.php#L12) | auth | Save draft_config (JSON endpoint) |
-| `POST` | `/editor/publish` | `tenant.page.publish` | [TenantPageSaveController::publish](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageSaveController.php#L43) | auth | Promote draft → published (DB transaction) |
+| `POST` | `/editor/publish` | `tenant.page.publish` | [TenantPageSaveController::publish](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageSaveController.php#L43) | auth | Promote single page draft → published (DB transaction) |
+| `POST` | `/editor/publish-all` | `tenant.page.publish-all` | [TenantPageSaveController::publishAll](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageSaveController.php#L64) | auth | Promote all tenant pages' drafts → published in a DB transaction; skips pages with empty draft; auto-flags `is_published = true` |
 | `GET` | `/editor/pages` | `tenant.pages.index` | [TenantPageController::index](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageController.php#L10) | auth | List all tenant pages |
 | `POST` | `/editor/pages` | `tenant.pages.store` | [TenantPageController::store](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageController.php#L28) | auth | Create a new page |
 | `PATCH` | `/editor/pages/{page}` | `tenant.pages.update` | [TenantPageController::update](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageController.php#L62) | auth | Update page details (title, slug, homepage, sort) |
+| `PATCH` | `/editor/pages/{page}/visibility` | `tenant.pages.visibility` | [TenantPageController::updateVisibility](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageController.php#L129) | auth | Toggle page's public visibility (list/unlist); homepage cannot be unlisted |
 | `DELETE` | `/editor/pages/{page}` | `tenant.pages.destroy` | [TenantPageController::destroy](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageController.php#L105) | auth | Delete a page (enforces homepage protection) |
 | `GET` | `/editor/media` | `tenant.media.index` | [TenantMediaController::index](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantMediaController.php#L16) | auth | List all media for the tenant (newest first) |
 | `POST` | `/editor/media` | `tenant.media.store` | [TenantMediaController::store](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantMediaController.php#L32) | auth | Upload a media file (validates type, size) |
@@ -349,7 +352,7 @@ All routes protected by [IdentifyTenant](file:///c:/Users/Z.BOOK/Desktop/things/
 
 Authorization is **controller-level, not policy-based**:
 
-- **Editor Access, Page CRUD, Media CRUD, Navigation & Theme Settings**: `auth()->id() !== $tenant->user_id` → 403 for all authenticated tenant operations
+- **Editor Access, Page CRUD (incl. visibility toggle), Media CRUD, Navigation & Theme Settings**: `auth()->id() !== $tenant->user_id` → 403 for all authenticated tenant operations
 - **Save/Publish/CRUD**: Same ownership check + `TenantScope` on `Page::findOrFail()` / routing constraints ensures cross-tenant isolation
 - **Media Deletion**: Double-checks `$media->tenant_id !== $tenant->id` even after ownership gate
 - **Public Site**: No auth required; only reads `published_config`
@@ -364,6 +367,7 @@ Authorization is **controller-level, not policy-based**:
 | `POST /editor/publish` | `page_id`: required integer |
 | `POST /editor/pages` | `title`: required string max:255; `slug`: required lowercase alphanumeric+hyphens unique per tenant |
 | `PATCH /editor/pages/{page}` | `title`: sometimes required string max:255; `slug`: sometimes required lowercase alphanumeric+hyphens unique per tenant; `is_homepage`: sometimes required boolean; `sort_order`: sometimes required integer |
+| `PATCH /editor/pages/{page}/visibility` | `is_published`: required boolean; homepage unlisting returns 422 |
 | `PATCH /theme` | `colors.*`: regex `/^#[0-9a-fA-F]{6}$/`; `typography.*Font`: must be in curated Google Fonts list; `borderRadius`: must be in `['0px','4px','8px','16px','9999px']` |
 | `POST /editor/media` | `file`: required, file, image, max:5120 KB, mimes:jpeg,png,gif,webp,svg |
 | `PATCH /editor/navigation` | `navigation_config`: required array; `navigation_config.header`: required array; `navigation_config.footer`: required array |
@@ -437,6 +441,8 @@ Key characteristics:
 
 ### 4.3 Publish Flow (Draft → Live Promotion)
 
+#### 4.3.1 Single Page Publish
+
 ```mermaid
 sequenceDiagram
     participant UI as Editor.vue
@@ -471,7 +477,7 @@ sequenceDiagram
     MW->>MW: Bind app('currentTenant')
     MW->>Controller: pass request
     Controller->>DB: Page::where('slug', $slug)->firstOrFail() — TenantScope auto-applied
-    Controller->>Controller: Check published_config !== null (else 404)
+    Controller->>Controller: Check is_published === true AND published_config !== null (else 404)
     Controller->>Vue: Inertia::render('Tenant/PublicPage', {tenant, page})
     Vue->>Vue: RenderPublicNode recursively renders block tree via <component :is>
     Vue->>Visitor: Inertia response; SSR HTML is produced only when the SSR build and server are running
@@ -479,6 +485,8 @@ sequenceDiagram
 
 > [!IMPORTANT]
 > Public sites are rendered via **Inertia** using the exact same Vue component definition tree as the editor (`RenderPublicNode.vue`). This eliminates the Blade/Vue block-template drift vector. The repository is configured for Inertia SSR, but production SSR output requires the SSR bundle and server process to be built, started, and monitored by the deployment environment.
+>
+> Public access requires **both** `is_published = true` AND `published_config !== null`. Either condition being false returns a 404. The homepage is permanently listed and cannot be unlisted via the visibility toggle.
 
 ### 4.5 Unified Rendering Architecture
 
@@ -601,6 +609,17 @@ Configured in [FortifyServiceProvider](file:///c:/Users/Z.BOOK/Desktop/things/co
 | CSRF | Standard Laravel CSRF via Inertia |
 | Reserved subdomains | Blocked at registration validation |
 
+#### 4.3.2 Bulk Publish All Pages
+
+A "Publish All" action (`POST /editor/publish-all` via `TenantPageSaveController::publishAll`) promotes every tenant page's draft to published in a single DB transaction:
+
+1. Iterates all tenant pages ordered by `sort_order`
+2. Skips pages with empty `draft_config`
+3. For each page with content: refreshes the model, copies `draft_config` → `published_config`, sets `is_published = true`
+4. Returns counts (`published_count`, `skipped_count`, `total_count`)
+
+The editor UI shows a "Publish all pages" button in the sidebar footer alongside the single-page publish button. Both buttons are disabled during any in-flight save or publish operation.
+
 ### 4.10 Page Switching & Settings Flow
 
 The multi-page lifecycle manages dynamic canvas reloading and metadata updates:
@@ -628,6 +647,33 @@ sequenceDiagram
     Server->>UI: JSON {status: 'success'}
     UI->>UI: router.reload({ only: ['pages', 'page'] })
 ```
+
+#### 4.10.1 Visibility Toggle
+
+Each non-homepage page can be listed or unlisted from the public site via an eye/eye-off icon in the Pages sidebar:
+
+- `PATCH /editor/pages/{page}/visibility` with `{is_published: boolean}`
+- The homepage is permanently listed — unlisting returns 422
+- Published config content is preserved during unlisting; only the access gate flips
+- The public site controller checks `is_published === true AND published_config !== null` before serving any page
+- Cross-tenant visibility tampering is prevented by ownership check + TenantScope
+
+#### 4.10.2 Safe Navigation (Draft Flush Before Exit)
+
+A `useSafeNavigate` composable wraps Inertia visits from editor-internal navigation (Back button, Exit to dashboard, Create/Rename page redirects):
+
+- Injects `forceSave` from the editor
+- Before navigating, attempts `await forceSave()` with a "Saving draft..." toast
+- On success, proceeds with `router.visit(url)`
+- On failure (save threw), shows an error toast and does NOT navigate — the user stays in the editor with their unsaved work
+- Used by: `EditorTopbar.vue` (Back), `EditorSidebar.vue` (Exit to dashboard), `CreatePageModal.vue` (redirect after create), `RenamePageModal.vue` (redirect after rename)
+
+#### 4.10.3 ButtonBlock Link Behavior
+
+The `ButtonBlock` component distinguishes internal vs external links:
+
+- **External**: Absolute URLs with a scheme (`https://...`, `mailto:`, `tel:`) → opens in a new tab (`target="_blank"`) with `rel="noopener noreferrer"`
+- **Internal**: Scheme-less or root-relative URLs (for page-to-page navigation within the tenant's site) → stays in the current tab (no `target`/`rel` attributes), preserving SPA navigation behavior
 
 Key characteristics:
 - **Save Guard**: Active modifications are fully flushed and persisted to the current page via `forceSave()` before transition, preventing user edits from being discarded.

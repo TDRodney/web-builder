@@ -2,9 +2,12 @@
 import { Link } from '@inertiajs/vue3';
 import {
     Blocks,
+    Eye,
+    EyeOff,
     ExternalLink,
     FileText,
     Home,
+    Layers,
     LogOut,
     PanelTop,
     Pencil,
@@ -20,6 +23,7 @@ import { computed, ref, watch } from 'vue';
 import BlockLibrary from '@/components/Editor/BlockLibrary.vue';
 import ContentInspector from '@/components/Editor/ContentInspector.vue';
 import NavigationSettings from '@/components/Editor/NavigationSettings.vue';
+import { useSafeNavigate } from '@/composables/useSafeNavigate';
 
 type PageSummary = {
     id: number | string;
@@ -41,6 +45,7 @@ const props = defineProps({
     logoutUrl: { type: String, required: true },
     liveUrl: { type: String, required: true },
     isPublishing: { type: Boolean, default: false },
+    isPublishingAll: { type: Boolean, default: false },
     isSaving: { type: Boolean, default: false },
     saveError: { type: String, default: '' },
 });
@@ -51,11 +56,15 @@ const emit = defineEmits([
     'rename-page',
     'set-homepage',
     'delete-page',
+    'toggle-visibility',
     'open-media-picker',
     'add-block',
     'add-preset',
     'publish',
+    'publish-all',
 ]);
+
+const { safeNavigate } = useSafeNavigate();
 
 const activeSection = ref('content');
 
@@ -214,6 +223,25 @@ watch(
                             <button
                                 v-if="!page.is_homepage"
                                 type="button"
+                                :class="{ 'muted-action': !page.is_published }"
+                                :title="
+                                    page.is_published
+                                        ? 'Unlist from public site'
+                                        : 'Re-list on public site'
+                                "
+                                :aria-label="
+                                    page.is_published
+                                        ? 'Unlist from public site'
+                                        : 'Re-list on public site'
+                                "
+                                @click="emit('toggle-visibility', page)"
+                            >
+                                <Eye v-if="page.is_published" :size="13" />
+                                <EyeOff v-else :size="13" />
+                            </button>
+                            <button
+                                v-if="!page.is_homepage"
+                                type="button"
                                 title="Set as homepage"
                                 aria-label="Set as homepage"
                                 @click="emit('set-homepage', page)"
@@ -276,6 +304,20 @@ watch(
 
             <button
                 type="button"
+                class="publish-all-button"
+                :disabled="
+                    isPublishingAll || isPublishing || isSaving || !!saveError
+                "
+                @click="emit('publish-all')"
+            >
+                <Layers :size="15" />
+                <span>{{
+                    isPublishingAll ? 'Publishing all…' : 'Publish all pages'
+                }}</span>
+            </button>
+
+            <button
+                type="button"
                 class="publish-button"
                 :disabled="isPublishing || isSaving || !!saveError"
                 @click="emit('publish')"
@@ -287,7 +329,13 @@ watch(
             </button>
 
             <div class="sidebar-account-actions">
-                <Link :href="dashboardUrl">Exit to dashboard</Link>
+                <button
+                    type="button"
+                    class="exit-dashboard"
+                    @click="safeNavigate(dashboardUrl)"
+                >
+                    Exit to dashboard
+                </button>
                 <Link :href="logoutUrl" method="post" as="button">
                     <LogOut :size="12" />
                     <span>Log out</span>
@@ -314,6 +362,7 @@ watch(
 .page-select,
 .page-actions,
 .publish-button,
+.publish-all-button,
 .create-page-button,
 .heading-action,
 .sidebar-live-link {
@@ -537,6 +586,9 @@ watch(
     color: #fca5a5;
     background: rgb(127 29 29 / 25%);
 }
+.page-actions .muted-action {
+    color: #52525b;
+}
 
 .create-page-button {
     width: 100%;
@@ -596,6 +648,35 @@ watch(
     background: #ffffff;
 }
 .publish-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+.publish-all-button {
+    width: 100%;
+    height: 38px;
+    margin-bottom: 8px;
+    justify-content: center;
+    gap: 8px;
+    color: #d4d4d8;
+    font-size: 11px;
+    font-weight: 650;
+    background: #1c1c1f;
+    border: 1px solid #343438;
+    border-radius: 5px;
+    cursor: pointer;
+    transition:
+        color 150ms ease,
+        border-color 150ms ease,
+        background 150ms ease;
+}
+
+.publish-all-button:hover:not(:disabled) {
+    color: #ffffff;
+    border-color: #52525b;
+    background: #232327;
+}
+.publish-all-button:disabled {
     cursor: not-allowed;
     opacity: 0.45;
 }

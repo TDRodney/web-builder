@@ -51,7 +51,7 @@ class TenantEditorController extends Controller
         }
 
         $pages = $tenant->pages()
-            ->select(['id', 'slug', 'title', 'is_homepage', 'sort_order'])
+            ->select(['id', 'slug', 'title', 'is_homepage', 'is_published', 'sort_order'])
             ->orderBy('sort_order')
             ->get();
 

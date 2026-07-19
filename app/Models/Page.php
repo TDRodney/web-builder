@@ -11,7 +11,7 @@ class Page extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['tenant_id', 'slug', 'title', 'is_homepage', 'sort_order', 'draft_config', 'published_config'];
+    protected $fillable = ['tenant_id', 'slug', 'title', 'is_homepage', 'sort_order', 'is_published', 'draft_config', 'published_config'];
 
     protected static function booted(): void
     {
@@ -26,6 +26,7 @@ class Page extends Model
     {
         return [
             'is_homepage' => 'boolean',
+            'is_published' => 'boolean',
             'draft_config' => 'array',
             'published_config' => 'array',
         ];

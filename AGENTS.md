@@ -373,6 +373,8 @@ Commerce data is resolved per request through `CommerceProvider` and returned in
 
 Fixture cart state is server-side session data namespaced by tenant ID and provider key. Storefront clients send only variant IDs and quantities; providers validate availability and return totals. Do not calculate live-provider prices, discounts, stock, or totals in Vue. Preview selection is request-only and must never trigger a page save. The fixture checkout page is a handoff simulator and must never be described as payment or order placement.
 
-Editor-internal navigation from the topbar, header, or canvas links must call the editor's save-before-switch operation. Never navigate directly away from the editor with an internal anchor because that can discard unsaved draft state. Public links still target ordinary page slugs and require the destination page to be published.
+Editor-internal navigation from the topbar, header, or canvas links must call the editor's save-before-switch operation (use the `useSafeNavigate` composable which injects `forceSave` and only navigates on success). Never navigate directly away from the editor with an internal anchor because that can discard unsaved draft state. Public links still target ordinary page slugs and require the destination page to be published (`is_published = true` AND `published_config !== null`).
+
+Bulk publish (`POST /editor/publish-all`) promotes all tenant page drafts to published in a single transaction. The per-page visibility toggle (`PATCH /editor/pages/{page}/visibility`) flips `is_published` while preserving `published_config` — a reversible unlist/re-list. The homepage is permanently listed and cannot be unlisted.
 
 </laravel-boost-guidelines>

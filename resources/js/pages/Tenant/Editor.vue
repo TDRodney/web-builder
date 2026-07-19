@@ -642,13 +642,49 @@ const publishPage = async () => {
     }
 };
 
+const isPublishingAll = ref(false);
+const publishAllHttp = useHttp({});
+
+const publishAll = async () => {
+    isPublishingAll.value = true;
+
+    try {
+        toast.loading('Publishing all pages...', { id: 'publish-all-toast' });
+
+        const res = await publishAllHttp.post(`/editor/publish-all`);
+
+        if (res && res.status === 'success') {
+            toast.success(
+                res.message || 'All pages published.',
+                { id: 'publish-all-toast' },
+            );
+            router.reload({ only: ['pages', 'page'] });
+        } else {
+            toast.error('Publish all returned an unexpected response', {
+                id: 'publish-all-toast',
+            });
+        }
+    } catch (err) {
+        const message = extractHttpError(err);
+
+        if (message !== null) {
+            toast.error(`Failed to publish all pages: ${message}`, {
+                id: 'publish-all-toast',
+            });
+        }
+    } finally {
+        isPublishingAll.value = false;
+    }
+};
+
 // Page Management Functions
 const showCreateModal = ref(false);
 const showRenameModal = ref(false);
 const pageToRename = ref(null);
 
 const deleteHttp = useHttp({});
-const setHomepageHttp = useHttp({});
+const setHomepageHttp = useHttp({ is_homepage: true });
+const visibilityHttp = useHttp({ is_published: false });
 
 const pageActionError = ref('');
 
@@ -716,9 +752,8 @@ const handleSetHomepage = async (page) => {
     pageActionError.value = '';
     const loadingToast = toast.loading('Setting homepage...');
     try {
-        const res = await setHomepageHttp.patch(`/editor/pages/${page.id}`, {
-            is_homepage: true,
-        });
+        setHomepageHttp.is_homepage = true;
+        const res = await setHomepageHttp.patch(`/editor/pages/${page.id}`);
 
         if (res && res.status === 'success') {
             toast.success(`"${page.title}" is now the homepage`, {
@@ -731,6 +766,37 @@ const handleSetHomepage = async (page) => {
         if (message !== null) {
             pageActionError.value = message;
             toast.error(`Failed to set homepage: ${message}`, {
+                id: loadingToast,
+            });
+        } else {
+            toast.dismiss(loadingToast);
+        }
+    }
+};
+
+const handleToggleVisibility = async (page) => {
+    pageActionError.value = '';
+    const next = !page.is_published;
+    const loadingToast = toast.loading(
+        next ? 'Re-listing page...' : 'Unlisting page...',
+    );
+    try {
+        visibilityHttp.is_published = next;
+        const res = await visibilityHttp.patch(
+            `/editor/pages/${page.id}/visibility`,
+        );
+
+        if (res && res.status === 'success') {
+            toast.success(res.message || 'Page visibility updated', {
+                id: loadingToast,
+            });
+            router.reload({ only: ['pages', 'page'] });
+        }
+    } catch (err) {
+        const message = extractHttpError(err);
+        if (message !== null) {
+            pageActionError.value = message;
+            toast.error(`Failed to update visibility: ${message}`, {
                 id: loadingToast,
             });
         } else {
@@ -807,6 +873,7 @@ const onMediaSelected = (item) => {
                     :logout-url="urls.logout"
                     :live-url="urls.live"
                     :is-publishing="isPublishing"
+                    :is-publishing-all="isPublishingAll"
                     :is-saving="http.processing"
                     :save-error="saveError"
                     @create-page="showCreateModal = true"
@@ -814,10 +881,12 @@ const onMediaSelected = (item) => {
                     @rename-page="openRenameModal"
                     @set-homepage="handleSetHomepage"
                     @delete-page="handleDeletePage"
+                    @toggle-visibility="handleToggleVisibility"
                     @open-media-picker="openMediaPicker"
                     @add-block="addBlock"
                     @add-preset="addPreset"
                     @publish="publishPage"
+                    @publish-all="publishAll"
                 />
             </div>
 
