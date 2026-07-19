@@ -2,30 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateTenantNavigationRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class TenantNavigationController extends Controller
 {
-    /**
-     * Update the tenant's navigation configuration.
-     */
-    public function update(Request $request): JsonResponse
+    public function update(UpdateTenantNavigationRequest $request): JsonResponse
     {
         $tenant = app('currentTenant');
 
-        if (auth()->id() !== $tenant->user_id) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
-        $validated = $request->validate([
-            'navigation_config' => ['required', 'array'],
-            'navigation_config.header' => ['required', 'array'],
-            'navigation_config.footer' => ['required', 'array'],
-        ]);
+        /** @var array<string, mixed> $navigationConfig */
+        $navigationConfig = $request->validated('navigation_config');
 
         $tenant->update([
-            'navigation_config' => $validated['navigation_config'],
+            'navigation_config' => $navigationConfig,
         ]);
         $tenant->markSiteSetupCompleted();
 

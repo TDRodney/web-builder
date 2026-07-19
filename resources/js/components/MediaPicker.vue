@@ -1,6 +1,7 @@
+<!-- eslint-disable vue/block-lang -->
 <script setup>
-import { ref, onMounted } from 'vue';
 import { useHttp } from '@inertiajs/vue3';
+import { ref, onMounted } from 'vue';
 
 const emit = defineEmits(['select', 'close']);
 
@@ -19,11 +20,13 @@ const deleteHttp = useHttp({});
  */
 const getCsrfToken = () => {
   const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
+
   return match ? decodeURIComponent(match[1]) : '';
 };
 
 const fetchMedia = async () => {
   isLoading.value = true;
+
   try {
     const res = await fetch('/editor/media', {
       headers: {
@@ -33,6 +36,7 @@ const fetchMedia = async () => {
       },
       credentials: 'same-origin',
     });
+
     if (res.ok) {
       mediaItems.value = await res.json();
     }
@@ -56,6 +60,7 @@ const deleteItem = async (item) => {
   try {
     await deleteHttp.delete(`/editor/media/${item.id}`);
     mediaItems.value = mediaItems.value.filter(m => m.id !== item.id);
+
     if (selectedId.value === item.id) {
       selectedId.value = null;
     }
@@ -80,7 +85,10 @@ const handleFileInput = (event) => {
 };
 
 const uploadFiles = async (files) => {
-  if (!files.length) return;
+  if (!files.length) {
+return;
+}
+
   isUploading.value = true;
   uploadError.value = '';
 
@@ -107,13 +115,14 @@ const uploadFiles = async (files) => {
         const body = await res.json().catch(() => ({}));
         uploadError.value = body.message || `Upload failed (${res.status})`;
       }
-    } catch (e) {
+    } catch {
       uploadError.value = 'Network error during upload.';
     }
   }
 
   isUploading.value = false;
   activeTab.value = 'library';
+
   if (fileInput.value) {
     fileInput.value.value = '';
   }
@@ -237,7 +246,7 @@ const uploadFiles = async (files) => {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(2, 6, 23, 0.75);
+  background: rgba(24, 24, 27, 0.5);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -246,15 +255,15 @@ const uploadFiles = async (files) => {
 }
 
 .media-picker-modal {
-  background: #0f172a;
-  border: 1px solid #1e293b;
+  background: var(--editor-panel, #ffffff);
+  border: 1px solid var(--editor-border, #e4e4e7);
   border-radius: 1rem;
   width: 100%;
   max-width: 720px;
   max-height: 85vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 25px 50px -12px rgba(24, 24, 27, 0.25);
   overflow: hidden;
 }
 
@@ -263,28 +272,28 @@ const uploadFiles = async (files) => {
   align-items: center;
   justify-content: space-between;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #1e293b;
+  border-bottom: 1px solid var(--editor-border, #e4e4e7);
   flex-shrink: 0;
 }
 
 .modal-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #f8fafc;
+  color: var(--editor-text, #18181b);
   margin: 0;
 }
 
 .modal-close-btn {
   background: transparent;
   border: 0;
-  color: #64748b;
+  color: var(--editor-text-muted, #71717a);
   cursor: pointer;
   padding: 0.25rem;
   border-radius: 0.375rem;
   transition: color 0.15s;
 }
 .modal-close-btn:hover {
-  color: #f8fafc;
+  color: var(--editor-text, #18181b);
 }
 
 .icon {
@@ -295,7 +304,7 @@ const uploadFiles = async (files) => {
 
 .modal-tabs {
   display: flex;
-  border-bottom: 1px solid #1e293b;
+  border-bottom: 1px solid var(--editor-border, #e4e4e7);
   padding: 0 1.5rem;
   flex-shrink: 0;
 }
@@ -304,7 +313,7 @@ const uploadFiles = async (files) => {
   background: transparent;
   border: 0;
   border-bottom: 2px solid transparent;
-  color: #64748b;
+  color: var(--editor-text-muted, #71717a);
   font-size: 0.8125rem;
   font-weight: 600;
   padding: 0.75rem 0;
@@ -316,16 +325,16 @@ const uploadFiles = async (files) => {
   gap: 0.375rem;
 }
 .tab-btn:hover {
-  color: #94a3b8;
+  color: var(--editor-text, #18181b);
 }
 .tab-active {
-  color: var(--theme-primary, #6366f1);
-  border-bottom-color: var(--theme-primary, #6366f1);
+  color: var(--editor-accent, #4f46e5);
+  border-bottom-color: var(--editor-accent, #4f46e5);
 }
 
 .tab-count {
-  background: #1e293b;
-  color: #94a3b8;
+  background: var(--editor-panel-muted, #f4f4f5);
+  color: var(--editor-text-muted, #71717a);
   font-size: 0.6875rem;
   padding: 0.125rem 0.4rem;
   border-radius: 9999px;
@@ -339,7 +348,7 @@ const uploadFiles = async (files) => {
 
 .status-message {
   text-align: center;
-  color: #64748b;
+  color: var(--editor-text-muted, #71717a);
   font-size: 0.875rem;
   padding: 3rem 0;
 }
@@ -347,7 +356,7 @@ const uploadFiles = async (files) => {
 .link-btn {
   background: transparent;
   border: 0;
-  color: var(--theme-primary, #6366f1);
+  color: var(--editor-accent, #4f46e5);
   cursor: pointer;
   font-size: inherit;
   text-decoration: underline;
@@ -366,15 +375,15 @@ const uploadFiles = async (files) => {
   border-radius: 0.5rem;
   overflow: hidden;
   cursor: pointer;
-  border: 2px solid transparent;
+  border: 2px solid var(--editor-border, #e4e4e7);
   transition: border-color 0.15s, transform 0.15s;
 }
 .media-card:hover {
   transform: scale(1.02);
 }
 .media-card-selected {
-  border-color: var(--theme-primary, #6366f1);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+  border-color: var(--editor-accent, #4f46e5);
+  box-shadow: 0 0 0 2px var(--editor-accent-soft, rgba(79, 70, 229, 0.2));
 }
 
 .media-thumb {
@@ -387,7 +396,7 @@ const uploadFiles = async (files) => {
 .media-card-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(2, 6, 23, 0);
+  background: rgba(24, 24, 27, 0);
   transition: background 0.15s;
   display: flex;
   flex-direction: column;
@@ -395,12 +404,12 @@ const uploadFiles = async (files) => {
   padding: 0.5rem;
 }
 .media-card:hover .media-card-overlay {
-  background: rgba(2, 6, 23, 0.65);
+  background: rgba(24, 24, 27, 0.6);
 }
 
 .media-filename {
   font-size: 0.625rem;
-  color: #f8fafc;
+  color: #ffffff;
   font-weight: 500;
   word-break: break-all;
   opacity: 0;
@@ -412,7 +421,7 @@ const uploadFiles = async (files) => {
 
 .delete-btn,
 .confirm-delete-btn {
-  background: rgba(239, 68, 68, 0.85);
+  background: rgba(239, 68, 68, 0.9);
   border: 0;
   border-radius: 0.25rem;
   color: #fff;
@@ -437,7 +446,7 @@ const uploadFiles = async (files) => {
 
 /* Upload Tab */
 .drop-zone {
-  border: 2px dashed #334155;
+  border: 2px dashed var(--editor-border-strong, #d4d4d8);
   border-radius: 0.75rem;
   padding: 3rem 2rem;
   text-align: center;
@@ -450,27 +459,27 @@ const uploadFiles = async (files) => {
 }
 .drop-zone:hover,
 .drop-zone-active {
-  border-color: var(--theme-primary, #6366f1);
-  background: rgba(99, 102, 241, 0.05);
+  border-color: var(--editor-accent, #4f46e5);
+  background: var(--editor-accent-soft, rgba(79, 70, 229, 0.08));
 }
 
 .upload-icon {
   width: 3rem;
   height: 3rem;
-  color: var(--theme-primary, #6366f1);
-  opacity: 0.7;
+  color: var(--editor-accent, #4f46e5);
+  opacity: 0.75;
 }
 
 .drop-label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #cbd5e1;
+  color: var(--editor-text, #18181b);
   margin: 0;
 }
 
 .drop-subtext {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--editor-text-muted, #71717a);
   margin: 0;
 }
 
@@ -482,14 +491,14 @@ const uploadFiles = async (files) => {
   margin-top: 1rem;
   text-align: center;
   font-size: 0.875rem;
-  color: var(--theme-primary, #6366f1);
+  color: var(--editor-accent, #4f46e5);
   font-weight: 600;
 }
 
 .upload-error {
   margin-top: 0.75rem;
   font-size: 0.8125rem;
-  color: #f87171;
+  color: #dc2626;
   text-align: center;
 }
 </style>

@@ -1,4 +1,5 @@
-import { computed, watch, type CSSProperties } from 'vue';
+import { computed, watch  } from 'vue';
+import type {CSSProperties} from 'vue';
 
 interface ThemeColors {
     primary?: string;
@@ -33,6 +34,7 @@ function buildFontUrl(fonts: string[]): string {
     const families = fonts
         .map((f) => `family=${encodeURIComponent(f).replace(/%20/g, '+')}:wght@400;500;600;700`)
         .join('&');
+
     return `https://fonts.googleapis.com/css2?${families}&display=swap`;
 }
 
@@ -60,6 +62,7 @@ export function useTheme(themeGetter: () => ThemeConfig | null | undefined) {
         const heading = t?.typography?.headingFont ?? DEFAULT_THEME.typography.headingFont;
         const body = t?.typography?.bodyFont ?? DEFAULT_THEME.typography.bodyFont;
         const fonts = [...new Set([heading, body])];
+
         return buildFontUrl(fonts);
     });
 
@@ -68,12 +71,14 @@ export function useTheme(themeGetter: () => ThemeConfig | null | undefined) {
             fontUrl,
             (url) => {
                 let link = document.getElementById(FONT_LINK_ID) as HTMLLinkElement | null;
+
                 if (!link) {
                     link = document.createElement('link');
                     link.id = FONT_LINK_ID;
                     link.rel = 'stylesheet';
                     document.head.appendChild(link);
                 }
+
                 if (link.href !== url) {
                     link.href = url;
                 }

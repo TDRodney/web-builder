@@ -27,15 +27,39 @@ test('tenant owners can preview the three approved site kits', function () {
             ->where('can_apply_site_kit', true)
             ->has('kits', 3)
             ->where('kits.0.key', 'restaurant')
+            ->where('kits.0.tier', 'free')
             ->where('kits.1.key', 'retail')
             ->where('kits.2.key', 'hotel')
             ->has('kits.0.pages', 4)
             ->has('kits.0.preview_blocks')
+            ->has('kits.0.pages.0.preview_blocks')
             ->missing('kits.0.pages.0.blocks')
         );
 });
 
-test('established workspaces can preview kits but cannot apply them', function () {
+test('every catalog page can be rendered in the read only kit preview', function () {
+    $user = User::factory()->create();
+    $tenant = Tenant::factory()->awaitingSiteSetup()->create([
+        'user_id' => $user->id,
+        'subdomain' => 'design-page-preview',
+    ]);
+
+    $response = $this->actingAs($user)
+        ->get(route('tenant.designs.index', ['tenant' => $tenant->subdomain]))
+        ->assertOk();
+
+    $kits = $response->inertiaProps('kits');
+
+    expect($kits)->toHaveCount(3);
+
+    foreach ($kits as $kit) {
+        foreach ($kit['pages'] as $page) {
+            expect($page['preview_blocks'])->toBeArray()->not->toBeEmpty();
+        }
+    }
+});
+
+test('established workspaces are redirected away from onboarding kits', function () {
     $user = User::factory()->create();
     $tenant = Tenant::factory()->create([
         'user_id' => $user->id,
@@ -44,11 +68,7 @@ test('established workspaces can preview kits but cannot apply them', function (
 
     $this->actingAs($user)
         ->get(route('tenant.designs.index', ['tenant' => $tenant->subdomain]))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('DesignLibrary')
-            ->where('can_apply_site_kit', false)
-        );
+        ->assertRedirect(route('tenant.editor', ['tenant' => $tenant->subdomain]));
 });
 
 test('users cannot view another tenant design library', function () {

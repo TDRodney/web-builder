@@ -1,7 +1,9 @@
 <script setup lang="ts">
+/* eslint-disable vue/no-mutating-props */
 import { computed } from 'vue';
 import { useCommerceBlock } from '@/lib/commerce';
 import type { CommerceCollection } from '@/types/commerce';
+import InlineText from './InlineText.vue';
 
 const props = defineProps<{
     nodeId?: string;
@@ -29,8 +31,20 @@ const collections = computed(() => {
         </div>
         <div class="heading">
             <div>
-                <p>{{ blockProps.eyebrow }}</p>
-                <h2>{{ blockProps.heading }}</h2>
+                <InlineText
+                    tag="p"
+                    :value="blockProps.eyebrow"
+                    placeholder="Section eyebrow"
+                    aria-label="Collection section eyebrow"
+                    @update:value="blockProps.eyebrow = $event"
+                />
+                <InlineText
+                    tag="h2"
+                    :value="blockProps.heading"
+                    placeholder="Collection section heading"
+                    aria-label="Collection section heading"
+                    @update:value="blockProps.heading = $event"
+                />
             </div>
         </div>
         <div class="grid">
@@ -38,7 +52,7 @@ const collections = computed(() => {
                 v-for="item in collections"
                 :key="item.id || item.handle || item.title"
                 :href="item.url || '#'"
-                ><div class="media">
+                ><div class="media" :class="{ 'media-empty': !item.imageSrc }">
                     <img
                         v-if="item.imageSrc"
                         :src="item.imageSrc"
@@ -86,6 +100,20 @@ a {
     aspect-ratio: 4/5;
     background: color-mix(in srgb, var(--theme-text) 8%, transparent);
     overflow: hidden;
+}
+.media-empty {
+    background:
+        radial-gradient(
+            120% 90% at 20% 0%,
+            color-mix(in srgb, var(--theme-primary) 12%, transparent) 0%,
+            transparent 60%
+        ),
+        radial-gradient(
+            110% 100% at 85% 100%,
+            color-mix(in srgb, var(--theme-secondary) 16%, transparent) 0%,
+            transparent 55%
+        ),
+        color-mix(in srgb, var(--theme-text) 6%, transparent);
 }
 .media img {
     width: 100%;

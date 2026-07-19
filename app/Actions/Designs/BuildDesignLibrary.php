@@ -33,6 +33,7 @@ class BuildDesignLibrary
                     'label' => $siteKit['label'],
                     'industry' => $siteKit['industry'],
                     'description' => $siteKit['description'],
+                    'tier' => $siteKit['tier'],
                     'theme_config' => $style['theme_config'],
                     'navigation_config' => $style['navigation_config'] ?? [],
                     'pages' => collect($siteKit['pages'])
@@ -40,6 +41,7 @@ class BuildDesignLibrary
                             'title' => $page['title'],
                             'slug' => $page['slug'],
                             'is_homepage' => $page['is_homepage'],
+                            'preview_blocks' => $catalog['page_layouts'][$page['layout_key']]['blocks'],
                         ])
                         ->values()
                         ->all(),

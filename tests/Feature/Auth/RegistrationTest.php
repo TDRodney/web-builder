@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Tenant;
+use App\Models\User;
 use Laravel\Fortify\Features;
 
 beforeEach(function () {
@@ -11,6 +12,12 @@ test('registration screen can be rendered', function () {
     $response = $this->get(route('register'));
 
     $response->assertOk();
+});
+
+test('authenticated users visiting registration are redirected to the central dashboard', function () {
+    $response = $this->actingAs(User::factory()->create())->get(route('register'));
+
+    $response->assertRedirect(route('central.dashboard'));
 });
 
 test('new users can register', function () {

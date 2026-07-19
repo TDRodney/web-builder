@@ -35,9 +35,34 @@ test('authorized tenant owners can access their editor canvas', function () {
     $response->assertOk()
         ->assertInertia(fn (Assert $inertia) => $inertia
             ->component('Tenant/Editor')
+            ->where('workspace', 'pages')
+            ->where('navigation_studio.default_variant', 'floating-island')
+            ->where('navigation_studio.default_menu_mode', 'simple')
+            ->where('navigation_studio.menu_modes.mega.label', 'Mega menu')
+            ->where('navigation_studio.action_positions.end.label', 'Right side')
+            ->where('navigation_studio.action_variants.primary', 'Filled')
             ->where('urls.live', 'http://test-tenant.domain.localhost')
         );
 });
+
+test('editor accepts global theme and navigation workspace modes', function (string $workspace) {
+    $user = User::factory()->create();
+    $tenant = Tenant::factory()->withHomePage()->create([
+        'user_id' => $user->id,
+        'subdomain' => 'workspace-mode-'.$workspace,
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('tenant.editor', [
+            'tenant' => $tenant->subdomain,
+            'workspace' => $workspace,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $inertia) => $inertia
+            ->component('Tenant/Editor')
+            ->where('workspace', $workspace)
+        );
+})->with(['theme', 'navigation']);
 
 test('editor receives the live URL for the page being edited', function () {
     $user = User::factory()->create();

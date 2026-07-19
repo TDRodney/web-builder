@@ -1,6 +1,6 @@
 # Web Builder — Current Gap Analysis and Roadmap
 
-> Last reconciled: 2026-07-14.
+> Last reconciled: 2026-07-18.
 >
 > Sources checked: the active application code, `spec.md`, `AGENTS.md`, routes, migrations, models, controllers, Vue components, factories, and feature tests. Where documentation and code disagree, the active code is treated as authoritative.
 
@@ -26,6 +26,8 @@ The original roadmap is approximately **70% complete**. The largest remaining pr
 
 The previously identified navigation propagation regression is resolved: saved navigation is now included in both editor and public Inertia props, with regression coverage for each response.
 
+The v1 information architecture is now unified: the tenant dashboard is an overview, while Pages, Navigation, Theme, Media, responsive preview, and Publish live in one editor shell. Site kits are restricted to onboarding-eligible empty workspaces.
+
 ### Status Overview
 
 | Area | Status | Summary |
@@ -33,12 +35,12 @@ The previously identified navigation propagation regression is resolved: saved n
 | Multi-page management | Complete | CRUD, switching, metadata, homepage selection, and deletion guard are implemented |
 | Block editor | Mostly complete | 15 block types, presets, toolbar, schema validation, and TipTap are implemented; 6 specialized blocks remain |
 | Media pipeline | Core complete | Upload, tenant isolation, thumbnails, picker, and deletion work; production optimization features remain |
-| Theming | Core complete | Theme persistence, dashboard controls, CSS variables, and curated Google Fonts work |
+| Theming | Core complete | Theme persistence, unified-builder controls, CSS variables, and curated Google Fonts work |
 | General site settings | Mostly missing | Site identity, social, analytics, SEO defaults, and custom domains are not modeled |
 | Navigation | Core complete | API, editor UI, external links, editor propagation, and public propagation are implemented |
 | SEO | Mostly missing | Responsive public rendering and `<html lang>` exist; page metadata, sitemap, robots, canonical, and OG data do not |
 | History/collaboration | Missing | Client undo/redo exists, but no persistent revisions, audit trail, or publish diff |
-| Testing/infrastructure | Good foundation | 93 tests pass; production database and several integration/SEO tests remain |
+| Testing/infrastructure | Good foundation | 181 tests pass and 1 is skipped; production database and several integration/SEO tests remain |
 
 ---
 
@@ -117,6 +119,7 @@ Remaining quality improvements, not blockers for the original gap:
 | Block Type | Status | Notes |
 |---|---|---|
 | `HeroBlock` | Done | Theme-aware heading and subheading |
+| `SectionBlock` | Done | Composable section shell with five content-preserving hero patterns |
 | `FeatureBlock` | Done | Theme-aware feature content |
 | `AtomicText` | Done | Text content with size and color controls |
 | `LayoutGrid` | Done | Configurable nested grid container |
@@ -153,8 +156,10 @@ The previous statement that `RichTextBlock` only had a raw HTML textarea is obso
 - data-driven inspector fields;
 - recursive backend schema and nesting validation;
 - drag-and-drop nesting enforcement;
+- drag-from-library insertion into root and allowed nested canvas targets;
+- reusable inline plain-text editing across the common kit content blocks;
 - duplicate, delete, move, copy, paste, and wrap actions;
-- three presets: Hero with CTA, Features Grid, and FAQ Accordion Row;
+- eight presets: five composable hero patterns, Features Grid, FAQ Accordion Row, and the legacy Hero with CTA;
 - editor and public block-level error boundaries;
 - desktop, tablet, and mobile preview modes.
 
@@ -212,7 +217,7 @@ Implemented:
 - model casting and mass-assignment support;
 - ownership-guarded `PATCH /theme` endpoint;
 - validation for four colors, curated fonts, and radius presets;
-- dashboard theme settings with palette presets and individual controls;
+- unified-builder theme mode with palette presets, typography, corners, accessibility feedback, and live preview;
 - `useTheme()` CSS-variable generation;
 - editor and public theme propagation;
 - curated Google Font selection and `<Head>` link injection;
@@ -257,7 +262,7 @@ Remaining:
 
 ## Gap 5 — Navigation System
 
-### Status: Core Complete; Enhancements Remain
+### Status: Core Complete; Structured Footer Complete
 
 Implemented:
 
@@ -267,7 +272,12 @@ Implemented:
 - internal page selection;
 - external URL editing and public `<a>` rendering;
 - shared `SiteHeader.vue` and `SiteFooter.vue` components;
-- single-line footer copyright configuration.
+- active/current-page styling for internal header links;
+- responsive mobile header navigation;
+- minimal, columns, callout, and editorial footer variants;
+- reorderable/optional footer brand, link groups, callout, social, and copyright modules;
+- footer logo selection through the existing media picker;
+- nested validation for header and footer configuration;
 - saved navigation propagated to editor and public Inertia responses;
 - integration tests for editor and public navigation props.
 
@@ -276,10 +286,10 @@ External URL support is no longer a gap. It is present in the editor, renderer, 
 Remaining and corrective work:
 
 - [x] Fix navigation prop propagation as described in the P0 section.
-- [ ] Add active/current-page styling for internal navigation links.
-- [ ] Add a responsive mobile navigation menu; the current mobile breakpoint hides the link list.
-- [ ] Add a multi-column footer structure.
-- [ ] Add validation for the nested navigation payload, including external URLs.
+- [x] Add active/current-page styling for internal navigation links.
+- [x] Add responsive mobile navigation.
+- [x] Add structured, multi-column footer variants and reorderable modules.
+- [x] Add validation for the nested navigation payload, including external URLs.
 - [ ] Use route-aware or domain-aware URL generation instead of assuming root-relative paths.
 - [ ] Support custom-domain navigation when custom domains are implemented.
 
@@ -363,12 +373,14 @@ page_revisions
 
 ### Status: Good Development Baseline, Production Work Pending
 
-Current verified baseline on 2026-07-14:
+Current verified baseline on 2026-07-18:
 
-- **132 tests passed**;
+- **181 tests passed**;
 - **1 test skipped**;
-- **573 assertions**;
+- **1,089 assertions**;
 - production Vite build completed successfully;
+- ESLint passes for the unified-builder files changed in this refactor;
+- repository-wide ESLint remains blocked by 105 pre-existing errors in legacy Vue/block files;
 - the build emitted only third-party Rolldown annotation warnings from a nested VueUse dependency.
 
 The previous statement that the suite contained 23 feature tests is obsolete.
@@ -421,11 +433,13 @@ Implemented test coverage includes:
 - [x] Add the configuration-backed catalog and structural validation tests.
 - [x] Confirm Restaurant, Retail, and Hotel as the first three kit identities.
 - [x] Confirm their page inventories, enquiry-only functional scope, copy direction, visual direction, and editable media-placeholder strategy.
-- [x] Author three styles, twelve reusable page layouts, and three site-kit manifests through the existing block and theme schemas.
+- [x] Author three styles, fourteen reusable page layouts, and three site-kit manifests through the existing block and theme schemas.
+- [x] Rebuild every catalog hero with composable `SectionBlock` patterns and richer media replacement guidance.
+- [x] Add content-preserving section layout switching and structured global footer variants.
 
-### Phase 1 — Safe Dashboard Selection [Complete]
+### Phase 1 — Safe Onboarding Selection [Complete]
 
-- [x] Add a dedicated dashboard design-library entry point and catalog browsing screen.
+- [x] Add a dashboard onboarding entry point and catalog browsing screen for eligible empty workspaces.
 - [x] Add preview data and responsive previews through the existing public block renderer.
 - [x] Add an explicit server-side workspace-setup marker with historical tenants safely backfilled as completed.
 - [x] Require a pending marker, zero pages, and null theme/navigation data for initial-kit eligibility.
@@ -440,6 +454,17 @@ Implemented test coverage includes:
 - [x] Wrap the complete operation in a database transaction and test rollback, retries, tenant isolation, and duplicate application.
 - [x] Route successful setup into the existing editor for normal customization and publishing.
 - [x] Add a "Start from scratch" escape hatch that marks setup complete without creating content.
+
+### Phase 3 — Unified Builder Information Architecture [Complete]
+
+- [x] Make the tenant dashboard a website/business overview with status, URL, page counts, theme summary, and quick actions.
+- [x] Mount the full Navigation and Theme experiences inside the existing editor shell.
+- [x] Keep Media and Publish accessible from the same editor top bar.
+- [x] Flush pending page drafts before switching into a global builder workspace.
+- [x] Replace editor theme/navigation state immediately after successful global saves.
+- [x] Redirect legacy Theme Studio and Navbar Studio URLs into matching editor modes.
+- [x] Remove standalone studio pages and the duplicate sidebar navigation editor.
+- [x] Redirect established tenants away from the onboarding-only design library.
 
 ### Phase A — Correctness and Integration
 
@@ -473,7 +498,7 @@ Implemented test coverage includes:
 ### Phase E — Optional Product Expansion
 
 - [ ] Add the remaining specialized blocks based on user demand.
-- [ ] Add multi-column footer and mobile navigation.
+- [x] Add multi-column footer variants and mobile navigation.
 - [ ] Expand theme tokens and font discovery.
 - [ ] Consider collaboration only after revision history is reliable.
 
@@ -489,7 +514,14 @@ Implemented test coverage includes:
 | Header/footer outside the page block tree | Correctly models site-wide chrome |
 | Tenant scope plus explicit ownership guards | Provides defense in depth for tenant isolation |
 | Presets as cloned block trees | Reuses the same schema and renderer as normal blocks |
+| Visual preset library (grouped wireframe thumbs) | Merchants pick composition by eye; hero presets stay pattern-keyed for Change layout; near-duplicates removed |
 | Shared page layouts and site kits as cloned catalog data | Enables reusable professional designs without creating live template coupling or a second infrastructure stack |
+| Scroll-reveal as optional `reveal`/`revealDelay` block props | Adds public-site entrance animation without new block types, backend schema changes, or editor-canvas motion; kit media stays placeholder-based with theme-derived styling |
+| Editable `MenuBlock` (flat `items` grouped by category) | Adds a restaurant menu section reusing the existing repeater/inline-edit UI and block schema instead of a bespoke menu data model or renderer |
+| `theme-color`/`font-size`/`columns` inspector field types | Gives users real color (theme tokens + palette + custom hex), font-size, and 1/2/3/4/6 grid controls through the shared field-rendering pipeline rather than free-text inputs |
+| One-click theme palettes in the Theme workspace | Applies a full primary/secondary/background/text set (including kit-aligned presets) with hover preview before save |
+| Rich text per-selection color via TipTap Color | Stores inline `style="color"` spans in ordinary `RichTextBlock` HTML — finer than block-level color without a new schema |
+| `VideoEmbedBlock` lite-embed (thumbnail-first) | Improves LCP and avoids loading third-party iframes until a visitor clicks, using a derived YouTube poster or optional override with no new asset system |
 | Curated fonts before arbitrary font search | Keeps validation and loading predictable |
 
 ---
@@ -498,7 +530,7 @@ Implemented test coverage includes:
 
 | Risk | Current mitigation | Remaining action |
 |---|---|---|
-| Navigation payload accepts malformed nested data | Only top-level arrays are currently validated | Add nested item, CTA, footer, and external-URL validation |
+| Navigation payload complexity | Nested header, action, menu, footer, module-order, and external-URL fields are validated | Keep validation synchronized when new navigation modules are introduced |
 | Large JSON page configurations | Recursive validation | Measure payload size and set practical limits |
 | Unsafe or malformed rich-text HTML | TipTap constrains normal editor input | Define sanitization/trust policy before broader HTML features |
 | Unbounded tenant media | Per-file 5 MB limit | Add total tenant quotas and usage reporting |
@@ -511,6 +543,8 @@ Implemented test coverage includes:
 
 - The Retail kit is a six-page, block-composed storefront editable in the original visual editor, including an ordinary Cart page.
 - Product and collection blocks are hydrated at request time through a block-ID-keyed provider envelope. `COMMERCE_DRIVER=fixture` supplies development data and `COMMERCE_DRIVER=null` exercises the disconnected fallback.
+- Product Grid has a dedicated Simple/Advanced presentation inspector with separate source, layout, card, style, responsive, and advanced controls. It supports grid, carousel, list, and editorial layouts; nine card presets; reorderable/optional supported fields; responsive columns and image ratios; and safe provider-backed add-to-cart actions.
+- Fixture product-list sorting is provider-owned and currently supports provider order, price ascending/descending, and alphabetical order. The editor can additionally filter the hydrated result without mutating commerce records.
 - Fixture mode implements filters, sorting, pagination, variant availability, tenant-isolated cart mutations, cart drawer/page, and a simulated hosted-checkout handoff. It never collects payment or places orders.
-- Live platform authentication, tenant connection storage, cache policy, dynamic product/collection routes, provider cart tokens, customer identity, payment, order placement, and real hosted checkout remain deferred until the platform contract is assessed.
+- Live platform authentication, tenant connection storage, cache policy, dynamic product/collection routes, provider cart tokens, customer identity, payment, order placement, real hosted checkout, additional smart sources, and reusable product-detail template assignment remain deferred until the platform contract is assessed.
 - Cart, live inventory, authoritative pricing, and checkout remain deferred instead of using a parallel renderer.

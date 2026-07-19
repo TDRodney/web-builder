@@ -137,9 +137,16 @@ class FixtureCommerceProvider implements CommerceProvider
         $limit = max(1, min((int) ($options['limit'] ?? 12), 50));
         $products = collect($handles)
             ->map(fn (string $handle): mixed => config("commerce.fixtures.products.{$handle}"))
-            ->filter(fn (mixed $product): bool => is_array($product))
-            ->take($limit)
-            ->values();
+            ->filter(fn (mixed $product): bool => is_array($product));
+
+        $products = match ($options['sort'] ?? 'featured') {
+            'price-low' => $products->sortBy(fn (array $product): int => (int) ($product['price']['amountMinor'] ?? 0)),
+            'price-high' => $products->sortByDesc(fn (array $product): int => (int) ($product['price']['amountMinor'] ?? 0)),
+            'title' => $products->sortBy(fn (array $product): string => (string) ($product['title'] ?? ''), SORT_NATURAL | SORT_FLAG_CASE),
+            default => $products,
+        };
+
+        $products = $products->take($limit)->values();
 
         return [
             'products' => $products->all(),

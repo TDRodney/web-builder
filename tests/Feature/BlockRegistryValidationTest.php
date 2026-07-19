@@ -3,6 +3,15 @@
 use App\Models\Tenant;
 use App\Models\User;
 
+test('atomic text exposes simple font size controls with advanced values preserved', function () {
+    $definition = config('blocks.definitions.AtomicText');
+    $fontSizeField = collect($definition['inspectorFields'])->firstWhere('key', 'fontSize');
+
+    expect($fontSizeField['label'])->toBe('Font Size')
+        ->and($fontSizeField['type'])->toBe('font-size')
+        ->and($definition['defaultProps']['fontSize'])->toBe('16px');
+});
+
 test('authenticated tenant owners can save a valid block schema configuration', function () {
     $user = User::factory()->create();
     $tenant = Tenant::factory()->withHomePage()->create(['user_id' => $user->id]);
@@ -164,4 +173,52 @@ test('saving layouts with unrestricted block types succeeds', function () {
 
     $page->refresh();
     expect($page->draft_config)->toBe($validData);
+});
+
+test('a composed section with editable hero roles saves successfully', function () {
+    $user = User::factory()->create();
+    $tenant = Tenant::factory()->withHomePage()->create(['user_id' => $user->id]);
+    $page = $tenant->pages()->first();
+    $section = [
+        'id' => 'section-hero',
+        'type' => 'SectionBlock',
+        'props' => [
+            'patternKey' => 'hero-split-right',
+            'padding' => 0,
+            'sectionPadding' => 72,
+            'backgroundColor' => 'transparent',
+            'backgroundImage' => '',
+            'contentWidth' => 1180,
+            'minHeight' => 560,
+            'verticalAlign' => 'center',
+            'textAlign' => 'left',
+            'overlayOpacity' => 0,
+        ],
+        'children' => [[
+            'id' => 'section-heading',
+            'type' => 'AtomicText',
+            'props' => [
+                'patternRole' => 'heading',
+                'content' => 'Composed hero',
+                'padding' => 0,
+                'backgroundColor' => 'transparent',
+            ],
+            'children' => [],
+        ]],
+    ];
+
+    $this->actingAs($user)
+        ->postJson("http://{$tenant->subdomain}.domain.localhost/editor/save", [
+            'page_id' => $page->id,
+            'draft_config' => [$section],
+        ])
+        ->assertSuccessful();
+
+    $savedSection = $page->refresh()->draft_config[0];
+
+    expect($savedSection['type'])->toBe('SectionBlock')
+        ->and($savedSection['props']['patternKey'])->toBe('hero-split-right')
+        ->and($savedSection['props']['backgroundImage'])->toBeNull()
+        ->and($savedSection['children'][0]['props']['patternRole'])->toBe('heading')
+        ->and($savedSection['children'][0]['props']['content'])->toBe('Composed hero');
 });

@@ -1,5 +1,11 @@
+<!-- eslint-disable vue/block-lang -->
 <script setup>
+/* eslint-disable vue/no-mutating-props */
 import { inject } from 'vue';
+import FontSizeControl from '@/components/Editor/FontSizeControl.vue';
+import ProductGridInspector from '@/components/Editor/ProductGridInspector.vue';
+import SectionPatternInspector from '@/components/Editor/SectionPatternInspector.vue';
+import ThemeColorControl from '@/components/Editor/ThemeColorControl.vue';
 
 const props = defineProps({
     selectedBlock: {
@@ -14,6 +20,23 @@ const props = defineProps({
 
 const emit = defineEmits(['open-media-picker']);
 
+const revealOptions = [
+    { label: 'None', value: '' },
+    { label: 'Fade up', value: 'fade-up' },
+    { label: 'Fade in', value: 'fade-in' },
+    { label: 'Scale in', value: 'scale-in' },
+    { label: 'Slide from right', value: 'slide-left' },
+    { label: 'Slide from left', value: 'slide-right' },
+];
+
+const revealDelayOptions = [
+    { label: 'No delay', value: 0 },
+    { label: '100 ms', value: 100 },
+    { label: '200 ms', value: 200 },
+    { label: '300 ms', value: 300 },
+    { label: '450 ms', value: 450 },
+];
+
 const blockActions = inject('blockActions', null);
 const forceSave = inject('forceSave', null);
 
@@ -25,43 +48,181 @@ const deleteSelectedBlock = () => {
 
 // Repeater helpers
 const addRepeaterItem = (fieldKey, subFields) => {
-    if (!props.selectedBlock) return;
+    if (!props.selectedBlock) {
+        return;
+    }
+
     if (
         !props.selectedBlock.props[fieldKey] ||
         !Array.isArray(props.selectedBlock.props[fieldKey])
     ) {
         props.selectedBlock.props[fieldKey] = [];
     }
+
     const newItem = {};
     subFields.forEach((sub) => {
         newItem[sub.key] =
             sub.type === 'select' ? sub.options?.[0]?.value || '' : '';
     });
     props.selectedBlock.props[fieldKey].push(newItem);
-    if (forceSave) forceSave();
+
+    if (forceSave) {
+        forceSave();
+    }
 };
 
 const deleteRepeaterItem = (fieldKey, index) => {
-    if (!props.selectedBlock || !props.selectedBlock.props[fieldKey]) return;
+    if (!props.selectedBlock || !props.selectedBlock.props[fieldKey]) {
+        return;
+    }
+
     props.selectedBlock.props[fieldKey].splice(index, 1);
-    if (forceSave) forceSave();
+
+    if (forceSave) {
+        forceSave();
+    }
 };
 
 const moveRepeaterItem = (fieldKey, index, direction) => {
-    if (!props.selectedBlock || !props.selectedBlock.props[fieldKey]) return;
+    if (!props.selectedBlock || !props.selectedBlock.props[fieldKey]) {
+        return;
+    }
+
     const list = props.selectedBlock.props[fieldKey];
     const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= list.length) return;
+
+    if (targetIndex < 0 || targetIndex >= list.length) {
+        return;
+    }
+
     const temp = list[index];
     list[index] = list[targetIndex];
     list[targetIndex] = temp;
-    if (forceSave) forceSave();
+
+    if (forceSave) {
+        forceSave();
+    }
 };
 </script>
 
 <template>
     <div v-if="selectedBlock" class="inspector-form animate-fade-in space-y-4">
-        <div v-if="activeBlockDefinition" class="space-y-4">
+        <ProductGridInspector
+            v-if="selectedBlock.type === 'ProductGridBlock'"
+            :selected-block="selectedBlock"
+        />
+
+        <div
+            v-else-if="selectedBlock.type === 'SectionBlock'"
+            class="space-y-4"
+        >
+            <SectionPatternInspector :selected-block="selectedBlock" />
+
+            <div v-if="activeBlockDefinition" class="space-y-4">
+                <div
+                    v-for="field in activeBlockDefinition.inspectorFields"
+                    :key="field.key"
+                    class="space-y-1"
+                >
+                    <label class="block text-xs font-semibold text-slate-400">
+                        {{ field.label }}
+                        <span
+                            v-if="
+                                field.type === 'range' &&
+                                selectedBlock.props[field.key] !== undefined
+                            "
+                            class="text-slate-300"
+                        >
+                            : {{ selectedBlock.props[field.key] }}
+                        </span>
+                    </label>
+
+                    <input
+                        v-if="field.type === 'range'"
+                        v-model.number="selectedBlock.props[field.key]"
+                        type="range"
+                        :min="field.min"
+                        :max="field.max"
+                        class="w-full accent-indigo-500"
+                    />
+                    <input
+                        v-else-if="field.type === 'number'"
+                        v-model.number="selectedBlock.props[field.key]"
+                        type="number"
+                        :min="field.min"
+                        :max="field.max"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                    />
+                    <select
+                        v-else-if="field.type === 'select'"
+                        v-model="selectedBlock.props[field.key]"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                    >
+                        <option
+                            v-for="option in field.options"
+                            :key="option.value"
+                            :value="option.value"
+                        >
+                            {{ option.label }}
+                        </option>
+                    </select>
+                    <ThemeColorControl
+                        v-else-if="field.type === 'theme-color'"
+                        v-model="selectedBlock.props[field.key]"
+                        :default-value="field.defaultValue"
+                        :custom-default="field.customDefault"
+                    />
+                    <FontSizeControl
+                        v-else-if="field.type === 'font-size'"
+                        v-model="selectedBlock.props[field.key]"
+                    />
+                    <div
+                        v-else-if="field.type === 'color'"
+                        class="flex items-center gap-2"
+                    >
+                        <input
+                            v-model="selectedBlock.props[field.key]"
+                            type="color"
+                            class="h-8 w-12 rounded border border-slate-700 bg-transparent p-0"
+                        />
+                        <code class="text-xs text-slate-300">{{
+                            selectedBlock.props[field.key]
+                        }}</code>
+                    </div>
+                    <div v-else-if="field.type === 'media'" class="space-y-2">
+                        <img
+                            v-if="selectedBlock.props[field.key]"
+                            :src="String(selectedBlock.props[field.key])"
+                            alt=""
+                            class="h-24 w-full rounded object-cover"
+                        />
+                        <div class="grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                class="inspector-secondary-button rounded border px-2 py-2 text-xs"
+                                @click="emit('open-media-picker', field.key)"
+                            >
+                                {{
+                                    selectedBlock.props[field.key]
+                                        ? 'Change image'
+                                        : 'Choose image'
+                                }}
+                            </button>
+                            <button
+                                v-if="selectedBlock.props[field.key]"
+                                type="button"
+                                class="rounded border border-rose-500/20 px-2 py-2 text-xs text-rose-400"
+                                @click="selectedBlock.props[field.key] = ''"
+                            >
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-else-if="activeBlockDefinition" class="space-y-4">
             <div
                 v-for="field in activeBlockDefinition.inspectorFields"
                 :key="field.key"
@@ -91,6 +252,19 @@ const moveRepeaterItem = (fieldKey, index, direction) => {
                 />
 
                 <!-- Color picker -->
+                <ThemeColorControl
+                    v-else-if="field.type === 'theme-color'"
+                    v-model="selectedBlock.props[field.key]"
+                    :default-value="field.defaultValue"
+                    :custom-default="field.customDefault"
+                />
+
+                <FontSizeControl
+                    v-else-if="field.type === 'font-size'"
+                    v-model="selectedBlock.props[field.key]"
+                />
+
+                <!-- Color picker -->
                 <div
                     v-else-if="field.type === 'color'"
                     class="flex items-center gap-2"
@@ -114,6 +288,35 @@ const moveRepeaterItem = (fieldKey, index, direction) => {
                     v-model.number="selectedBlock.props[field.key]"
                     class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
                 />
+
+                <!-- Columns segmented control -->
+                <div
+                    v-else-if="field.type === 'columns'"
+                    class="columns-control flex flex-wrap gap-1.5"
+                    role="group"
+                    :aria-label="field.label"
+                >
+                    <button
+                        v-for="opt in field.options"
+                        :key="opt.value"
+                        type="button"
+                        class="columns-option"
+                        :class="{
+                            'columns-option-active':
+                                Number(selectedBlock.props[field.key]) ===
+                                Number(opt.value),
+                        }"
+                        :aria-pressed="
+                            Number(selectedBlock.props[field.key]) ===
+                            Number(opt.value)
+                        "
+                        @click="
+                            selectedBlock.props[field.key] = Number(opt.value)
+                        "
+                    >
+                        {{ opt.label }}
+                    </button>
+                </div>
 
                 <!-- Select dropdown -->
                 <select
@@ -301,6 +504,48 @@ const moveRepeaterItem = (fieldKey, index, direction) => {
             </div>
         </div>
 
+        <div class="animation-section space-y-3">
+            <span class="animation-section-title">Animation</span>
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold text-slate-400"
+                    >Entrance on scroll</label
+                >
+                <select
+                    v-model="selectedBlock.props.reveal"
+                    class="w-full cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                >
+                    <option
+                        v-for="opt in revealOptions"
+                        :key="opt.value"
+                        :value="opt.value"
+                    >
+                        {{ opt.label }}
+                    </option>
+                </select>
+            </div>
+            <div v-if="selectedBlock.props.reveal" class="space-y-1">
+                <label class="block text-xs font-semibold text-slate-400"
+                    >Delay</label
+                >
+                <select
+                    v-model.number="selectedBlock.props.revealDelay"
+                    class="w-full cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                >
+                    <option
+                        v-for="opt in revealDelayOptions"
+                        :key="opt.value"
+                        :value="opt.value"
+                    >
+                        {{ opt.label }}
+                    </option>
+                </select>
+            </div>
+            <p class="animation-section-hint">
+                Plays once on the published site as visitors scroll. The editor
+                canvas stays static so blocks are always visible.
+            </p>
+        </div>
+
         <button
             @click="deleteSelectedBlock"
             class="delete-block-button mt-4 w-full cursor-pointer rounded-lg border-0 bg-rose-600 px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-rose-500"
@@ -316,7 +561,7 @@ const moveRepeaterItem = (fieldKey, index, direction) => {
 
 <style scoped>
 .inspector-form :deep(label) {
-    color: #8b9ab3;
+    color: var(--editor-text-muted);
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -326,47 +571,98 @@ const moveRepeaterItem = (fieldKey, index, direction) => {
 .inspector-form :deep(input:not([type='color']):not([type='range'])),
 .inspector-form :deep(select) {
     min-height: 36px;
-    color: #f4f4f5;
+    color: var(--editor-text);
     font-size: 11px;
-    background: #19191b;
-    border-color: #343438;
+    background: var(--editor-panel);
+    border-color: var(--editor-border-strong);
     border-radius: 5px;
 }
 
 .inspector-form :deep(input:not([type='color']):not([type='range']):focus),
 .inspector-form :deep(select:focus) {
-    border-color: #7185a5;
-    box-shadow: 0 0 0 2px rgb(113 133 165 / 15%);
+    border-color: var(--editor-accent);
+    box-shadow: 0 0 0 3px rgb(79 70 229 / 10%);
 }
 
 .inspector-form :deep(input[type='range']) {
-    accent-color: #9db3d6;
+    accent-color: var(--editor-accent);
 }
 
 .inspector-form :deep(input[type='color']) {
-    border-color: #3f3f46;
+    border-color: var(--editor-border-strong);
     border-radius: 4px;
 }
 
 .repeater-card {
-    background: #161618;
-    border-color: #303033;
+    background: var(--editor-panel-muted);
+    border-color: var(--editor-border);
     border-radius: 5px;
 }
 
 .inspector-secondary-button,
 .add-repeater-button {
-    color: #c5cfdf;
-    background: #1b1b1e;
-    border-color: #38383c;
+    color: var(--editor-text);
+    background: var(--editor-panel);
+    border-color: var(--editor-border);
     border-radius: 5px;
 }
 
 .inspector-secondary-button:hover,
 .add-repeater-button:hover {
-    color: #ffffff;
-    background: #29292c;
-    border-color: #52525b;
+    color: var(--editor-accent);
+    background: var(--editor-accent-soft);
+    border-color: color-mix(in srgb, var(--editor-accent) 30%, white);
+}
+
+.columns-option {
+    flex: 1 1 0;
+    min-width: 2.25rem;
+    min-height: 36px;
+    color: var(--editor-text-muted);
+    background: var(--editor-panel);
+    border: 1px solid var(--editor-border);
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        color 140ms ease,
+        background-color 140ms ease,
+        border-color 140ms ease;
+}
+
+.columns-option:hover {
+    color: var(--editor-text);
+    border-color: var(--editor-border-strong);
+}
+
+.columns-option-active {
+    color: #fff;
+    background: var(--editor-text);
+    border-color: var(--editor-text);
+}
+
+.animation-section {
+    padding: 12px;
+    background: var(--editor-panel-muted);
+    border: 1px solid var(--editor-border);
+    border-radius: 5px;
+}
+
+.animation-section-title {
+    display: block;
+    color: var(--editor-text);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.animation-section-hint {
+    margin: 0;
+    color: var(--editor-text-muted);
+    font-size: 9px;
+    line-height: 1.5;
 }
 
 .delete-block-button {
@@ -384,20 +680,20 @@ const moveRepeaterItem = (fieldKey, index, direction) => {
 .inspector-empty-state {
     padding: 26px 18px;
     text-align: center;
-    background: #151517;
-    border: 1px dashed #343438;
+    background: var(--editor-panel-muted);
+    border: 1px dashed var(--editor-border-strong);
     border-radius: 5px;
 }
 
 .inspector-empty-state span {
-    color: #d4d4d8;
+    color: var(--editor-text);
     font-size: 11px;
     font-weight: 650;
 }
 
 .inspector-empty-state p {
     margin: 5px 0 0;
-    color: #71717a;
+    color: var(--editor-text-muted);
     font-size: 10px;
     line-height: 1.5;
 }

@@ -1,8 +1,40 @@
 <script setup lang="ts">
-defineProps<{ nodeId?: string; blockProps: Record<string, any> }>();
+/* eslint-disable vue/no-mutating-props */
+import { computed } from 'vue';
+
+import InlineText from './InlineText.vue';
+
+const props = defineProps<{
+    nodeId?: string;
+    blockProps: Record<string, unknown>;
+}>();
+
+const resolveColor = (value: unknown, fallback: string): string => {
+    if (typeof value !== 'string' || value === '') {
+        return fallback;
+    }
+
+    return value.startsWith('--') ? `var(${value})` : value;
+};
+
+const announcementStyles = computed(() => ({
+    backgroundColor: resolveColor(
+        props.blockProps.barColor,
+        'var(--theme-primary, #111827)',
+    ),
+    color: resolveColor(props.blockProps.textColor, 'var(--theme-bg, #ffffff)'),
+}));
 </script>
 <template>
-    <div class="announcement">{{ blockProps.text }}</div>
+    <InlineText
+        tag="div"
+        class="announcement"
+        :style="announcementStyles"
+        :value="blockProps.text"
+        placeholder="Announcement text"
+        aria-label="Announcement text"
+        @update:value="blockProps.text = $event"
+    />
 </template>
 <style scoped>
 .announcement {
@@ -11,7 +43,5 @@ defineProps<{ nodeId?: string; blockProps: Record<string, any> }>();
     font-family: var(--theme-font-body);
     font-size: 0.82rem;
     letter-spacing: 0.08em;
-    background: var(--theme-primary, #111827);
-    color: var(--theme-bg, #fff);
 }
 </style>

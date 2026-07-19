@@ -1,5 +1,4 @@
 <script setup>
-import { inject, ref } from 'vue';
 import {
     Trash2,
     Copy,
@@ -9,6 +8,7 @@ import {
     SquareUserRound,
     ArrowUpFromLine,
 } from '@lucide/vue';
+import { inject, ref } from 'vue';
 
 const props = defineProps({
     nodeId: { type: String, required: true },

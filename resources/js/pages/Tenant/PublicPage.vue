@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/block-lang -->
 <script setup>
 import { Head } from '@inertiajs/vue3';
 import { computed, provide } from 'vue';
@@ -52,6 +53,7 @@ const { cssVars: themeVars, fontUrl } = useTheme(
             :navigation-config="props.tenant.navigation_config"
             :tenant-name="props.tenant.subdomain"
             :is-editable="false"
+            :current-page-slug="props.page.slug"
             :show-cart="props.commerce_enabled"
             :cart-count="commerceCart.itemCount.value"
             @open-cart="commerceCart.open"

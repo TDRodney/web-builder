@@ -107,6 +107,9 @@ class CommerceHydrator
             'source' => $source,
             'options' => [
                 'limit' => max(1, min((int) ($props['limit'] ?? 12), 50)),
+                'sort' => in_array($props['sort'] ?? null, ['featured', 'price-low', 'price-high', 'title'], true)
+                    ? $props['sort']
+                    : 'featured',
             ],
         ];
     }

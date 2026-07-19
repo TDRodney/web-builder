@@ -1,19 +1,32 @@
+<!-- eslint-disable vue/block-lang -->
 <script setup>
 import { useHttp, Head, router, usePage } from '@inertiajs/vue3';
-import { ref, computed, watch, provide, nextTick } from 'vue';
+import {
+    ref,
+    computed,
+    watch,
+    provide,
+    reactive,
+    nextTick,
+    onMounted,
+    onUnmounted,
+} from 'vue';
 
-import MediaPicker from '@/components/MediaPicker.vue';
+import { toast } from 'vue-sonner';
+import DashboardThemeStudio from '@/components/DashboardThemeStudio.vue';
 import CreatePageModal from '@/components/Editor/CreatePageModal.vue';
-import RenamePageModal from '@/components/Editor/RenamePageModal.vue';
 import EditorCanvasViewport from '@/components/Editor/EditorCanvasViewport.vue';
+import EditorInspectorPanel from '@/components/Editor/EditorInspectorPanel.vue';
 import EditorSidebar from '@/components/Editor/EditorSidebar.vue';
 import EditorTopbar from '@/components/Editor/EditorTopbar.vue';
-import { getBlockDefinition, blockComponents } from '@/lib/blockRegistry';
+import NavigationWorkspace from '@/components/Editor/NavigationWorkspace.vue';
+import RenamePageModal from '@/components/Editor/RenamePageModal.vue';
+import MediaPicker from '@/components/MediaPicker.vue';
+import { Toaster } from '@/components/ui/sonner';
 import { blockPresets } from '@/lib/blockPresets';
+import { getBlockDefinition, blockComponents } from '@/lib/blockRegistry';
 import { commerceHydrationKey, emptyCommerceHydration } from '@/lib/commerce';
 import { useTheme } from '@/lib/theme';
-import { Toaster } from '@/components/ui/sonner';
-import { toast } from 'vue-sonner';
 
 provide('blockRegistry', blockComponents);
 
@@ -24,6 +37,8 @@ const props = defineProps({
     page_layouts: { type: Array, default: () => [] },
     commerce_hydration: { type: Object, default: () => emptyCommerceHydration },
     commerce_preview: { type: Object, default: () => ({}) },
+    workspace: { type: String, default: 'pages' },
+    navigation_studio: { type: Object, default: () => ({}) },
     urls: Object,
 });
 
@@ -32,13 +47,13 @@ provide(
     computed(() => props.commerce_hydration || emptyCommerceHydration),
 );
 
-const { cssVars: themeVars, fontUrl } = useTheme(
-    () => props.tenant?.theme_config,
-);
+const themeConfig = ref(props.tenant?.theme_config || null);
+const { cssVars: themeVars, fontUrl } = useTheme(() => themeConfig.value);
 
-const page = usePage();
+const inertiaPage = usePage();
 const blockDefinitions = computed(() => {
-    const definitions = page.props.blocksConfig?.definitions || {};
+    const definitions = inertiaPage.props.blocksConfig?.definitions || {};
+
     return Array.isArray(definitions)
         ? definitions
         : Object.values(definitions);
@@ -66,6 +81,8 @@ const navigationConfig = ref(
         },
     },
 );
+
+const workspaceMode = ref(props.workspace || 'pages');
 
 // Seed some initial demo data if the draft is empty so you have blocks to see instantly
 const blocks = ref(
@@ -114,8 +131,170 @@ const isDragging = ref(false);
 provide('isDragging', isDragging);
 provide('isEditable', true);
 
+const dragState = reactive({
+    activeType: null,
+    source: null,
+});
+provide('dragState', dragState);
+
+const hoveredNodeId = ref(null);
+provide('hoveredNodeId', hoveredNodeId);
+
 const viewMode = ref('desktop');
 const sidebarOpen = ref(false);
+const sidebarCollapsed = ref(
+    localStorage.getItem('editor-sidebar-collapsed') === 'true',
+);
+const inspectorCollapsed = ref(
+    localStorage.getItem('editor-inspector-collapsed') === 'true',
+);
+const inspectorMobileOpen = ref(false);
+
+watch(sidebarCollapsed, (val) => {
+    localStorage.setItem('editor-sidebar-collapsed', val ? 'true' : 'false');
+});
+
+watch(inspectorCollapsed, (val) => {
+    localStorage.setItem('editor-inspector-collapsed', val ? 'true' : 'false');
+});
+
+// Selecting a block on a small screen slides the inspector in over the canvas.
+watch(selectedNode, (node) => {
+    if (node && window.innerWidth <= 1100) {
+        inspectorMobileOpen.value = true;
+    }
+});
+
+const isTypingContext = (target) =>
+    target instanceof HTMLElement &&
+    (target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable);
+
+const handleKeyDown = (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+        e.preventDefault();
+        sidebarCollapsed.value = !sidebarCollapsed.value;
+
+        return;
+    }
+
+    if (workspaceMode.value !== 'pages' || isTypingContext(e.target)) {
+        return;
+    }
+
+    const withModifier = e.metaKey || e.ctrlKey;
+
+    if (withModifier && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+
+        if (e.shiftKey) {
+            redo();
+        } else {
+            undo();
+        }
+
+        return;
+    }
+
+    if (withModifier && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redo();
+
+        return;
+    }
+
+    if (withModifier && e.key.toLowerCase() === 'd' && selectedNode.value) {
+        e.preventDefault();
+        duplicateBlock(selectedNode.value.id);
+
+        return;
+    }
+
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNode.value) {
+        e.preventDefault();
+        deleteBlockById(selectedNode.value.id);
+
+        return;
+    }
+
+    if (e.key === 'Escape') {
+        selectedNode.value = null;
+        inspectorMobileOpen.value = false;
+    }
+};
+
+const handleToggleSidebar = () => {
+    if (window.innerWidth <= 820) {
+        sidebarOpen.value = !sidebarOpen.value;
+    } else {
+        sidebarCollapsed.value = !sidebarCollapsed.value;
+    }
+};
+
+const handleToggleInspector = () => {
+    if (window.innerWidth <= 1100) {
+        inspectorMobileOpen.value = !inspectorMobileOpen.value;
+    } else {
+        inspectorCollapsed.value = !inspectorCollapsed.value;
+    }
+};
+
+const handleInspectorClose = () => {
+    if (window.innerWidth <= 1100) {
+        inspectorMobileOpen.value = false;
+    } else {
+        inspectorCollapsed.value = true;
+    }
+};
+
+const updateWorkspaceUrl = (workspace) => {
+    const url = new URL(window.location.href);
+
+    if (workspace === 'pages') {
+        url.searchParams.delete('workspace');
+    } else {
+        url.searchParams.set('workspace', workspace);
+    }
+
+    window.history.replaceState(window.history.state, '', url);
+};
+
+const changeWorkspaceMode = async (workspace) => {
+    if (workspace === workspaceMode.value) {
+        return;
+    }
+
+    if (workspaceMode.value === 'pages') {
+        await forceSave();
+
+        if (saveError.value) {
+            toast.error('Fix the draft save before leaving page editing.');
+
+            return;
+        }
+    }
+
+    workspaceMode.value = workspace;
+    sidebarOpen.value = false;
+    updateWorkspaceUrl(workspace);
+};
+
+const handleThemeSaved = (savedThemeConfig) => {
+    themeConfig.value = savedThemeConfig;
+};
+
+const handleNavigationSaved = (savedNavigationConfig) => {
+    navigationConfig.value = JSON.parse(JSON.stringify(savedNavigationConfig));
+};
+
+onMounted(() => {
+    window.addEventListener('keydown', handleKeyDown);
+});
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeyDown);
+});
 
 const canvasMaxWidth = computed(() => {
     switch (viewMode.value) {
@@ -154,6 +333,55 @@ const snapshotState = () => {
 };
 
 let lastSavedState = snapshotState();
+let dragStartState = null;
+let isFinalizingDrag = false;
+
+const beginCanvasDrag = (blockType = null, source = 'canvas') => {
+    if (!isDragging.value) {
+        dragStartState = snapshotState();
+    }
+
+    dragState.activeType = blockType;
+    dragState.source = source;
+    isDragging.value = true;
+};
+
+const finishCanvasDrag = () => {
+    if (!isDragging.value) {
+        return;
+    }
+
+    const nextState = snapshotState();
+    const previousState = dragStartState;
+    const didChange =
+        previousState !== null &&
+        JSON.stringify(previousState) !== JSON.stringify(nextState);
+
+    isDragging.value = false;
+    dragState.activeType = null;
+    dragState.source = null;
+    dragStartState = null;
+
+    if (!didChange) {
+        return;
+    }
+
+    isFinalizingDrag = true;
+    undoStack.value.push(previousState);
+    redoStack.value = [];
+    lastSavedState = nextState;
+    http.draft_config = blocks.value;
+    queueSave();
+
+    nextTick(() => {
+        isFinalizingDrag = false;
+    });
+};
+
+provide('canvasDrag', {
+    start: beginCanvasDrag,
+    end: finishCanvasDrag,
+});
 
 const undo = () => {
     if (undoStack.value.length === 0) {
@@ -262,7 +490,8 @@ const addBlock = (type) => {
         const parentType = selectedBlock.value.type;
         const parentDef = getBlockDefinition(parentType);
         let isAllowed = true;
-        const nestingRules = page.props.blocksConfig?.nesting;
+        const nestingRules = inertiaPage.props.blocksConfig?.nesting;
+
         if (nestingRules && typeof nestingRules === 'object') {
             const allowed = nestingRules[parentType];
             isAllowed = Array.isArray(allowed) ? allowed.includes(type) : true;
@@ -275,16 +504,18 @@ const addBlock = (type) => {
 
         if (isAllowed) {
             selectedBlock.value.children.push(newBlock);
+            selectedBlock.value = newBlock;
             toast.success(
-                `Added ${definition.label} inside ${parentDef.label}`,
+                `Added ${definition.label} inside ${parentDef?.label || parentType}`,
             );
         } else {
             toast.error(
-                `Nesting Error: ${definition.label} is not allowed inside ${parentDef.label}`,
+                `Nesting Error: ${definition.label} is not allowed inside ${parentDef?.label || parentType}`,
             );
         }
     } else {
         blocks.value.push(newBlock);
+        selectedBlock.value = newBlock;
         toast.success(`Added ${definition.label}`);
     }
 };
@@ -302,31 +533,27 @@ const findParent = (nodes, targetId) => {
         if (node.children?.some((c) => c.id === targetId)) {
             return node;
         }
+
         if (node.children) {
             const result = findParent(node.children, targetId);
-            if (result) return result;
-        }
-    }
-    return null;
-};
 
-const findIndexInParent = (nodes, targetId) => {
-    for (let i = 0; i < nodes.length; i++) {
-        if (nodes[i].id === targetId) return i;
-        if (nodes[i].children) {
-            const idx = findIndexInParent(nodes[i].children, targetId);
-            if (idx !== -1) return idx;
+            if (result) {
+                return result;
+            }
         }
     }
-    return -1;
+
+    return null;
 };
 
 const generateNewIds = (node) => {
     const copy = JSON.parse(JSON.stringify(node));
     copy.id = `${copy.type.toLowerCase()}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
     if (copy.children) {
         copy.children = copy.children.map(generateNewIds);
     }
+
     return copy;
 };
 
@@ -334,32 +561,35 @@ const removeNode = (nodes, id) => {
     for (let i = 0; i < nodes.length; i++) {
         if (nodes[i].id === id) {
             nodes.splice(i, 1);
+
             return true;
         }
+
         if (nodes[i].children && removeNode(nodes[i].children, id)) {
             return true;
         }
     }
+
     return false;
 };
 
 const deleteBlockById = (nodeId) => {
     removeNode(blocks.value, nodeId);
+
     if (selectedBlock.value?.id === nodeId) {
         selectedBlock.value = null;
     }
-};
-
-const deleteSelectedBlock = () => {
-    if (!selectedBlock.value) return;
-    deleteBlockById(selectedBlock.value.id);
 };
 
 const duplicateBlock = (nodeId) => {
     const parent = findParent(blocks.value, nodeId);
     const list = parent ? parent.children : blocks.value;
     const idx = list.findIndex((n) => n.id === nodeId);
-    if (idx === -1) return;
+
+    if (idx === -1) {
+        return;
+    }
+
     list.splice(idx + 1, 0, generateNewIds(list[idx]));
 };
 
@@ -367,7 +597,11 @@ const moveBlock = (nodeId, direction) => {
     const parent = findParent(blocks.value, nodeId);
     const list = parent ? parent.children : blocks.value;
     const idx = list.findIndex((n) => n.id === nodeId);
-    if (idx === -1) return;
+
+    if (idx === -1) {
+        return;
+    }
+
     if (direction === 'up' && idx > 0) {
         const [item] = list.splice(idx, 1);
         list.splice(idx - 1, 0, item);
@@ -384,17 +618,25 @@ const copyBlock = (nodeId) => {
         for (const n of nodes) {
             if (n.id === nodeId) {
                 copiedBlock.value = JSON.parse(JSON.stringify(n));
+
                 return true;
             }
-            if (n.children && walk(n.children)) return true;
+
+            if (n.children && walk(n.children)) {
+                return true;
+            }
         }
+
         return false;
     };
     walk(blocks.value);
 };
 
 const pasteBlock = (targetId) => {
-    if (!copiedBlock.value) return;
+    if (!copiedBlock.value) {
+        return;
+    }
+
     const parent = targetId ? findParent(blocks.value, targetId) : null;
     const list = parent ? parent.children : blocks.value;
     const idx = targetId
@@ -407,7 +649,11 @@ const wrapInContainer = (nodeId, containerType = 'LayoutColumn') => {
     const parent = findParent(blocks.value, nodeId);
     const list = parent ? parent.children : blocks.value;
     const idx = list.findIndex((n) => n.id === nodeId);
-    if (idx === -1) return;
+
+    if (idx === -1) {
+        return;
+    }
+
     const node = list[idx];
     const container = {
         id: `${containerType.toLowerCase()}-${Date.now()}`,
@@ -458,6 +704,7 @@ const extractHttpError = (error) => {
     }
 
     const response = error.response;
+
     if (!response) {
         return error.message || 'Unknown error';
     }
@@ -472,17 +719,21 @@ const extractHttpError = (error) => {
         if (status === 419) {
             return 'Session expired â€” please reload the page';
         }
+
         if (status === 401 || status === 403) {
             return 'Unauthorized â€” your session may have expired';
         }
+
         if (status >= 500) {
             return `Server error (${status}) â€” please try again`;
         }
+
         return `Request failed (${status})`;
     }
 
     if (body?.errors) {
         const messages = Object.values(body.errors).flat();
+
         return messages.join('; ');
     }
 
@@ -512,9 +763,11 @@ const saveCanvasState = async () => {
         });
 
         await currentSaveVisit;
+
         if (saveError.value) {
             toast.success('Draft saved successfully', { id: 'save-error' });
         }
+
         saveError.value = '';
         saveState.value = 'saved';
     } catch (error) {
@@ -575,6 +828,12 @@ watch(
             return;
         }
 
+        if (isDragging.value || isFinalizingDrag) {
+            http.draft_config = newBlocks;
+
+            return;
+        }
+
         undoStack.value.push(lastSavedState);
         redoStack.value = [];
         lastSavedState = snapshotState();
@@ -611,6 +870,7 @@ const publishPage = async () => {
             publishError.value =
                 'Cannot publish while save is failing: ' + saveError.value;
             toast.error(publishError.value, { id: 'publish-toast' });
+
             return;
         }
 
@@ -658,11 +918,12 @@ const switchPage = async (pageSlug) => {
     }
 
     const loadToast = toast.loading(`Saving draft and switching to page...`);
+
     try {
         await forceSave();
         toast.success('Draft saved successfully', { id: loadToast });
         router.visit(`/editor?page=${pageSlug}`);
-    } catch (err) {
+    } catch {
         toast.error('Failed to save draft before switching', { id: loadToast });
     }
 };
@@ -675,6 +936,7 @@ const openRenameModal = (page) => {
 const handleDeletePage = async (page) => {
     if (page.is_homepage) {
         toast.error('Cannot delete the homepage', { id: 'page-delete' });
+
         return;
     }
 
@@ -688,11 +950,13 @@ const handleDeletePage = async (page) => {
 
     pageActionError.value = '';
     const loadingToast = toast.loading('Deleting page...');
+
     try {
         const res = await deleteHttp.delete(`/editor/pages/${page.id}`);
 
         if (res && res.status === 'success') {
             toast.success('Page deleted successfully', { id: loadingToast });
+
             if (page.slug === props.page.slug) {
                 router.visit('/editor');
             } else {
@@ -701,6 +965,7 @@ const handleDeletePage = async (page) => {
         }
     } catch (err) {
         const message = extractHttpError(err);
+
         if (message !== null) {
             pageActionError.value = message;
             toast.error(`Failed to delete page: ${message}`, {
@@ -715,6 +980,7 @@ const handleDeletePage = async (page) => {
 const handleSetHomepage = async (page) => {
     pageActionError.value = '';
     const loadingToast = toast.loading('Setting homepage...');
+
     try {
         const res = await setHomepageHttp.patch(`/editor/pages/${page.id}`, {
             is_homepage: true,
@@ -728,6 +994,7 @@ const handleSetHomepage = async (page) => {
         }
     } catch (err) {
         const message = extractHttpError(err);
+
         if (message !== null) {
             pageActionError.value = message;
             toast.error(`Failed to set homepage: ${message}`, {
@@ -747,10 +1014,16 @@ const openMediaPicker = (fieldKey) => {
     showMediaPicker.value = true;
 };
 
+const openMediaLibrary = () => {
+    mediaPickerFieldKey.value = '';
+    showMediaPicker.value = true;
+};
+
 const onMediaSelected = (item) => {
     if (selectedBlock.value && mediaPickerFieldKey.value) {
         selectedBlock.value.props[mediaPickerFieldKey.value] = item.url;
     }
+
     showMediaPicker.value = false;
 };
 </script>
@@ -760,7 +1033,7 @@ const onMediaSelected = (item) => {
         <link v-if="fontUrl" rel="stylesheet" :href="fontUrl" />
     </Head>
 
-    <div class="editor-root">
+    <div class="editor-root" :style="themeVars">
         <EditorTopbar
             :dashboard-url="urls.dashboard"
             :live-url="urls.live"
@@ -773,69 +1046,134 @@ const onMediaSelected = (item) => {
             :commerce-preview="props.commerce_preview"
             :pages="props.pages"
             :current-page-slug="props.page.slug"
-            @toggle-sidebar="sidebarOpen = !sidebarOpen"
+            :sidebar-collapsed="sidebarCollapsed"
+            :inspector-collapsed="inspectorCollapsed"
+            :workspace-mode="workspaceMode"
+            :is-publishing="isPublishing"
+            :is-saving="http.processing"
+            :save-error="saveError"
+            @toggle-sidebar="handleToggleSidebar"
+            @toggle-inspector="handleToggleInspector"
             @update:view-mode="viewMode = $event"
             @undo="undo"
             @redo="redo"
             @update:commerce-preview="updateCommercePreview"
             @switch-page="switchPage"
+            @update:workspace-mode="changeWorkspaceMode"
+            @open-media="openMediaLibrary"
+            @publish="publishPage"
         />
 
-        <div class="editor-body">
-            <button
-                v-if="sidebarOpen"
-                type="button"
-                class="sidebar-backdrop"
-                aria-label="Close editor sidebar"
-                @click="sidebarOpen = false"
-            ></button>
+        <div
+            class="editor-body"
+            :class="{
+                'editor-body-global': workspaceMode !== 'pages',
+                'editor-body-inspector-collapsed': inspectorCollapsed,
+            }"
+        >
+            <template v-if="workspaceMode === 'pages'">
+                <button
+                    v-if="sidebarOpen"
+                    type="button"
+                    class="sidebar-backdrop"
+                    aria-label="Close editor sidebar"
+                    @click="sidebarOpen = false"
+                ></button>
 
-            <div
-                class="sidebar-drawer"
-                :class="{ 'sidebar-drawer-open': sidebarOpen }"
-            >
-                <EditorSidebar
-                    :pages="props.pages"
-                    :current-page="props.page"
-                    :selected-block="selectedBlock"
-                    :active-block-definition="activeBlockDefinition"
+                <div
+                    class="sidebar-drawer"
+                    :class="{
+                        'sidebar-drawer-open': sidebarOpen,
+                        'sidebar-collapsed': sidebarCollapsed,
+                    }"
+                >
+                    <EditorSidebar
+                        v-model:blocks="blocks"
+                        :pages="props.pages"
+                        :current-page="props.page"
+                        :block-definitions="blockDefinitions"
+                        :block-presets="blockPresets"
+                        :dashboard-url="urls.dashboard"
+                        :logout-url="urls.logout"
+                        :live-url="urls.live"
+                        :save-error="saveError"
+                        :collapsed="sidebarCollapsed"
+                        @expand="sidebarCollapsed = false"
+                        @create-page="showCreateModal = true"
+                        @switch-page="switchPage"
+                        @rename-page="openRenameModal"
+                        @set-homepage="handleSetHomepage"
+                        @delete-page="handleDeletePage"
+                        @add-block="addBlock"
+                        @add-preset="addPreset"
+                    />
+                </div>
+
+                <EditorCanvasViewport
+                    v-model:blocks="blocks"
                     :navigation-config="navigationConfig"
-                    :tenant="props.tenant"
-                    :block-definitions="blockDefinitions"
-                    :block-presets="blockPresets"
-                    :dashboard-url="urls.dashboard"
-                    :logout-url="urls.logout"
-                    :live-url="urls.live"
-                    :is-publishing="isPublishing"
-                    :is-saving="http.processing"
-                    :save-error="saveError"
-                    @create-page="showCreateModal = true"
-                    @switch-page="switchPage"
-                    @rename-page="openRenameModal"
-                    @set-homepage="handleSetHomepage"
-                    @delete-page="handleDeletePage"
-                    @open-media-picker="openMediaPicker"
-                    @add-block="addBlock"
-                    @add-preset="addPreset"
-                    @publish="publishPage"
+                    :pages="props.pages"
+                    :tenant-name="props.tenant?.subdomain"
+                    :theme-vars="themeVars"
+                    :canvas-max-width="canvasMaxWidth"
+                    :current-page-slug="props.page.slug"
+                    :view-mode="viewMode"
+                    @drag-start="beginCanvasDrag"
+                    @drag-end="finishCanvasDrag"
+                    @navigate-page="switchPage"
                 />
-            </div>
 
-            <EditorCanvasViewport
-                v-model:blocks="blocks"
-                :navigation-config="navigationConfig"
-                :pages="props.pages"
-                :tenant-name="props.tenant?.subdomain"
-                :theme-vars="themeVars"
-                :canvas-max-width="canvasMaxWidth"
-                :view-mode="viewMode"
-                @drag-start="isDragging = true"
-                @drag-end="
-                    isDragging = false;
-                    forceSave();
-                "
-                @navigate-page="switchPage"
-            />
+                <button
+                    v-if="inspectorMobileOpen"
+                    type="button"
+                    class="inspector-backdrop"
+                    aria-label="Close inspector"
+                    @click="inspectorMobileOpen = false"
+                ></button>
+
+                <div
+                    class="inspector-drawer"
+                    :class="{ 'inspector-drawer-open': inspectorMobileOpen }"
+                >
+                    <EditorInspectorPanel
+                        :selected-block="selectedBlock"
+                        :active-block-definition="activeBlockDefinition"
+                        :blocks="blocks"
+                        :page="props.page"
+                        :live-url="urls.live"
+                        @open-media-picker="openMediaPicker"
+                        @rename-page="openRenameModal"
+                        @change-workspace="changeWorkspaceMode"
+                        @close="handleInspectorClose"
+                    />
+                </div>
+            </template>
+
+            <main v-else class="global-workspace">
+                <NavigationWorkspace
+                    v-if="workspaceMode === 'navigation'"
+                    :tenant-name="props.tenant.subdomain"
+                    :navigation-config="navigationConfig"
+                    :theme-config="themeConfig"
+                    :default-variant="props.navigation_studio.default_variant"
+                    :default-menu-mode="
+                        props.navigation_studio.default_menu_mode
+                    "
+                    :variants="props.navigation_studio.variants"
+                    :surface-modes="props.navigation_studio.surface_modes"
+                    :menu-modes="props.navigation_studio.menu_modes"
+                    :action-positions="props.navigation_studio.action_positions"
+                    :action-variants="props.navigation_studio.action_variants"
+                    :pages="props.pages"
+                    @saved="handleNavigationSaved"
+                />
+                <DashboardThemeStudio
+                    v-else
+                    :tenant-name="props.tenant.subdomain"
+                    :theme-config="themeConfig"
+                    @saved="handleThemeSaved"
+                />
+            </main>
         </div>
 
         <CreatePageModal
@@ -869,8 +1207,8 @@ const onMediaSelected = (item) => {
     min-width: 0;
     grid-template-rows: 54px minmax(0, 1fr);
     overflow: hidden;
-    color: #f4f4f5;
-    background: #0c0c0d;
+    color: var(--editor-text);
+    background: var(--editor-bg);
     font-family:
         Inter,
         ui-sans-serif,
@@ -886,26 +1224,106 @@ const onMediaSelected = (item) => {
     display: grid;
     min-width: 0;
     min-height: 0;
-    grid-template-columns: 380px minmax(0, 1fr);
+    grid-template-columns: 340px minmax(0, 1fr) 300px;
     overflow: hidden;
+    transition: grid-template-columns 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.editor-body-global {
+    display: block;
+    padding: 12px;
+    overflow: hidden;
+}
+
+.global-workspace {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+}
+
+.editor-body:has(.sidebar-collapsed) {
+    grid-template-columns: 56px minmax(0, 1fr) 300px;
+}
+
+.editor-body-inspector-collapsed {
+    grid-template-columns: 340px minmax(0, 1fr) 0px;
+}
+
+.editor-body-inspector-collapsed:has(.sidebar-collapsed) {
+    grid-template-columns: 56px minmax(0, 1fr) 0px;
 }
 
 .sidebar-drawer {
     min-width: 0;
     min-height: 0;
     z-index: 40;
+    overflow: hidden;
+    transition: width 280ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-drawer > :deep(*) {
     height: 100%;
 }
 
-.sidebar-backdrop {
+.inspector-drawer {
+    min-width: 0;
+    min-height: 0;
+    z-index: 40;
+    overflow: hidden;
+}
+
+.inspector-drawer > :deep(*) {
+    height: 100%;
+}
+
+.sidebar-backdrop,
+.inspector-backdrop {
     display: none;
 }
 
+@media (max-width: 1100px) {
+    .editor-body,
+    .editor-body:has(.sidebar-collapsed),
+    .editor-body-inspector-collapsed,
+    .editor-body-inspector-collapsed:has(.sidebar-collapsed) {
+        grid-template-columns: 340px minmax(0, 1fr);
+    }
+
+    .editor-body:has(.sidebar-collapsed),
+    .editor-body-inspector-collapsed:has(.sidebar-collapsed) {
+        grid-template-columns: 56px minmax(0, 1fr);
+    }
+
+    .inspector-drawer {
+        position: absolute;
+        inset: 0 0 0 auto;
+        width: min(320px, calc(100vw - 42px));
+        transform: translateX(102%);
+        transition: transform 180ms ease;
+        box-shadow: -12px 0 32px rgb(24 24 27 / 14%);
+    }
+
+    .inspector-drawer-open {
+        transform: translateX(0);
+    }
+
+    .inspector-backdrop {
+        position: absolute;
+        inset: 0;
+        z-index: 30;
+        display: block;
+        background: rgb(24 24 27 / 28%);
+        backdrop-filter: blur(2px);
+        border: 0;
+    }
+}
+
 @media (max-width: 820px) {
-    .editor-body {
+    .editor-body,
+    .editor-body:has(.sidebar-collapsed),
+    .editor-body-inspector-collapsed,
+    .editor-body-inspector-collapsed:has(.sidebar-collapsed) {
         grid-template-columns: minmax(0, 1fr);
     }
 
@@ -926,14 +1344,23 @@ const onMediaSelected = (item) => {
         inset: 0;
         z-index: 30;
         display: block;
-        background: rgb(0 0 0 / 62%);
+        background: rgb(24 24 27 / 28%);
+        backdrop-filter: blur(2px);
         border: 0;
     }
 }
 
+@media (min-width: 821px) {
+    .sidebar-collapsed {
+        width: 56px;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .sidebar-drawer {
-        transition: none;
+    .sidebar-drawer,
+    .inspector-drawer,
+    .editor-body {
+        transition: none !important;
     }
 }
 </style>

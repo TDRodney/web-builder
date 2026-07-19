@@ -2,24 +2,21 @@
 import { Link } from '@inertiajs/vue3';
 import {
     Blocks,
+    ChevronRight,
     ExternalLink,
     FileText,
     Home,
+    ListTree,
     LogOut,
-    PanelTop,
     Pencil,
     Plus,
-    Settings2,
-    SlidersHorizontal,
     Trash2,
-    Upload,
 } from '@lucide/vue';
 import type { PropType } from 'vue';
-import { computed, ref, watch } from 'vue';
+import { ref } from 'vue';
 
 import BlockLibrary from '@/components/Editor/BlockLibrary.vue';
-import ContentInspector from '@/components/Editor/ContentInspector.vue';
-import NavigationSettings from '@/components/Editor/NavigationSettings.vue';
+import EditorLayersTree from '@/components/Editor/EditorLayersTree.vue';
 
 type PageSummary = {
     id: number | string;
@@ -28,21 +25,21 @@ type PageSummary = {
     is_homepage: boolean;
 };
 
-const props = defineProps({
+const blocks = defineModel('blocks', {
+    type: Array,
+    required: true,
+});
+
+defineProps({
     pages: { type: Array as PropType<PageSummary[]>, required: true },
     currentPage: { type: Object as PropType<PageSummary>, required: true },
-    selectedBlock: { type: Object, default: null },
-    activeBlockDefinition: { type: Object, default: null },
-    navigationConfig: { type: Object, required: true },
-    tenant: { type: Object, required: true },
     blockDefinitions: { type: Array, required: true },
     blockPresets: { type: Array, required: true },
     dashboardUrl: { type: String, required: true },
     logoutUrl: { type: String, required: true },
     liveUrl: { type: String, required: true },
-    isPublishing: { type: Boolean, default: false },
-    isSaving: { type: Boolean, default: false },
     saveError: { type: String, default: '' },
+    collapsed: { type: Boolean, default: false },
 });
 
 const emit = defineEmits([
@@ -51,46 +48,37 @@ const emit = defineEmits([
     'rename-page',
     'set-homepage',
     'delete-page',
-    'open-media-picker',
     'add-block',
     'add-preset',
-    'publish',
+    'expand',
 ]);
 
-const activeSection = ref('content');
+const activeSection = ref('structure');
+const pagesExpanded = ref(true);
+
+const handleCollapsedTabClick = (section: string) => {
+    activeSection.value = section;
+    emit('expand');
+};
 
 const sections = [
-    { value: 'content', label: 'Content', icon: SlidersHorizontal },
-    { value: 'blocks', label: 'Blocks', icon: Blocks },
-    { value: 'pages', label: 'Pages', icon: FileText },
-    { value: 'site', label: 'Site', icon: PanelTop },
+    { value: 'structure', label: 'Structure', icon: ListTree },
+    { value: 'insert', label: 'Insert', icon: Blocks },
 ];
-
-const selectedBlockLabel = computed(
-    () =>
-        props.activeBlockDefinition?.label ||
-        props.selectedBlock?.type ||
-        'Nothing selected',
-);
-
-watch(
-    () => props.selectedBlock?.id,
-    (selectedId) => {
-        if (selectedId) {
-            activeSection.value = 'content';
-        }
-    },
-);
 </script>
 
 <template>
     <aside class="editor-sidebar">
-        <div class="sidebar-heading">
-            <div>
+        <div
+            class="sidebar-heading"
+            :class="{ 'sidebar-heading-collapsed': collapsed }"
+        >
+            <div v-if="!collapsed">
                 <span class="sidebar-eyebrow">Editing</span>
                 <h1>{{ currentPage.title }}</h1>
             </div>
             <a
+                v-if="!collapsed"
                 :href="liveUrl"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -102,7 +90,7 @@ watch(
             </a>
         </div>
 
-        <nav class="sidebar-tabs" aria-label="Editor panels">
+        <nav v-if="!collapsed" class="sidebar-tabs" aria-label="Editor panels">
             <button
                 v-for="section in sections"
                 :key="section.value"
@@ -120,179 +108,205 @@ watch(
             </button>
         </nav>
 
-        <div class="sidebar-scroll">
-            <section v-if="activeSection === 'content'" class="sidebar-panel">
-                <div class="panel-heading">
-                    <div>
-                        <span class="panel-kicker">Content inspector</span>
-                        <h2>{{ selectedBlockLabel }}</h2>
-                    </div>
-                    <span v-if="selectedBlock" class="selection-badge"
-                        >Selected</span
-                    >
-                </div>
-
-                <ContentInspector
-                    :selected-block="selectedBlock"
-                    :active-block-definition="activeBlockDefinition"
-                    @open-media-picker="emit('open-media-picker', $event)"
-                />
-            </section>
-
-            <section
-                v-else-if="activeSection === 'blocks'"
-                class="sidebar-panel"
+        <nav v-else class="sidebar-rail" aria-label="Editor panels">
+            <button
+                v-for="section in sections"
+                :key="section.value"
+                type="button"
+                class="rail-icon"
+                :class="{ 'rail-icon-active': activeSection === section.value }"
+                :title="section.label"
+                :aria-label="section.label"
+                @click="handleCollapsedTabClick(section.value)"
             >
-                <div class="panel-heading">
-                    <div>
-                        <span class="panel-kicker">Build your page</span>
-                        <h2>Block library</h2>
-                    </div>
-                    <Blocks :size="17" />
-                </div>
+                <component :is="section.icon" :size="16" />
+            </button>
+        </nav>
 
-                <BlockLibrary
-                    :block-definitions="blockDefinitions"
-                    :block-presets="blockPresets"
-                    @add-block="emit('add-block', $event)"
-                    @add-preset="emit('add-preset', $event)"
-                />
-            </section>
-
-            <section
-                v-else-if="activeSection === 'pages'"
-                class="sidebar-panel"
-            >
-                <div class="panel-heading">
-                    <div>
-                        <span class="panel-kicker">Site structure</span>
-                        <h2>Pages</h2>
-                    </div>
-                    <button
-                        type="button"
-                        class="heading-action"
-                        title="Create page"
-                        aria-label="Create page"
-                        @click="emit('create-page')"
-                    >
-                        <Plus :size="16" />
-                    </button>
-                </div>
-
-                <div class="page-list">
-                    <article
-                        v-for="page in pages"
-                        :key="page.id"
-                        class="page-row"
-                        :class="{
-                            'page-row-active': currentPage.slug === page.slug,
-                        }"
-                    >
-                        <button
-                            type="button"
-                            class="page-select"
-                            @click="emit('switch-page', page.slug)"
-                        >
-                            <span class="page-icon">
-                                <Home v-if="page.is_homepage" :size="13" />
-                                <FileText v-else :size="13" />
-                            </span>
-                            <span class="page-copy">
-                                <strong>{{ page.title }}</strong>
-                                <small
-                                    >/{{
-                                        page.slug === 'home' ? '' : page.slug
-                                    }}</small
-                                >
-                            </span>
-                            <span v-if="page.is_homepage" class="home-badge"
-                                >Home</span
-                            >
-                        </button>
-
-                        <div class="page-actions">
+        <div v-if="!collapsed" class="sidebar-scroll">
+            <Transition name="panel-switch" mode="out-in">
+                <section
+                    v-if="activeSection === 'structure'"
+                    key="structure"
+                    class="sidebar-panel"
+                >
+                    <div class="structure-group">
+                        <div class="structure-group-heading">
                             <button
-                                v-if="!page.is_homepage"
                                 type="button"
-                                title="Set as homepage"
-                                aria-label="Set as homepage"
-                                @click="emit('set-homepage', page)"
+                                class="structure-toggle"
+                                :aria-expanded="pagesExpanded"
+                                @click="pagesExpanded = !pagesExpanded"
                             >
-                                <Home :size="13" />
+                                <ChevronRight
+                                    :size="12"
+                                    class="structure-chevron"
+                                    :class="{
+                                        'structure-chevron-open': pagesExpanded,
+                                    }"
+                                />
+                                <span class="panel-kicker">Pages</span>
+                                <span class="structure-count">{{
+                                    pages.length
+                                }}</span>
                             </button>
                             <button
                                 type="button"
-                                title="Rename page"
-                                aria-label="Rename page"
-                                @click="emit('rename-page', page)"
+                                class="heading-action heading-action-small"
+                                title="Create page"
+                                aria-label="Create page"
+                                @click="emit('create-page')"
                             >
-                                <Pencil :size="13" />
-                            </button>
-                            <button
-                                v-if="!page.is_homepage"
-                                type="button"
-                                class="danger-action"
-                                title="Delete page"
-                                aria-label="Delete page"
-                                @click="emit('delete-page', page)"
-                            >
-                                <Trash2 :size="13" />
+                                <Plus :size="14" />
                             </button>
                         </div>
-                    </article>
-                </div>
 
-                <button
-                    type="button"
-                    class="create-page-button"
-                    @click="emit('create-page')"
-                >
-                    <Plus :size="14" />
-                    <span>Create page</span>
-                </button>
-            </section>
+                        <div v-if="pagesExpanded" class="structure-group-body">
+                            <TransitionGroup
+                                name="list-item"
+                                tag="div"
+                                class="page-list"
+                            >
+                                <article
+                                    v-for="page in pages"
+                                    :key="page.id"
+                                    class="page-row hover-lift"
+                                    :class="{
+                                        'page-row-active':
+                                            currentPage.slug === page.slug,
+                                    }"
+                                >
+                                    <button
+                                        type="button"
+                                        class="page-select"
+                                        @click="emit('switch-page', page.slug)"
+                                    >
+                                        <span class="page-icon">
+                                            <Home
+                                                v-if="page.is_homepage"
+                                                :size="13"
+                                            />
+                                            <FileText v-else :size="13" />
+                                        </span>
+                                        <span class="page-copy">
+                                            <strong>{{ page.title }}</strong>
+                                            <small
+                                                >/{{
+                                                    page.slug === 'home'
+                                                        ? ''
+                                                        : page.slug
+                                                }}</small
+                                            >
+                                        </span>
+                                        <span
+                                            v-if="page.is_homepage"
+                                            class="home-badge"
+                                            >Home</span
+                                        >
+                                    </button>
 
-            <section v-else class="sidebar-panel">
-                <div class="panel-heading">
-                    <div>
-                        <span class="panel-kicker">Shared site settings</span>
-                        <h2>Navigation</h2>
+                                    <div class="page-actions">
+                                        <button
+                                            v-if="!page.is_homepage"
+                                            type="button"
+                                            title="Set as homepage"
+                                            aria-label="Set as homepage"
+                                            @click="emit('set-homepage', page)"
+                                        >
+                                            <Home :size="13" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            title="Rename page"
+                                            aria-label="Rename page"
+                                            @click="emit('rename-page', page)"
+                                        >
+                                            <Pencil :size="13" />
+                                        </button>
+                                        <button
+                                            v-if="!page.is_homepage"
+                                            type="button"
+                                            class="danger-action"
+                                            title="Delete page"
+                                            aria-label="Delete page"
+                                            @click="emit('delete-page', page)"
+                                        >
+                                            <Trash2 :size="13" />
+                                        </button>
+                                    </div>
+                                </article>
+                            </TransitionGroup>
+
+                            <button
+                                type="button"
+                                class="create-page-button"
+                                @click="emit('create-page')"
+                            >
+                                <Plus :size="14" />
+                                <span>Create page</span>
+                            </button>
+                        </div>
                     </div>
-                    <Settings2 :size="17" />
-                </div>
 
-                <NavigationSettings
-                    :navigation-config="navigationConfig"
-                    :pages="pages"
-                    :tenant="tenant"
-                />
-            </section>
+                    <div class="structure-group structure-group-sections">
+                        <div class="structure-group-heading">
+                            <span class="structure-static-heading">
+                                <ListTree :size="12" />
+                                <span class="panel-kicker">Sections</span>
+                            </span>
+                            <button
+                                type="button"
+                                class="heading-action heading-action-small"
+                                title="Insert block"
+                                aria-label="Insert block"
+                                @click="activeSection = 'insert'"
+                            >
+                                <Plus :size="14" />
+                            </button>
+                        </div>
+
+                        <div class="structure-group-body">
+                            <EditorLayersTree v-model:blocks="blocks" />
+                        </div>
+                    </div>
+                </section>
+
+                <section v-else key="insert" class="sidebar-panel">
+                    <div class="panel-heading">
+                        <div>
+                            <span class="panel-kicker">Build your page</span>
+                            <h2>Block library</h2>
+                        </div>
+                        <Blocks :size="17" />
+                    </div>
+
+                    <BlockLibrary
+                        :block-definitions="blockDefinitions"
+                        :block-presets="blockPresets"
+                        @add-block="emit('add-block', $event)"
+                        @add-preset="emit('add-preset', $event)"
+                    />
+                </section>
+            </Transition>
         </div>
 
-        <footer class="sidebar-footer">
-            <p v-if="saveError" class="save-error" role="alert">
-                {{ saveError }}
-            </p>
+        <footer
+            class="sidebar-footer"
+            :class="{ 'sidebar-footer-collapsed': collapsed }"
+        >
+            <template v-if="!collapsed">
+                <p v-if="saveError" class="save-error" role="alert">
+                    {{ saveError }}
+                </p>
 
-            <button
-                type="button"
-                class="publish-button"
-                :disabled="isPublishing || isSaving || !!saveError"
-                @click="emit('publish')"
-            >
-                <Upload :size="15" />
-                <span>{{
-                    isPublishing ? 'Publishing…' : 'Publish interface'
-                }}</span>
-            </button>
-
-            <div class="sidebar-account-actions">
-                <Link :href="dashboardUrl">Exit to dashboard</Link>
-                <Link :href="logoutUrl" method="post" as="button">
-                    <LogOut :size="12" />
-                    <span>Log out</span>
-                </Link>
-            </div>
+                <div class="sidebar-account-actions">
+                    <Link :href="dashboardUrl">Exit to dashboard</Link>
+                    <Link :href="logoutUrl" method="post" as="button">
+                        <LogOut :size="12" />
+                        <span>Log out</span>
+                    </Link>
+                </div>
+            </template>
         </footer>
     </aside>
 </template>
@@ -303,9 +317,9 @@ watch(
     min-width: 0;
     min-height: 0;
     flex-direction: column;
-    color: #d4d4d8;
-    background: #101011;
-    border-right: 1px solid #29292c;
+    color: var(--editor-text);
+    background: var(--editor-panel);
+    border-right: 1px solid var(--editor-border);
 }
 
 .sidebar-heading,
@@ -325,13 +339,13 @@ watch(
     min-height: 66px;
     padding: 11px 17px;
     justify-content: space-between;
-    border-bottom: 1px solid #252527;
+    border-bottom: 1px solid var(--editor-border);
 }
 
 .sidebar-eyebrow,
 .panel-kicker {
     display: block;
-    color: #7c8eae;
+    color: var(--editor-accent);
     font-size: 9px;
     font-weight: 750;
     letter-spacing: 0.14em;
@@ -341,7 +355,7 @@ watch(
 .sidebar-heading h1,
 .panel-heading h2 {
     margin: 3px 0 0;
-    color: #f4f4f5;
+    color: var(--editor-text);
     font-size: 13px;
     font-weight: 650;
     line-height: 1.25;
@@ -352,23 +366,23 @@ watch(
     justify-content: center;
     width: 30px;
     height: 30px;
-    color: #a1a1aa;
-    background: #18181a;
-    border: 1px solid #303033;
+    color: var(--editor-text-muted);
+    background: var(--editor-panel-muted);
+    border: 1px solid var(--editor-border);
     border-radius: 5px;
     cursor: pointer;
 }
 
 .sidebar-live-link:hover,
 .heading-action:hover {
-    color: #ffffff;
-    background: #262629;
+    color: var(--editor-accent);
+    background: var(--editor-accent-soft);
 }
 
 .sidebar-tabs {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    border-bottom: 1px solid #252527;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-bottom: 1px solid var(--editor-border);
 }
 
 .sidebar-tabs button {
@@ -378,14 +392,14 @@ watch(
     align-items: center;
     justify-content: center;
     gap: 5px;
-    color: #71717a;
+    color: var(--editor-text-muted);
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     background: transparent;
     border: 0;
-    border-right: 1px solid #202022;
+    border-right: 1px solid var(--editor-border);
     border-bottom: 2px solid transparent;
     cursor: pointer;
 }
@@ -395,21 +409,21 @@ watch(
 }
 
 .sidebar-tabs button:hover {
-    color: #d4d4d8;
-    background: #151517;
+    color: var(--editor-text);
+    background: var(--editor-panel-muted);
 }
 
 .sidebar-tabs .sidebar-tab-active {
-    color: #ffffff;
-    background: #171719;
-    border-bottom-color: #9db3d6;
+    color: var(--editor-accent);
+    background: var(--editor-accent-soft);
+    border-bottom-color: var(--editor-accent);
 }
 
 .sidebar-scroll {
     min-height: 0;
     flex: 1;
     overflow-y: auto;
-    scrollbar-color: #3f3f46 transparent;
+    scrollbar-color: var(--editor-border-strong) transparent;
     scrollbar-width: thin;
 }
 
@@ -417,18 +431,80 @@ watch(
     padding: 17px;
 }
 
+.structure-group + .structure-group {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--editor-border);
+}
+
+.structure-group-heading {
+    display: flex;
+    min-height: 28px;
+    margin-bottom: 8px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.structure-toggle {
+    display: inline-flex;
+    min-width: 0;
+    padding: 2px 4px 2px 0;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.structure-toggle:hover .panel-kicker {
+    color: var(--editor-text);
+}
+
+.structure-chevron {
+    color: var(--editor-text-muted);
+    transition: transform 140ms ease;
+}
+
+.structure-chevron-open {
+    transform: rotate(90deg);
+}
+
+.structure-count {
+    padding: 1px 6px;
+    color: var(--editor-text-muted);
+    font-size: 8.5px;
+    font-weight: 700;
+    background: var(--editor-panel-muted);
+    border: 1px solid var(--editor-border);
+    border-radius: 9999px;
+}
+
+.structure-static-heading {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--editor-text-muted);
+}
+
+.heading-action-small {
+    width: 25px;
+    height: 25px;
+}
+
 .panel-heading {
     min-height: 39px;
     margin-bottom: 17px;
     padding-bottom: 11px;
     justify-content: space-between;
-    color: #71717a;
-    border-bottom: 1px solid #29292c;
+    color: var(--editor-text-muted);
+    border-bottom: 1px solid var(--editor-border);
 }
 
 .selection-badge,
 .home-badge {
-    color: #a9bad5;
+    color: var(--editor-accent);
     font-size: 8px;
     font-weight: 750;
     letter-spacing: 0.08em;
@@ -455,17 +531,17 @@ watch(
     display: flex;
     min-width: 0;
     align-items: center;
-    background: #171719;
-    border: 1px solid #2b2b2e;
+    background: var(--editor-panel);
+    border: 1px solid var(--editor-border);
     border-radius: 5px;
 }
 
 .page-row:hover {
-    border-color: #3f3f46;
+    border-color: var(--editor-border-strong);
 }
 .page-row-active {
-    background: #1d222a;
-    border-color: #5b6d88;
+    background: var(--editor-accent-soft);
+    border-color: color-mix(in srgb, var(--editor-accent) 35%, white);
 }
 
 .page-select {
@@ -483,7 +559,7 @@ watch(
 
 .page-icon {
     display: inline-flex;
-    color: #7c8eae;
+    color: var(--editor-accent);
 }
 
 .page-copy {
@@ -495,7 +571,7 @@ watch(
 
 .page-copy strong {
     overflow: hidden;
-    color: #e4e4e7;
+    color: var(--editor-text);
     font-size: 11px;
     font-weight: 600;
     text-overflow: ellipsis;
@@ -504,7 +580,7 @@ watch(
 
 .page-copy small {
     overflow: hidden;
-    color: #71717a;
+    color: var(--editor-text-muted);
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 9px;
     text-overflow: ellipsis;
@@ -522,7 +598,7 @@ watch(
     justify-content: center;
     width: 25px;
     height: 25px;
-    color: #71717a;
+    color: var(--editor-text-muted);
     background: transparent;
     border: 0;
     border-radius: 4px;
@@ -530,8 +606,8 @@ watch(
 }
 
 .page-actions button:hover {
-    color: #ffffff;
-    background: #29292c;
+    color: var(--editor-accent);
+    background: var(--editor-accent-soft);
 }
 .page-actions .danger-action:hover {
     color: #fca5a5;
@@ -544,26 +620,26 @@ watch(
     margin-top: 11px;
     justify-content: center;
     gap: 6px;
-    color: #a9bad5;
+    color: var(--editor-accent);
     font-size: 10px;
     font-weight: 650;
     background: transparent;
-    border: 1px dashed #3f4652;
+    border: 1px dashed var(--editor-border-strong);
     border-radius: 5px;
     cursor: pointer;
 }
 
 .create-page-button:hover {
-    color: #ffffff;
-    background: #171a1f;
-    border-color: #64748b;
+    color: var(--editor-accent);
+    background: var(--editor-accent-soft);
+    border-color: color-mix(in srgb, var(--editor-accent) 35%, white);
 }
 
 .sidebar-footer {
     padding: 14px 16px 12px;
-    background: #0d0d0e;
-    border-top: 1px solid #29292c;
-    box-shadow: 0 -12px 30px rgb(0 0 0 / 22%);
+    background: var(--editor-panel);
+    border-top: 1px solid var(--editor-border);
+    box-shadow: 0 -8px 24px rgb(24 24 27 / 5%);
 }
 
 .save-error {
@@ -582,18 +658,18 @@ watch(
     height: 45px;
     justify-content: center;
     gap: 8px;
-    color: #101011;
+    color: #ffffff;
     font-size: 12px;
     font-weight: 750;
-    background: #f4f4f5;
-    border: 1px solid #ffffff;
+    background: var(--editor-accent);
+    border: 1px solid var(--editor-accent);
     border-radius: 5px;
     cursor: pointer;
-    box-shadow: 0 8px 24px rgb(0 0 0 / 28%);
+    box-shadow: 0 8px 20px rgb(79 70 229 / 18%);
 }
 
 .publish-button:hover:not(:disabled) {
-    background: #ffffff;
+    background: color-mix(in srgb, var(--editor-accent) 88%, black);
 }
 .publish-button:disabled {
     cursor: not-allowed;
@@ -611,7 +687,7 @@ watch(
     align-items: center;
     padding: 4px 2px;
     gap: 4px;
-    color: #71717a;
+    color: var(--editor-text-muted);
     font-size: 9px;
     font-weight: 600;
     text-decoration: none;
@@ -622,12 +698,119 @@ watch(
 
 .sidebar-account-actions a:hover,
 .sidebar-account-actions button:hover {
-    color: #d4d4d8;
+    color: var(--editor-text);
 }
 
 button:focus-visible,
 a:focus-visible {
-    outline: 2px solid #93c5fd;
+    outline: 2px solid color-mix(in srgb, var(--editor-accent) 45%, white);
     outline-offset: 2px;
+}
+
+.editor-sidebar :deep([class*='bg-slate-8']),
+.editor-sidebar :deep([class*='bg-slate-9']) {
+    background-color: var(--editor-panel-muted) !important;
+}
+
+.editor-sidebar :deep([class*='border-slate-6']),
+.editor-sidebar :deep([class*='border-slate-7']),
+.editor-sidebar :deep([class*='border-slate-8']) {
+    border-color: var(--editor-border) !important;
+}
+
+.editor-sidebar :deep([class*='text-slate-2']),
+.editor-sidebar :deep([class*='text-slate-3']),
+.editor-sidebar :deep([class*='text-slate-4']) {
+    color: var(--editor-text) !important;
+}
+
+.editor-sidebar :deep([class*='text-slate-5']) {
+    color: var(--editor-text-muted) !important;
+}
+
+.editor-sidebar :deep(input:not([type='checkbox']):not([type='color'])),
+.editor-sidebar :deep(select),
+.editor-sidebar :deep(textarea) {
+    color: var(--editor-text) !important;
+    background: var(--editor-panel) !important;
+    border-color: var(--editor-border-strong) !important;
+    box-shadow: 0 1px 2px rgb(24 24 27 / 4%);
+}
+
+.editor-sidebar :deep(input:focus),
+.editor-sidebar :deep(select:focus),
+.editor-sidebar :deep(textarea:focus) {
+    border-color: var(--editor-accent) !important;
+    box-shadow: 0 0 0 3px rgb(79 70 229 / 10%);
+}
+
+.sidebar-heading-collapsed {
+    min-height: 56px;
+    justify-content: center;
+    padding: 0;
+}
+
+.sidebar-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--editor-border);
+}
+
+.rail-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    color: var(--editor-text-muted);
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition:
+        color 150ms ease,
+        background-color 150ms ease;
+}
+
+.rail-icon:hover {
+    color: var(--editor-text);
+    background: var(--editor-panel-muted);
+}
+
+.rail-icon-active {
+    color: var(--editor-accent);
+    background: var(--editor-accent-soft);
+}
+
+.sidebar-footer-collapsed {
+    display: flex;
+    justify-content: center;
+    padding: 10px 8px;
+}
+
+.publish-button-compact {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    color: #ffffff;
+    background: var(--editor-accent);
+    border: 1px solid var(--editor-accent);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 150ms ease;
+}
+
+.publish-button-compact:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--editor-accent) 88%, black);
+}
+
+.publish-button-compact:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
 }
 </style>

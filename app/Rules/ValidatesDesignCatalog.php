@@ -135,6 +135,10 @@ class ValidatesDesignCatalog implements ValidationRule
                 }
             }
 
+            if (! isset($siteKit['tier']) || ! is_string($siteKit['tier']) || ! in_array($siteKit['tier'], ['free', 'premium'], true)) {
+                $fail("The site kit '{$kitKey}' must declare tier as 'free' or 'premium'.");
+            }
+
             if (isset($siteKit['style_key']) && is_string($siteKit['style_key']) && ! array_key_exists($siteKit['style_key'], $styles)) {
                 $fail("The site kit '{$kitKey}' references unknown style '{$siteKit['style_key']}'.");
             }

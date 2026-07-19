@@ -1,11 +1,26 @@
 <script setup lang="ts">
+import InlineText from './InlineText.vue';
+
 defineProps<{ nodeId?: string; blockProps: Record<string, any> }>();
 </script>
 <template>
     <section>
-        <div v-for="item in blockProps.items || []" :key="item.title">
-            <h3>{{ item.title }}</h3>
-            <p>{{ item.body }}</p>
+        <div v-for="(item, index) in blockProps.items || []" :key="index">
+            <InlineText
+                tag="h3"
+                :value="item.title"
+                placeholder="Value title"
+                aria-label="Value title"
+                @update:value="item.title = $event"
+            />
+            <InlineText
+                tag="p"
+                :value="item.body"
+                placeholder="Value description"
+                aria-label="Value description"
+                multiline
+                @update:value="item.body = $event"
+            />
         </div>
     </section>
 </template>

@@ -71,10 +71,29 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
                 $tenant = app('currentTenant');
                 abort_unless(auth()->id() === $tenant->user_id, 403);
 
+                $pages = $tenant->pages()
+                    ->orderByDesc('is_homepage')
+                    ->orderByDesc('updated_at')
+                    ->get(['id', 'title', 'slug', 'is_homepage', 'updated_at', 'published_config']);
+
                 return Inertia::render('CentralDashboard', [
                     'tenant' => $tenant->only(['id', 'subdomain']),
                     'theme_config' => $tenant->theme_config,
+                    'navigation_config' => $tenant->navigation_config,
                     'can_apply_site_kit' => $tenant->isEligibleForInitialSiteKit(),
+                    'site_summary' => [
+                        'page_count' => $pages->count(),
+                        'published_page_count' => $pages->whereNotNull('published_config')->count(),
+                        'last_edited_at' => $pages->max('updated_at')?->toIso8601String(),
+                    ],
+                    'pages' => $pages->map(fn ($page) => [
+                        'id' => $page->id,
+                        'title' => $page->title,
+                        'slug' => $page->slug,
+                        'is_homepage' => $page->is_homepage,
+                        'is_published' => $page->published_config !== null,
+                        'updated_at' => $page->updated_at?->toIso8601String(),
+                    ])->values(),
                     'central_navigation' => [
                         'account_settings_url' => route('profile.edit'),
                         'logout_url' => route('logout'),
@@ -82,6 +101,26 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
                     ],
                 ]);
             })->name('dashboard');
+
+            Route::get('/dashboard/navbars', function () {
+                $tenant = app('currentTenant');
+                abort_unless(auth()->id() === $tenant->user_id, 403);
+
+                return redirect()->route('tenant.editor', [
+                    'tenant' => $tenant->subdomain,
+                    'workspace' => 'navigation',
+                ]);
+            })->name('tenant.navbars.index');
+
+            Route::get('/dashboard/theme', function () {
+                $tenant = app('currentTenant');
+                abort_unless(auth()->id() === $tenant->user_id, 403);
+
+                return redirect()->route('tenant.editor', [
+                    'tenant' => $tenant->subdomain,
+                    'workspace' => 'theme',
+                ]);
+            })->name('tenant.theme.index');
 
             Route::get('/designs', [TenantDesignLibraryController::class, 'index'])->name('tenant.designs.index');
             Route::post('/designs/site-kits/{kit}/apply', [TenantDesignLibraryController::class, 'store'])->name('tenant.designs.apply-kit');

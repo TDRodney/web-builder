@@ -59,6 +59,16 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    --color-editor-bg: var(--editor-bg);
+    --color-editor-panel: var(--editor-panel);
+    --color-editor-panel-muted: var(--editor-panel-muted);
+    --color-editor-border: var(--editor-border);
+    --color-editor-border-strong: var(--editor-border-strong);
+    --color-editor-text: var(--editor-text);
+    --color-editor-text-muted: var(--editor-text-muted);
+    --color-editor-accent: var(--editor-accent);
+    --color-editor-accent-soft: var(--editor-accent-soft);
 }
 
 /*
@@ -90,6 +100,17 @@
 }
 
 :root {
+    --editor-bg: #f4f4f5;
+    --editor-panel: #ffffff;
+    --editor-panel-muted: #fafafa;
+    --editor-border: #e4e4e7;
+    --editor-border-strong: #d4d4d8;
+    --editor-text: #18181b;
+    --editor-text-muted: #71717a;
+    --editor-accent: #18181b;
+    --editor-accent-soft: #f4f4f5;
+    --editor-shadow: 0 18px 48px rgb(24 24 27 / 10%);
+
     --background: hsl(0 0% 100%);
     --foreground: hsl(0 0% 3.9%);
     --card: hsl(0 0% 100%);
@@ -168,5 +189,300 @@
     }
     body {
         @apply bg-background text-foreground;
+    }
+}
+
+/* ============================================================
+   Global Animation Utilities — Panel, List & Sidebar Transitions
+   ============================================================ */
+
+/* Panel switch (sidebar sections, navbar studio tabs, content swap) */
+.panel-switch-enter-active {
+    transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1), transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.panel-switch-leave-active {
+    transition: opacity 140ms cubic-bezier(0.4, 0, 0.2, 1), transform 140ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.panel-switch-enter-from {
+    opacity: 0;
+    transform: translateY(8px);
+}
+.panel-switch-leave-to {
+    opacity: 0;
+    transform: translateY(-6px);
+}
+
+/* List items — staggered enter/leave for page lists, nav items */
+.list-item-enter-active {
+    transition: opacity 220ms ease, transform 220ms ease;
+}
+.list-item-leave-active {
+    transition: opacity 160ms ease, transform 160ms ease;
+}
+.list-item-enter-from {
+    opacity: 0;
+    transform: translateX(-10px);
+}
+.list-item-leave-to {
+    opacity: 0;
+    transform: translateX(10px) scale(0.97);
+}
+.list-item-move {
+    transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Block grid items — scale entrance for block library cards */
+.block-grid-enter-active {
+    transition: opacity 240ms ease, transform 240ms ease;
+}
+.block-grid-leave-active {
+    transition: opacity 160ms ease, transform 160ms ease;
+}
+.block-grid-enter-from {
+    opacity: 0;
+    transform: scale(0.9);
+}
+.block-grid-leave-to {
+    opacity: 0;
+    transform: scale(0.95);
+}
+.block-grid-move {
+    transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Fade-slide — generic reveal for hero text, section titles */
+.fade-slide-enter-active {
+    transition: opacity 320ms ease, transform 320ms ease;
+}
+.fade-slide-leave-active {
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+.fade-slide-enter-from {
+    opacity: 0;
+    transform: translateY(12px);
+}
+.fade-slide-leave-to {
+    opacity: 0;
+    transform: translateY(-8px);
+}
+
+/* Selection glow pulse — applied to selected items */
+@keyframes selection-pulse {
+    0%, 100% { box-shadow: 0 0 0 2px color-mix(in srgb, var(--editor-accent) 20%, transparent); }
+    50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--editor-accent) 12%, transparent); }
+}
+
+.selection-glow {
+    animation: selection-pulse 2.5s ease-in-out infinite;
+}
+
+/* Micro-interaction: hover lift for cards, rows, interactive panels */
+.hover-lift {
+    transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hover-lift:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 8%);
+}
+.hover-lift:active {
+    transform: translateY(0) scale(0.985);
+}
+
+/* Sidebar collapse icon rotation */
+.collapse-icon-rotate {
+    transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.collapse-icon-rotate.is-collapsed {
+    transform: rotate(180deg);
+}
+
+/* Reduced motion: disable all custom animations */
+@media (prefers-reduced-motion: reduce) {
+    .panel-switch-enter-active,
+    .panel-switch-leave-active,
+    .list-item-enter-active,
+    .list-item-leave-active,
+    .list-item-move,
+    .block-grid-enter-active,
+    .block-grid-leave-active,
+    .block-grid-move,
+    .fade-slide-enter-active,
+    .fade-slide-leave-active,
+    .hover-lift {
+        transition: none !important;
+    }
+
+    .selection-glow {
+        animation: none !important;
+    }
+}
+
+/* ============================================================
+   Global Animation Utilities — Panel, List & Sidebar Transitions
+   ============================================================ */
+
+/* Panel switch (sidebar sections, navbar studio tabs, content swap) */
+.panel-switch-enter-active {
+    transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1), transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.panel-switch-leave-active {
+    transition: opacity 140ms cubic-bezier(0.4, 0, 0.2, 1), transform 140ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.panel-switch-enter-from {
+    opacity: 0;
+    transform: translateY(8px);
+}
+.panel-switch-leave-to {
+    opacity: 0;
+    transform: translateY(-6px);
+}
+
+/* List items — staggered enter/leave for page lists, nav items */
+.list-item-enter-active {
+    transition: opacity 220ms ease, transform 220ms ease;
+}
+.list-item-leave-active {
+    transition: opacity 160ms ease, transform 160ms ease;
+}
+.list-item-enter-from {
+    opacity: 0;
+    transform: translateX(-10px);
+}
+.list-item-leave-to {
+    opacity: 0;
+    transform: translateX(10px) scale(0.97);
+}
+.list-item-move {
+    transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Block grid items — scale entrance for block library cards */
+.block-grid-enter-active {
+    transition: opacity 240ms ease, transform 240ms ease;
+}
+.block-grid-leave-active {
+    transition: opacity 160ms ease, transform 160ms ease;
+}
+.block-grid-enter-from {
+    opacity: 0;
+    transform: scale(0.9);
+}
+.block-grid-leave-to {
+    opacity: 0;
+    transform: scale(0.95);
+}
+.block-grid-move {
+    transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Fade-slide — generic reveal for hero text, section titles */
+.fade-slide-enter-active {
+    transition: opacity 320ms ease, transform 320ms ease;
+}
+.fade-slide-leave-active {
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+.fade-slide-enter-from {
+    opacity: 0;
+    transform: translateY(12px);
+}
+.fade-slide-leave-to {
+    opacity: 0;
+    transform: translateY(-8px);
+}
+
+/* Selection glow pulse — applied to selected items */
+@keyframes selection-pulse {
+    0%, 100% { box-shadow: 0 0 0 2px color-mix(in srgb, var(--editor-accent) 20%, transparent); }
+    50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--editor-accent) 12%, transparent); }
+}
+
+.selection-glow {
+    animation: selection-pulse 2.5s ease-in-out infinite;
+}
+
+/* Micro-interaction: hover lift for cards, rows, interactive panels */
+.hover-lift {
+    transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hover-lift:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 8%);
+}
+.hover-lift:active {
+    transform: translateY(0) scale(0.985);
+}
+
+/* Sidebar collapse icon rotation */
+.collapse-icon-rotate {
+    transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.collapse-icon-rotate.is-collapsed {
+    transform: rotate(180deg);
+}
+
+/* Reduced motion: disable all custom animations */
+@media (prefers-reduced-motion: reduce) {
+    .panel-switch-enter-active,
+    .panel-switch-leave-active,
+    .list-item-enter-active,
+    .list-item-leave-active,
+    .list-item-move,
+    .block-grid-enter-active,
+    .block-grid-leave-active,
+    .block-grid-move,
+    .fade-slide-enter-active,
+    .fade-slide-leave-active,
+    .hover-lift {
+        transition: none !important;
+    }
+
+    .selection-glow {
+        animation: none !important;
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Block scroll-reveal (public site + kit previews via v-reveal)      */
+/* ------------------------------------------------------------------ */
+.reveal {
+    opacity: 0;
+    transition:
+        opacity 640ms cubic-bezier(0.22, 1, 0.36, 1),
+        transform 640ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+    will-change: opacity, transform;
+}
+
+.reveal-fade-up {
+    transform: translateY(28px);
+}
+
+.reveal-fade-in {
+    transform: none;
+}
+
+.reveal-scale-in {
+    transform: scale(0.96);
+}
+
+.reveal-slide-left {
+    transform: translateX(36px);
+}
+
+.reveal-slide-right {
+    transform: translateX(-36px);
+}
+
+.reveal-visible {
+    opacity: 1;
+    transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
     }
 }

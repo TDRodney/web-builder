@@ -36,6 +36,7 @@ function validDesignCatalog(): array
                 'label' => 'Example Industry',
                 'industry' => 'Example',
                 'description' => 'Fixture used to verify the catalog contract.',
+                'tier' => 'free',
                 'style_key' => 'editorial',
                 'pages' => [
                     [
@@ -107,6 +108,86 @@ test('every approved page layout includes an editable media placeholder', functi
     }
 });
 
+test('every approved page layout uses a composed section pattern with preserved content roles', function () {
+    $supportedPatterns = ['hero-centered', 'hero-split-right', 'hero-split-left', 'hero-editorial', 'hero-minimal'];
+
+    foreach (config('designs.page_layouts') as $layout) {
+        $section = collect(flattenDesignNodes($layout['blocks']))
+            ->firstWhere('type', 'SectionBlock');
+
+        expect($section)->not->toBeNull()
+            ->and($section['props']['patternKey'])->toBeIn($supportedPatterns);
+
+        $roles = collect(flattenDesignNodes([$section]))
+            ->pluck('props.patternRole')
+            ->filter()
+            ->values()
+            ->all();
+
+        expect($roles)->toContain('eyebrow', 'heading', 'body', 'primaryAction');
+    }
+});
+
+test('approved kits include structured footer variants with resolvable internal links', function () {
+    foreach (config('designs.site_kits') as $siteKit) {
+        $pageSlugs = array_column($siteKit['pages'], 'slug');
+        $footer = config("designs.styles.{$siteKit['style_key']}.navigation_config.footer");
+
+        expect($footer['variant'])->toBeIn(array_keys(config('navigation.footer_variants')))
+            ->and($footer['moduleOrder'])->not->toBeEmpty()
+            ->and(array_unique($footer['moduleOrder']))->toHaveCount(count($footer['moduleOrder']))
+            ->and($footer['brand']['description'])->not->toBeEmpty();
+
+        foreach ($footer['linkGroups'] as $group) {
+            foreach ($group['links'] as $link) {
+                if (($link['type'] ?? 'internal') === 'internal') {
+                    expect($pageSlugs)->toContain($link['slug']);
+                }
+            }
+        }
+    }
+});
+
+test('catalog reveal animation props only use supported values', function () {
+    $supportedRevealTypes = ['fade-up', 'fade-in', 'scale-in', 'slide-left', 'slide-right'];
+
+    foreach (config('designs.page_layouts') as $layout) {
+        foreach (flattenDesignNodes($layout['blocks']) as $node) {
+            if (array_key_exists('reveal', $node['props'])) {
+                expect($node['props']['reveal'])->toBeIn($supportedRevealTypes);
+            }
+
+            if (array_key_exists('revealDelay', $node['props'])) {
+                expect($node['props']['revealDelay'])->toBeInt()
+                    ->toBeGreaterThanOrEqual(0)
+                    ->toBeLessThanOrEqual(1200);
+            }
+        }
+    }
+});
+
+test('the restaurant menu layout uses an editable grouped MenuBlock', function () {
+    $menuLayout = config('designs.page_layouts.restaurant-menu');
+
+    $menuBlocks = array_filter(
+        flattenDesignNodes($menuLayout['blocks']),
+        static fn (array $node): bool => $node['type'] === 'MenuBlock',
+    );
+
+    expect($menuBlocks)->not->toBeEmpty();
+
+    $menu = array_values($menuBlocks)[0];
+    $items = $menu['props']['items'];
+    $categories = array_unique(array_column($items, 'category'));
+
+    expect($items)->not->toBeEmpty()
+        ->and(count($categories))->toBeGreaterThan(1);
+
+    foreach ($items as $item) {
+        expect($item)->toHaveKeys(['category', 'name', 'description', 'price']);
+    }
+});
+
 test('kit navigation links resolve to pages within the same kit', function () {
     $catalog = config('designs');
 
@@ -124,6 +205,16 @@ test('kit navigation links resolve to pages within the same kit', function () {
 
 test('a complete design catalog is valid', function () {
     expect(designCatalogValidator(validDesignCatalog())->passes())->toBeTrue();
+});
+
+test('site kits must declare a free or premium tier', function () {
+    $catalog = validDesignCatalog();
+    unset($catalog['site_kits']['example-industry']['tier']);
+
+    $validator = designCatalogValidator($catalog);
+
+    expect($validator->fails())->toBeTrue()
+        ->and($validator->errors()->first('catalog'))->toContain("must declare tier as 'free' or 'premium'");
 });
 
 test('site kits must reference registered styles and shared layouts', function () {

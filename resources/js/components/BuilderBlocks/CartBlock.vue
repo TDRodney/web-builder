@@ -1,7 +1,9 @@
 <script setup lang="ts">
+/* eslint-disable vue/no-mutating-props */
 import { ShoppingBag } from '@lucide/vue';
 import { inject } from 'vue';
 import { useCommerceCart } from '@/lib/commerceCart';
+import InlineText from './InlineText.vue';
 
 defineProps<{
     nodeId?: string;
@@ -15,9 +17,27 @@ const commerceCart = useCommerceCart();
 <template>
     <section>
         <header>
-            <p>{{ blockProps.eyebrow }}</p>
-            <h1>{{ blockProps.heading }}</h1>
-            <span>{{ blockProps.body }}</span>
+            <InlineText
+                tag="p"
+                :value="blockProps.eyebrow"
+                placeholder="Section eyebrow"
+                aria-label="Cart eyebrow"
+                @update:value="blockProps.eyebrow = $event"
+            />
+            <InlineText
+                tag="h1"
+                :value="blockProps.heading"
+                placeholder="Cart heading"
+                aria-label="Cart heading"
+                @update:value="blockProps.heading = $event"
+            />
+            <InlineText
+                :value="blockProps.body"
+                placeholder="Cart description"
+                aria-label="Cart description"
+                multiline
+                @update:value="blockProps.body = $event"
+            />
         </header>
 
         <div v-if="isEditable" class="editor-note">

@@ -75,6 +75,11 @@ class TenantEditorController extends Controller
                 ? $requestedPreview
                 : null;
 
+        $requestedWorkspace = request()->string('workspace')->toString();
+        $workspace = in_array($requestedWorkspace, ['pages', 'navigation', 'theme'], true)
+            ? $requestedWorkspace
+            : 'pages';
+
         return Inertia::render('Tenant/Editor', [
             'tenant' => $tenant->only(['id', 'subdomain', 'theme_config', 'navigation_config']),
             'page' => $currentPage->only(['id', 'slug', 'title', 'is_homepage', 'draft_config']),
@@ -88,6 +93,16 @@ class TenantEditorController extends Controller
             'commerce_preview' => [
                 'selected' => $selectedPreview,
                 'options' => $previewOptions,
+            ],
+            'workspace' => $workspace,
+            'navigation_studio' => [
+                'default_variant' => config('navigation.default_navbar_variant'),
+                'default_menu_mode' => config('navigation.default_menu_mode'),
+                'variants' => config('navigation.navbar_variants'),
+                'surface_modes' => config('navigation.navbar_surface_modes'),
+                'menu_modes' => config('navigation.menu_modes'),
+                'action_positions' => config('navigation.action_positions'),
+                'action_variants' => config('navigation.action_variants'),
             ],
             'urls' => [
                 'dashboard' => '/dashboard',

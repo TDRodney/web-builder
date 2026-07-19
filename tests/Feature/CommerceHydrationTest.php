@@ -46,6 +46,7 @@ test('hydration is keyed by block id and never changes saved block configuration
             'version' => 1,
             'resource' => 'product-list',
             'source' => 'featured',
+            'options' => ['limit' => 4, 'sort' => 'featured'],
         ])
         ->and($hydration['blocks']['grid-one']['data']['products'])->toHaveCount(4)
         ->and($hydration['blocks']['product-one']['data']['price'])->toMatchArray([
@@ -54,6 +55,22 @@ test('hydration is keyed by block id and never changes saved block configuration
             'formatted' => '$48.00',
         ])
         ->and($blocks)->toBe($original);
+});
+
+test('product presentation sorting is passed to the provider without changing product data', function () {
+    $tenant = Tenant::factory()->create();
+    $blocks = boundStorefrontBlocks();
+    $blocks[0]['props']['sourceKey'] = 'all';
+    $blocks[0]['props']['sort'] = 'price-high';
+    $blocks[0]['props']['limit'] = 3;
+
+    $hydration = (new CommerceHydrator(new FixtureCommerceProvider))->hydrate($tenant, $blocks);
+    $products = $hydration['blocks']['grid-one']['data']['products'];
+
+    expect($hydration['blocks']['grid-one']['binding']['options'])->toBe([
+        'limit' => 3,
+        'sort' => 'price-high',
+    ])->and(collect($products)->pluck('price.amountMinor')->all())->toBe([6400, 5800, 4800]);
 });
 
 test('the null provider returns an explicit safe unavailable state', function () {

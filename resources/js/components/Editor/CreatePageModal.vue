@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/block-lang -->
 <script setup>
 import { useHttp, router } from '@inertiajs/vue3';
 import { Check, ChevronLeft, FilePlus2, LayoutTemplate, X } from '@lucide/vue';
@@ -37,6 +38,7 @@ const selectedLayout = computed(() =>
 // Unique page types for the filter chips
 const pageTypes = computed(() => {
     const types = props.pageLayouts.map((layout) => layout.page_type);
+
     return [...new Set(types)];
 });
 
@@ -96,6 +98,7 @@ const extractHttpError = (error) => {
     if (error?.response?.data?.message) {
         return error.response.data.message;
     }
+
     if (error?.message) {
         return error.message;
     }
@@ -106,6 +109,7 @@ const extractHttpError = (error) => {
 const submitCreatePage = async () => {
     pageActionError.value = '';
     const loadingToast = toast.loading('Creating page...');
+
     try {
         const res = await createForm.post('/editor/pages');
 
@@ -118,9 +122,12 @@ const submitCreatePage = async () => {
         }
     } catch (err) {
         const message = extractHttpError(err);
+
         if (message !== null) {
             pageActionError.value = message;
-            toast.error(`Failed to create page: ${message}`, { id: loadingToast });
+            toast.error(`Failed to create page: ${message}`, {
+                id: loadingToast,
+            });
         } else {
             toast.dismiss(loadingToast);
         }
@@ -134,30 +141,34 @@ const pageTypeLabel = (pageType) =>
 <template>
     <div
         v-if="show"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/35 p-4 backdrop-blur-[2px]"
     >
         <div
-            class="w-full max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl"
+            class="max-h-[90vh] w-full overflow-y-auto rounded-[10px] border border-editor-border bg-editor-panel p-5 text-editor-text shadow-[var(--editor-shadow)]"
             :class="step === 'layout' ? 'max-w-3xl' : 'max-w-md space-y-4'"
         >
             <div
-                class="flex items-center justify-between border-b border-slate-800 pb-3"
+                class="flex items-center justify-between border-b border-editor-border pb-3"
             >
                 <div class="flex items-center gap-2">
                     <button
                         v-if="step === 'layout' || step === 'details'"
                         type="button"
-                        class="cursor-pointer border-0 bg-transparent p-1 text-slate-400 transition hover:text-white"
+                        class="cursor-pointer rounded-[4px] border-0 bg-transparent p-1 text-editor-text-muted transition hover:bg-editor-panel-muted hover:text-editor-text"
                         :aria-label="
                             step === 'layout' ? 'Back to mode' : 'Back'
                         "
                         @click="
-                            step === 'layout' ? backToMode() : selectedLayoutKey ? backToLayouts() : backToMode()
+                            step === 'layout'
+                                ? backToMode()
+                                : selectedLayoutKey
+                                  ? backToLayouts()
+                                  : backToMode()
                         "
                     >
                         <ChevronLeft :size="18" />
                     </button>
-                    <h3 class="text-base font-bold text-white">
+                    <h3 class="text-base font-bold text-editor-text">
                         {{
                             step === 'mode'
                                 ? 'Create New Page'
@@ -169,7 +180,7 @@ const pageTypeLabel = (pageType) =>
                 </div>
                 <button
                     type="button"
-                    class="cursor-pointer border-0 bg-transparent p-1 text-slate-400 transition hover:text-white"
+                    class="cursor-pointer rounded-[4px] border-0 bg-transparent p-1 text-editor-text-muted transition hover:bg-editor-panel-muted hover:text-editor-text"
                     aria-label="Close"
                     @click="emit('close')"
                 >
@@ -181,19 +192,20 @@ const pageTypeLabel = (pageType) =>
             <div v-if="step === 'mode'" class="grid gap-3 py-2">
                 <button
                     type="button"
-                    class="group flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-800 p-4 text-left transition hover:border-indigo-500 hover:bg-slate-800/60 cursor-pointer"
+                    class="group flex cursor-pointer items-start gap-3 rounded-[7px] border border-editor-border bg-editor-panel-muted p-4 text-left transition hover:border-editor-text hover:bg-editor-panel"
                     @click="chooseBlank"
                 >
                     <div
-                        class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400"
+                        class="flex size-10 shrink-0 items-center justify-center rounded-[6px] bg-editor-accent-soft text-editor-text"
                     >
                         <FilePlus2 :size="18" />
                     </div>
                     <div>
-                        <span class="block text-sm font-semibold text-white"
+                        <span
+                            class="block text-sm font-semibold text-editor-text"
                             >Start blank</span
                         >
-                        <span class="mt-1 block text-xs text-slate-400"
+                        <span class="mt-1 block text-xs text-editor-text-muted"
                             >Begin with a single hero block and build your page
                             from scratch.</span
                         >
@@ -203,21 +215,22 @@ const pageTypeLabel = (pageType) =>
                 <button
                     type="button"
                     :disabled="pageLayouts.length === 0"
-                    class="group flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-800 p-4 text-left transition hover:border-indigo-500 hover:bg-slate-800/60 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                    class="group flex cursor-pointer items-start gap-3 rounded-[7px] border border-editor-border bg-editor-panel-muted p-4 text-left transition hover:border-editor-text hover:bg-editor-panel disabled:cursor-not-allowed disabled:opacity-50"
                     @click="chooseLayouts"
                 >
                     <div
-                        class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400"
+                        class="flex size-10 shrink-0 items-center justify-center rounded-[6px] bg-editor-accent-soft text-editor-text"
                     >
                         <LayoutTemplate :size="18" />
                     </div>
                     <div>
-                        <span class="block text-sm font-semibold text-white"
+                        <span
+                            class="block text-sm font-semibold text-editor-text"
                             >Choose a layout</span
                         >
-                        <span class="mt-1 block text-xs text-slate-400"
-                            >Start from a pre-designed page layout. Everything is
-                            fully editable.</span
+                        <span class="mt-1 block text-xs text-editor-text-muted"
+                            >Start from a pre-designed page layout. Everything
+                            is fully editable.</span
                         >
                     </div>
                 </button>
@@ -231,8 +244,8 @@ const pageTypeLabel = (pageType) =>
                         class="cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold transition"
                         :class="
                             activeFilter === 'all'
-                                ? 'border-indigo-500 bg-indigo-500/10 text-indigo-300'
-                                : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'
+                                ? 'border-editor-text bg-editor-text text-white'
+                                : 'border-editor-border bg-editor-panel-muted text-editor-text-muted hover:border-editor-border-strong hover:text-editor-text'
                         "
                         @click="activeFilter = 'all'"
                     >
@@ -245,8 +258,8 @@ const pageTypeLabel = (pageType) =>
                         class="cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold capitalize transition"
                         :class="
                             activeFilter === pageType
-                                ? 'border-indigo-500 bg-indigo-500/10 text-indigo-300'
-                                : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'
+                                ? 'border-editor-text bg-editor-text text-white'
+                                : 'border-editor-border bg-editor-panel-muted text-editor-text-muted hover:border-editor-border-strong hover:text-editor-text'
                         "
                         @click="activeFilter = pageType"
                     >
@@ -254,19 +267,21 @@ const pageTypeLabel = (pageType) =>
                     </button>
                 </div>
 
-                <div class="grid max-h-[60vh] gap-3 overflow-y-auto sm:grid-cols-2">
+                <div
+                    class="grid max-h-[60vh] gap-3 overflow-y-auto sm:grid-cols-2"
+                >
                     <button
                         v-for="layout in filteredLayouts"
                         :key="layout.key"
                         type="button"
-                        class="group overflow-hidden rounded-xl border border-slate-700 bg-slate-800 text-left transition hover:border-indigo-500 cursor-pointer"
+                        class="group cursor-pointer overflow-hidden rounded-[7px] border border-editor-border bg-editor-panel-muted text-left transition hover:border-editor-text"
                         @click="selectLayout(layout.key)"
                     >
                         <div
-                            class="flex h-28 items-center justify-center overflow-hidden border-b border-slate-700 bg-slate-950/60"
+                            class="flex h-28 items-center justify-center overflow-hidden border-b border-editor-border bg-editor-bg"
                         >
                             <div
-                                class="pointer-events-none flex w-full max-w-[280px] scale-[0.32] origin-top flex-col gap-1"
+                                class="pointer-events-none flex w-full max-w-[280px] origin-top scale-[0.32] flex-col gap-1"
                             >
                                 <RenderPublicNode
                                     v-for="node in layout.preview_blocks"
@@ -275,20 +290,22 @@ const pageTypeLabel = (pageType) =>
                                 />
                             </div>
                         </div>
-                        <div class="flex items-center justify-between gap-2 p-3">
+                        <div
+                            class="flex items-center justify-between gap-2 p-3"
+                        >
                             <div class="min-w-0">
                                 <span
-                                    class="block truncate text-sm font-semibold text-white"
+                                    class="block truncate text-sm font-semibold text-editor-text"
                                     >{{ layout.label }}</span
                                 >
                                 <span
-                                    class="block text-[10px] font-medium capitalize text-slate-500"
+                                    class="block text-[10px] font-medium text-editor-text-muted capitalize"
                                     >{{ layout.industry }} ·
                                     {{ pageTypeLabel(layout.page_type) }}</span
                                 >
                             </div>
                             <div
-                                class="flex size-6 shrink-0 items-center justify-center rounded-full border border-slate-700 text-slate-500 transition group-hover:border-indigo-500 group-hover:text-indigo-400"
+                                class="flex size-6 shrink-0 items-center justify-center rounded-full border border-editor-border text-editor-text-muted transition group-hover:border-editor-text group-hover:bg-editor-text group-hover:text-white"
                             >
                                 <Check :size="12" />
                             </div>
@@ -301,23 +318,24 @@ const pageTypeLabel = (pageType) =>
             <form v-else @submit.prevent="submitCreatePage" class="space-y-4">
                 <div
                     v-if="selectedLayout"
-                    class="flex items-center justify-between gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3"
+                    class="flex items-center justify-between gap-3 rounded-[6px] border border-editor-border bg-editor-panel-muted p-3"
                 >
                     <div class="flex items-center gap-2">
-                        <LayoutTemplate :size="14" class="text-emerald-400" />
+                        <LayoutTemplate :size="14" class="text-editor-text" />
                         <div>
                             <span
-                                class="block text-xs font-semibold text-emerald-300"
+                                class="block text-xs font-semibold text-editor-text"
                                 >Selected layout</span
                             >
-                            <span class="block text-xs text-slate-400">{{
-                                selectedLayout.label
-                            }}</span>
+                            <span
+                                class="block text-xs text-editor-text-muted"
+                                >{{ selectedLayout.label }}</span
+                            >
                         </div>
                     </div>
                     <button
                         type="button"
-                        class="cursor-pointer border-0 bg-transparent text-xs font-semibold text-indigo-400 hover:text-indigo-300"
+                        class="cursor-pointer border-0 bg-transparent text-xs font-semibold text-editor-text underline-offset-4 hover:underline"
                         @click="backToLayouts"
                     >
                         Change
@@ -325,34 +343,42 @@ const pageTypeLabel = (pageType) =>
                 </div>
 
                 <div>
-                    <label class="mb-1 block text-xs font-semibold text-slate-400"
+                    <label
+                        class="mb-1 block text-xs font-semibold text-editor-text-muted"
                         >Page Title</label
                     >
                     <input
                         v-model="createForm.title"
                         type="text"
                         required
-                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white text-slate-100 focus:border-indigo-500 focus:outline-none"
+                        class="w-full rounded-[6px] border border-editor-border bg-editor-panel px-3 py-2 text-sm text-editor-text outline-none focus:border-editor-text"
                         placeholder="e.g. About Us"
                         @input="autoGenerateSlug"
                     />
-                    <p v-if="createForm.errors.title" class="mt-1 text-xs text-rose-500">
+                    <p
+                        v-if="createForm.errors.title"
+                        class="mt-1 text-xs text-rose-500"
+                    >
                         {{ createForm.errors.title }}
                     </p>
                 </div>
 
                 <div>
-                    <label class="mb-1 block text-xs font-semibold text-slate-400"
+                    <label
+                        class="mb-1 block text-xs font-semibold text-editor-text-muted"
                         >URL Slug</label
                     >
                     <input
                         v-model="createForm.slug"
                         type="text"
                         required
-                        class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 font-mono text-sm text-white text-slate-100 focus:border-indigo-500 focus:outline-none"
+                        class="w-full rounded-[6px] border border-editor-border bg-editor-panel px-3 py-2 font-mono text-sm text-editor-text outline-none focus:border-editor-text"
                         placeholder="e.g. about-us"
                     />
-                    <p v-if="createForm.errors.slug" class="mt-1 text-xs text-rose-500">
+                    <p
+                        v-if="createForm.errors.slug"
+                        class="mt-1 text-xs text-rose-500"
+                    >
                         {{ createForm.errors.slug }}
                     </p>
                 </div>
@@ -367,7 +393,7 @@ const pageTypeLabel = (pageType) =>
                 <div class="flex items-center justify-end gap-3 pt-2">
                     <button
                         type="button"
-                        class="cursor-pointer rounded-lg border border-slate-700 bg-slate-800 py-2 px-4 text-xs font-semibold text-slate-200 transition hover:bg-slate-700"
+                        class="cursor-pointer rounded-[6px] border border-editor-border bg-editor-panel px-4 py-2 text-xs font-semibold text-editor-text transition hover:bg-editor-panel-muted"
                         @click="emit('close')"
                     >
                         Cancel
@@ -375,9 +401,13 @@ const pageTypeLabel = (pageType) =>
                     <button
                         type="submit"
                         :disabled="createForm.processing"
-                        class="cursor-pointer rounded-lg border-0 bg-indigo-600 py-2 px-4 text-xs font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-50"
+                        class="cursor-pointer rounded-[6px] border border-editor-text bg-editor-text px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        {{ createForm.processing ? 'Creating...' : 'Create Page' }}
+                        {{
+                            createForm.processing
+                                ? 'Creating...'
+                                : 'Create Page'
+                        }}
                     </button>
                 </div>
             </form>

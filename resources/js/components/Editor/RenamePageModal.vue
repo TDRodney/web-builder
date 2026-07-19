@@ -30,16 +30,22 @@ const extractHttpError = (error) => {
   if (error?.response?.data?.message) {
     return error.response.data.message;
   }
+
   if (error?.message) {
     return error.message;
   }
+
   return 'An unknown error occurred';
 };
 
 const submitRenamePage = async () => {
-  if (!props.page) return;
+  if (!props.page) {
+return;
+}
+
   pageActionError.value = '';
   const loadingToast = toast.loading('Saving settings...');
+
   try {
     const res = await renameForm.patch(`/editor/pages/${props.page.id}`);
 
@@ -55,6 +61,7 @@ const submitRenamePage = async () => {
     }
   } catch (err) {
     const message = extractHttpError(err);
+
     if (message !== null) {
       pageActionError.value = message;
       toast.error(`Failed to update page: ${message}`, { id: loadingToast });

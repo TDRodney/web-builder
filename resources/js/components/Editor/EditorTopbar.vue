@@ -3,41 +3,83 @@ import { Link } from '@inertiajs/vue3';
 import {
     ArrowLeft,
     ExternalLink,
+    FileText,
+    Images,
+    Loader2,
     Monitor,
+    Palette,
     PanelLeft,
+    PanelRight,
+    PanelTop,
     Redo2,
     Smartphone,
     Tablet,
     Undo2,
+    Upload,
 } from '@lucide/vue';
 import { computed } from 'vue';
 
-const props = defineProps({
-    dashboardUrl: { type: String, required: true },
-    liveUrl: { type: String, required: true },
-    pageTitle: { type: String, default: 'Untitled page' },
-    tenantName: { type: String, default: 'Workspace' },
-    viewMode: { type: String, required: true },
-    canUndo: { type: Boolean, default: false },
-    canRedo: { type: Boolean, default: false },
-    saveState: { type: String, default: 'saved' },
-    commercePreview: { type: Object, default: () => ({}) },
-    pages: { type: Array, default: () => [] },
-    currentPageSlug: { type: String, default: '' },
-});
+interface EditorPageOption {
+    id: number;
+    slug: string;
+    title: string;
+    is_homepage?: boolean;
+}
+
+const props = withDefaults(
+    defineProps<{
+        dashboardUrl: string;
+        liveUrl: string;
+        pageTitle?: string;
+        tenantName?: string;
+        viewMode: string;
+        canUndo?: boolean;
+        canRedo?: boolean;
+        saveState?: string;
+        commercePreview?: { options?: Array<Record<string, string>> };
+        pages?: EditorPageOption[];
+        currentPageSlug?: string;
+        sidebarCollapsed?: boolean;
+        inspectorCollapsed?: boolean;
+        workspaceMode?: string;
+        isPublishing?: boolean;
+        isSaving?: boolean;
+        saveError?: string;
+    }>(),
+    {
+        pageTitle: 'Untitled page',
+        tenantName: 'Workspace',
+        canUndo: false,
+        canRedo: false,
+        saveState: 'saved',
+        commercePreview: () => ({}),
+        pages: () => [],
+        currentPageSlug: '',
+        sidebarCollapsed: false,
+        inspectorCollapsed: false,
+        workspaceMode: 'pages',
+        isPublishing: false,
+        isSaving: false,
+        saveError: '',
+    },
+);
 
 const emit = defineEmits([
     'toggle-sidebar',
+    'toggle-inspector',
     'update:view-mode',
     'undo',
     'redo',
     'update:commerce-preview',
     'switch-page',
+    'update:workspace-mode',
+    'open-media',
+    'publish',
 ]);
 
 const productPreviewOptions = computed(() =>
     (props.commercePreview?.options || []).filter(
-        (option: Record<string, string>) => option.resource === 'product',
+        (option) => option.resource === 'product',
     ),
 );
 
@@ -45,6 +87,12 @@ const viewModes = [
     { value: 'desktop', label: 'Desktop view', icon: Monitor },
     { value: 'tablet', label: 'Tablet view', icon: Tablet },
     { value: 'mobile', label: 'Mobile view', icon: Smartphone },
+];
+
+const workspaceModes = [
+    { value: 'pages', label: 'Pages', icon: FileText },
+    { value: 'navigation', label: 'Navigation', icon: PanelTop },
+    { value: 'theme', label: 'Theme', icon: Palette },
 ];
 </script>
 
@@ -54,10 +102,21 @@ const viewModes = [
             <button
                 type="button"
                 class="sidebar-toggle"
-                aria-label="Toggle editor sidebar"
+                :aria-label="
+                    sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'
+                "
+                :title="
+                    sidebarCollapsed
+                        ? 'Expand sidebar (Ctrl+\\)'
+                        : 'Collapse sidebar (Ctrl+\\)'
+                "
                 @click="emit('toggle-sidebar')"
             >
-                <PanelLeft :size="16" />
+                <PanelLeft
+                    :size="16"
+                    class="collapse-icon-rotate"
+                    :class="{ 'is-collapsed': sidebarCollapsed }"
+                />
             </button>
 
             <Link :href="dashboardUrl" class="back-link">
@@ -66,8 +125,11 @@ const viewModes = [
             </Link>
 
             <div class="builder-title">
-                <span class="builder-kicker">Visual builder</span>
-                <label class="builder-page-select">
+                <span class="builder-kicker">Website builder</span>
+                <label
+                    v-if="workspaceMode === 'pages'"
+                    class="builder-page-select"
+                >
                     <span class="sr-only">Edit page</span>
                     <select
                         :value="currentPageSlug"
@@ -89,11 +151,45 @@ const viewModes = [
                         </option>
                     </select>
                 </label>
+                <span v-else class="builder-workspace-label">
+                    {{ tenantName }} / {{ workspaceMode }}
+                </span>
             </div>
         </div>
 
         <div class="preview-tools">
-            <label v-if="productPreviewOptions.length" class="resource-preview">
+            <nav class="workspace-switcher" aria-label="Builder workspace">
+                <button
+                    v-for="workspace in workspaceModes"
+                    :key="workspace.value"
+                    type="button"
+                    class="workspace-button"
+                    :class="{
+                        'workspace-button-active':
+                            workspaceMode === workspace.value,
+                    }"
+                    :aria-current="
+                        workspaceMode === workspace.value ? 'page' : undefined
+                    "
+                    @click="emit('update:workspace-mode', workspace.value)"
+                >
+                    <component :is="workspace.icon" :size="13" />
+                    <span>{{ workspace.label }}</span>
+                </button>
+                <button
+                    type="button"
+                    class="workspace-button"
+                    @click="emit('open-media')"
+                >
+                    <Images :size="13" />
+                    <span>Media</span>
+                </button>
+            </nav>
+
+            <label
+                v-if="workspaceMode === 'pages' && productPreviewOptions.length"
+                class="resource-preview"
+            >
                 <span>Fixture product</span>
                 <select
                     :value="commercePreview?.selected || ''"
@@ -114,7 +210,11 @@ const viewModes = [
                     </option>
                 </select>
             </label>
-            <div class="viewport-switcher" aria-label="Preview size">
+            <div
+                v-if="workspaceMode === 'pages'"
+                class="viewport-switcher"
+                aria-label="Preview size"
+            >
                 <button
                     v-for="mode in viewModes"
                     :key="mode.value"
@@ -154,7 +254,7 @@ const viewModes = [
                     type="button"
                     class="icon-action"
                     :disabled="!canUndo"
-                    title="Undo"
+                    title="Undo (Ctrl+Z)"
                     aria-label="Undo"
                     @click="emit('undo')"
                 >
@@ -164,13 +264,43 @@ const viewModes = [
                     type="button"
                     class="icon-action"
                     :disabled="!canRedo"
-                    title="Redo"
+                    title="Redo (Ctrl+Shift+Z)"
                     aria-label="Redo"
                     @click="emit('redo')"
                 >
                     <Redo2 :size="15" />
                 </button>
+                <button
+                    v-if="workspaceMode === 'pages'"
+                    type="button"
+                    class="icon-action"
+                    :class="{ 'icon-action-active': !inspectorCollapsed }"
+                    :title="
+                        inspectorCollapsed ? 'Show inspector' : 'Hide inspector'
+                    "
+                    :aria-label="
+                        inspectorCollapsed ? 'Show inspector' : 'Hide inspector'
+                    "
+                    @click="emit('toggle-inspector')"
+                >
+                    <PanelRight :size="15" />
+                </button>
             </div>
+
+            <button
+                type="button"
+                class="publish-action"
+                :disabled="isPublishing || isSaving || !!saveError"
+                @click="emit('publish')"
+            >
+                <Loader2
+                    v-if="isPublishing"
+                    :size="13"
+                    class="animate-spin motion-reduce:animate-none"
+                />
+                <Upload v-else :size="13" />
+                <span>{{ isPublishing ? 'Publishing' : 'Publish' }}</span>
+            </button>
 
             <a
                 :href="liveUrl"
@@ -194,15 +324,17 @@ const viewModes = [
     align-items: center;
     min-height: 54px;
     padding: 0 12px 0 10px;
-    color: #e5e7eb;
-    background: #0c0c0d;
-    border-bottom: 1px solid #252527;
+    color: var(--editor-text);
+    background: var(--editor-panel);
+    border-bottom: 1px solid var(--editor-border);
+    box-shadow: 0 1px 3px rgb(24 24 27 / 4%);
 }
 
 .topbar-identity,
 .topbar-actions,
 .history-actions,
 .viewport-switcher,
+.workspace-switcher,
 .preview-tools,
 .back-link,
 .live-link,
@@ -222,9 +354,9 @@ const viewModes = [
     justify-content: center;
     width: 32px;
     height: 32px;
-    color: #a1a1aa;
-    background: #171719;
-    border: 1px solid #303033;
+    color: var(--editor-text-muted);
+    background: var(--editor-panel-muted);
+    border: 1px solid var(--editor-border);
     border-radius: 5px;
     cursor: pointer;
 }
@@ -233,13 +365,13 @@ const viewModes = [
     height: 30px;
     padding: 0 10px;
     gap: 6px;
-    color: #cbd5e1;
+    color: var(--editor-text);
     font-size: 11px;
     font-weight: 650;
     letter-spacing: 0.04em;
     text-decoration: none;
     text-transform: uppercase;
-    border: 1px solid #6b7280;
+    border: 1px solid var(--editor-border-strong);
     border-radius: 6px;
     transition:
         border-color 150ms ease,
@@ -249,9 +381,9 @@ const viewModes = [
 
 .back-link:hover,
 .back-link:focus-visible {
-    color: #ffffff;
-    background: #1c1c1f;
-    border-color: #d1d5db;
+    color: var(--editor-accent);
+    background: var(--editor-accent-soft);
+    border-color: color-mix(in srgb, var(--editor-accent) 35%, white);
 }
 
 .builder-title {
@@ -259,11 +391,11 @@ const viewModes = [
     min-width: 0;
     flex-direction: column;
     padding-left: 8px;
-    border-left: 1px solid #2b2b2e;
+    border-left: 1px solid var(--editor-border);
 }
 
 .builder-kicker {
-    color: #7c8eae;
+    color: var(--editor-accent);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.15em;
@@ -273,11 +405,17 @@ const viewModes = [
 .builder-page-select select {
     max-width: 240px;
     padding: 0;
-    color: #9ca3af;
+    color: var(--editor-text-muted);
     background: transparent;
     border: 0;
     font-size: 10px;
     cursor: pointer;
+}
+
+.builder-workspace-label {
+    color: var(--editor-text-muted);
+    font-size: 10px;
+    text-transform: capitalize;
 }
 
 .builder-page-select select:focus-visible {
@@ -300,9 +438,38 @@ const viewModes = [
 .viewport-switcher {
     padding: 3px;
     gap: 2px;
-    background: #171719;
-    border: 1px solid #2d2d30;
+    background: var(--editor-panel-muted);
+    border: 1px solid var(--editor-border);
     border-radius: 6px;
+}
+
+.workspace-switcher {
+    padding: 3px;
+    gap: 2px;
+    background: var(--editor-panel-muted);
+    border: 1px solid var(--editor-border);
+    border-radius: 6px;
+}
+
+.workspace-button {
+    display: inline-flex;
+    align-items: center;
+    height: 28px;
+    padding: 0 9px;
+    gap: 5px;
+    color: var(--editor-text-muted);
+    font-size: 10px;
+    font-weight: 650;
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.workspace-button:hover,
+.workspace-button-active {
+    color: var(--editor-accent);
+    background: var(--editor-panel);
 }
 .preview-tools {
     justify-self: center;
@@ -312,7 +479,7 @@ const viewModes = [
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #7c8eae;
+    color: var(--editor-text-muted);
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -322,9 +489,9 @@ const viewModes = [
     max-width: 150px;
     height: 30px;
     padding: 0 8px;
-    color: #d1d5db;
-    background: #171719;
-    border: 1px solid #303033;
+    color: var(--editor-text);
+    background: var(--editor-panel);
+    border: 1px solid var(--editor-border);
     border-radius: 5px;
     font-size: 10px;
 }
@@ -335,7 +502,7 @@ const viewModes = [
     height: 28px;
     padding: 0 12px;
     gap: 7px;
-    color: #72809a;
+    color: var(--editor-text-muted);
     font-size: 11px;
     font-weight: 600;
     background: transparent;
@@ -348,13 +515,15 @@ const viewModes = [
 }
 
 .viewport-button:hover {
-    color: #d1d5db;
+    color: var(--editor-text);
 }
 
 .viewport-button-active {
-    color: #ffffff;
-    background: #343437;
-    box-shadow: inset 0 0 0 1px #3f3f43;
+    color: var(--editor-accent);
+    background: var(--editor-panel);
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--editor-accent) 35%, white),
+        0 1px 3px rgb(24 24 27 / 8%);
 }
 
 .topbar-actions {
@@ -364,7 +533,7 @@ const viewModes = [
 
 .save-state {
     gap: 6px;
-    color: #9ca3af;
+    color: var(--editor-text-muted);
     font-size: 10px;
     font-weight: 650;
     letter-spacing: 0.08em;
@@ -404,22 +573,28 @@ const viewModes = [
     justify-content: center;
     width: 30px;
     height: 30px;
-    color: #cbd5e1;
-    background: #171719;
-    border: 1px solid #303033;
+    color: var(--editor-text-muted);
+    background: var(--editor-panel-muted);
+    border: 1px solid var(--editor-border);
     border-radius: 5px;
     cursor: pointer;
 }
 
 .icon-action:hover:not(:disabled) {
-    color: #ffffff;
-    background: #29292c;
+    color: var(--editor-accent);
+    background: var(--editor-accent-soft);
 }
 
 .icon-action:disabled {
-    color: #52525b;
+    color: var(--editor-border-strong);
     cursor: not-allowed;
     opacity: 0.7;
+}
+
+.icon-action-active {
+    color: var(--editor-accent);
+    background: var(--editor-accent-soft);
+    border-color: color-mix(in srgb, var(--editor-accent) 30%, white);
 }
 
 .live-link {
@@ -430,23 +605,48 @@ const viewModes = [
     font-size: 11px;
     font-weight: 650;
     text-decoration: none;
-    background: #262629;
-    border: 1px solid #303033;
+    background: var(--editor-text);
+    border: 1px solid var(--editor-text);
     border-radius: 5px;
     transition:
         background 150ms ease,
         border-color 150ms ease;
 }
 
+.publish-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    padding: 0 11px;
+    gap: 6px;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 650;
+    background: var(--editor-accent);
+    border: 1px solid var(--editor-accent);
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.publish-action:hover:not(:disabled) {
+    filter: brightness(0.9);
+}
+
+.publish-action:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
 .live-link:hover,
 .live-link:focus-visible {
-    background: #343438;
-    border-color: #52525b;
+    background: #27272a;
+    border-color: #27272a;
 }
 
 button:focus-visible,
 a:focus-visible {
-    outline: 2px solid #93c5fd;
+    outline: 2px solid color-mix(in srgb, var(--editor-accent) 45%, white);
     outline-offset: 2px;
 }
 
@@ -468,12 +668,23 @@ a:focus-visible {
     }
 
     .builder-page-select,
+    .builder-workspace-label,
     .save-state {
         display: none;
     }
 
     .viewport-button span {
         display: none;
+    }
+
+    .workspace-button span {
+        display: none;
+    }
+
+    .workspace-button {
+        width: 30px;
+        padding: 0;
+        justify-content: center;
     }
 
     .viewport-button {
@@ -497,10 +708,14 @@ a:focus-visible {
         display: none;
     }
 
-    .viewport-switcher {
+    .preview-tools {
         position: absolute;
         left: 50%;
         transform: translateX(-50%);
+    }
+
+    .viewport-switcher {
+        display: none;
     }
 
     .resource-preview {
@@ -509,6 +724,15 @@ a:focus-visible {
 
     .live-link span {
         display: none;
+    }
+
+    .publish-action span {
+        display: none;
+    }
+
+    .publish-action {
+        width: 32px;
+        padding: 0;
     }
 
     .live-link {

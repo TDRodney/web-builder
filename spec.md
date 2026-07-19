@@ -1,6 +1,6 @@
 # Web Builder — Ground-Truth Project Specification
 
-> Last reconciled with the active codebase on 2026-07-14. Implemented behavior is documented, and known implementation/documentation mismatches are called out explicitly.
+> Last reconciled with the active codebase on 2026-07-18. Implemented behavior is documented, and known implementation/documentation mismatches are called out explicitly.
 
 ---
 
@@ -26,11 +26,11 @@ graph LR
 
   subgraph Tenant["Tenant Subdomain ({slug}.domain.localhost)"]
     TenantDash["Tenant Dashboard"]
-    Editor["Canvas Editor (authed)"]
+    Editor["Unified Website Builder (authed)"]
     Public["Public Site (Inertia SSR)"]
   end
 
-  Auth -- "login/register redirect" --> Editor
+  Auth -- "login/register redirect" --> TenantDash
   Dashboard -- "redirect if tenant exists" --> TenantDash
   Editor -- "publish" --> Public
 ```
@@ -272,16 +272,17 @@ interface BlockNode {
 | `AtomicText` | Leaf | `content`, `fontSize`, `color`, `padding`, `backgroundColor` |
 | `LayoutGrid` | Container | `columns`, `gap`, `padding`, `backgroundColor` + `children[]` (auto-creates 3 LayoutColumns on insert) |
 | `LayoutColumn` | Container | `span`, `padding`, `width`, `height`, `gap`, `backgroundColor` + `children[]` |
-| `ButtonBlock` | Leaf | `label`, `variant` (primary/secondary/outline), `url`, `size` (sm/md/lg) |
+| `ButtonBlock` | Leaf | `label`, `variant` (primary/secondary/outline), `url`, `openInNewTab` (adds `target="_blank"` + `rel`), `size` (sm/md/lg), `alignment` |
 | `DividerBlock` | Leaf | `thickness` (1-8), `color`, `margin` (0-60) |
 | `SpacerBlock` | Leaf | `height` (4-200) |
 | `ImageBlock` | Leaf | `src`, `alt`, `objectFit`, `borderRadius`, `width`, `height`, `padding`, `backgroundColor` |
-| `RichTextBlock` | Leaf | `html`, `padding`, `backgroundColor`; TipTap provides the editor UI and the public renderer outputs the stored HTML |
-| `VideoEmbedBlock` | Leaf | `url`, `provider` (youtube/vimeo/loom/raw), `aspectRatio` (16/9, 4/3, 1/1), `padding`, `backgroundColor` |
+| `RichTextBlock` | Leaf | `html`, `padding`, `backgroundColor`; TipTap provides the editor UI (bold/italic/headings/lists plus per-selection text color via `@tiptap/extension-text-style` Color) and the public renderer outputs the stored HTML including inline `style="color: …"` spans |
+| `VideoEmbedBlock` | Leaf | `url`, `provider` (youtube/vimeo/loom/raw), `aspectRatio` (16/9, 4/3, 1/1), `posterUrl` (optional thumbnail override), `padding`, `backgroundColor`; lite-embed loads a thumbnail poster first and the `<iframe>` only on click on the public site |
 | `FAQBlock` | Leaf | `items[]` (question/answer pairs), `padding`, `backgroundColor` |
 | `TestimonialBlock` | Leaf | `quote`, `authorName`, `authorRole`, `avatarSrc`, `padding`, `backgroundColor` |
 | `PricingTableBlock` | Leaf | `plans[]` (title/price/period/features/ctaText/ctaUrl/isPopular), `padding`, `backgroundColor` |
 | `ContactFormBlock` | Leaf | `fields[]` (type/label/placeholder/required), `submitLabel`, `successMessage`, `padding`, `backgroundColor` |
+| `MenuBlock` | Leaf | `heading`, `subheading`, `columns` (1-3), `items[]` (category/name/description/price grouped by category), `padding`, `backgroundColor`; used by the Restaurant Menu kit page |
 
 ---
 
@@ -326,12 +327,14 @@ All routes protected by [IdentifyTenant](file:///c:/Users/Z.BOOK/Desktop/things/
 
 | Method | Path | Name | Controller / Handler | Auth | Description |
 |---|---|---|---|---|---|---|
-| `GET` | `/dashboard` | `dashboard` | Closure → Inertia `CentralDashboard` (with tenant + theme_config props) | auth | Tenant-scoped dashboard |
-| `GET` | `/designs` | `tenant.designs.index` | `TenantDesignLibraryController::index` | auth | Browse site kits and render homepage previews through the shared public block renderer |
+| `GET` | `/dashboard` | `dashboard` | Closure → Inertia `CentralDashboard` | auth | Business/site overview with status, page counts, theme summary, and builder quick actions |
+| `GET` | `/dashboard/navbars` | `tenant.navbars.index` | Ownership-checked redirect | auth | Legacy compatibility redirect to `/editor?workspace=navigation` |
+| `GET` | `/dashboard/theme` | `tenant.theme.index` | Ownership-checked redirect | auth | Legacy compatibility redirect to `/editor?workspace=theme` |
+| `GET` | `/designs` | `tenant.designs.index` | `TenantDesignLibraryController::index` | auth | Onboarding-only site-kit selection; established workspaces redirect to the editor |
 | `POST` | `/designs/site-kits/{kit}/apply` | `tenant.designs.apply-kit` | `TenantDesignLibraryController::store` | auth | Apply a site kit to an eligible workspace (transactional: creates pages, applies style, completes setup) |
 | `POST` | `/designs/start-from-scratch` | `tenant.designs.start-from-scratch` | `TenantDesignLibraryController::startFromScratch` | auth | Opt out of the kit flow and mark setup complete without creating content |
 | `PATCH` | `/theme` | `tenant.theme.update` | [TenantThemeController::update](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantThemeController.php#L22) | auth | Save theme settings (colors, typography, borderRadius) |
-| `GET` | `/editor` | `tenant.editor` | [TenantEditorController::edit](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantEditorController.php#L10) | auth | Canvas editor (accepts optional `?page={slug}`, resolves active or homepage, passes pages + urls props) |
+| `GET` | `/editor` | `tenant.editor` | [TenantEditorController::edit](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantEditorController.php#L10) | auth | Unified builder; accepts `?page={slug}` and `?workspace=pages|navigation|theme` |
 | `POST` | `/editor/save` | `tenant.page.save` | [TenantPageSaveController::store](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageSaveController.php#L12) | auth | Save draft_config (JSON endpoint) |
 | `POST` | `/editor/publish` | `tenant.page.publish` | [TenantPageSaveController::publish](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageSaveController.php#L43) | auth | Promote draft → published (DB transaction) |
 | `GET` | `/editor/pages` | `tenant.pages.index` | [TenantPageController::index](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/app/Http/Controllers/TenantPageController.php#L10) | auth | List all tenant pages |
@@ -398,7 +401,7 @@ sequenceDiagram
     Tenant->>User: Inertia render CentralDashboard with site-kit eligibility
 ```
 
-New registrations intentionally create no pages, theme configuration, or navigation configuration. They remain eligible for an initial site kit until one is applied, a "Start from scratch" action completes setup, or a successful page/theme/navigation mutation marks setup complete. Direct editor access by an eligible empty tenant redirects to `/designs` instead of creating content during a GET request. The `/designs` page offers two exit paths: "Use this design" applies the selected kit transactionally, and "Start from scratch" marks setup complete with an empty workspace so the user can create pages in the editor.
+New registrations intentionally create no pages, theme configuration, or navigation configuration. They remain eligible for an initial site kit until one is applied, a "Start from scratch" action completes setup, or a successful page/theme/navigation mutation marks setup complete. Direct editor access by an eligible empty tenant redirects to `/designs` instead of creating content during a GET request. The `/designs` page offers two exit paths: "Use this design" applies the selected kit transactionally, and "Start from scratch" marks setup complete with an empty workspace so the user can create pages in the editor. After setup, direct `/designs` requests redirect to the unified editor and kits disappear from everyday navigation.
 
 ### 4.2 Editor Auto-Save Flow (Draft Persistence)
 
@@ -489,9 +492,9 @@ The block configuration is rendered in a unified rendering pipeline governed by 
 | **Editor (authed)** | Vue components via `RenderNode` | Vue 3 + vuedraggable | [RenderNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderNode.vue) | `draft_config` |
 | **Public Site (visitor)** | Vue components via Inertia; SSR-capable | Vue 3 client rendering or SSR when the SSR server is active | [RenderPublicNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderPublicNode.vue) | `published_config` |
 
-The [blockRegistry.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/lib/blockRegistry.ts) file maps type strings to Vue components. Block definitions (defaultProps, inspectorFields, labels, icons, categories) are dynamically resolved from `config/blocks.php` shared via Inertia's `blocksConfig` prop. The full registry of 15 block types: `HeroBlock`, `FeatureBlock`, `AtomicText`, `LayoutGrid`, `LayoutColumn`, `ButtonBlock`, `DividerBlock`, `SpacerBlock`, `ImageBlock`, `RichTextBlock`, `VideoEmbedBlock`, `FAQBlock`, `TestimonialBlock`, `PricingTableBlock`, `ContactFormBlock`.
+The [blockRegistry.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/lib/blockRegistry.ts) file maps type strings to Vue components. Block definitions (defaultProps, inspectorFields, labels, icons, categories) are dynamically resolved from `config/blocks.php` shared via Inertia's `blocksConfig` prop. The registry includes: `SectionBlock`, `HeroBlock`, `FeatureBlock`, `AtomicText`, `LayoutGrid`, `LayoutColumn`, `ButtonBlock`, `DividerBlock`, `SpacerBlock`, `ImageBlock`, `RichTextBlock`, `VideoEmbedBlock`, `FAQBlock`, `TestimonialBlock`, `PricingTableBlock`, `ContactFormBlock`, `MenuBlock`, `AnnouncementBlock`, `ImageWithTextBlock`, `CollectionListBlock`, `ProductGridBlock`, `ProductDetailBlock`, `CartBlock`, `NewsletterBlock`, and `TrustValuesBlock`.
 
-In addition to individual block types, [blockPresets.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/lib/blockPresets.ts) defines 3 pre-designed multi-block templates (Hero with CTA, Features Grid, FAQ Accordion Row) that can be inserted as a group from the block library sidebar.
+In addition to individual block types, [blockPresets.ts](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/lib/blockPresets.ts) defines insertable section presets for the Block library Presets tab. Presets are grouped by job (`heroes`, `content`, `commerce`), each with a CSS wireframe `preview` key rendered by `PresetThumbnail.vue` using live theme tokens. Hero openings are `SectionBlock` pattern trees (`patternKey` + `patternRole`) so Change layout preserves content; the old duplicate “Hero with CTA” grid was removed in favor of the split-right pattern.
 
 The [RenderNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderNode.vue) component drives the editor canvas:
 - Uses Vue's `<component :is>` dynamic component resolution against the component registry map.
@@ -504,6 +507,7 @@ The [RenderPublicNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-build
 - Uses the same `<component :is>` mapping to resolve the exact same block component files.
 - Renders static, lightweight block layouts and children nodes recursively without drag-and-drop or select wrappers.
 - Employs a public Vue `onErrorCaptured` error boundary to catch dynamic rendering failures locally on live pages without crashing the entire page.
+- Applies the `v-reveal` directive (`resources/js/lib/reveal.ts`) driven by the optional `reveal`/`revealDelay` block props, producing a one-shot IntersectionObserver-based entrance animation on published pages and kit previews. The editor canvas ignores these props, and `prefers-reduced-motion` disables the effect.
 
 #### Nesting Constraints & Block Validation Pipeline
 
@@ -601,7 +605,20 @@ Configured in [FortifyServiceProvider](file:///c:/Users/Z.BOOK/Desktop/things/co
 | CSRF | Standard Laravel CSRF via Inertia |
 | Reserved subdomains | Blocked at registration validation |
 
-### 4.10 Page Switching & Settings Flow
+### 4.10 Unified Builder Workspace
+
+`Tenant/Editor.vue` is the single website workspace. Its top bar switches between page editing, global navigation, and global theme modes; Media opens the existing media manager without leaving the editor, and Publish remains available from the same shell.
+
+- **Pages** renders the block canvas, section library, content inspector, page manager, responsive preview controls, and page-level undo/redo.
+- **Navigation** mounts the full navigation outline, live preview, responsive controls, and inspector while persisting through `PATCH /editor/navigation`.
+- **Theme** mounts global palette, typography, corner controls, accessibility feedback, and live preview while persisting through `PATCH /theme`.
+- **Media** opens `MediaPicker.vue` as an editor overlay for listing, uploading, selecting, and deleting tenant media.
+- **Safe transitions** flush pending page changes with `forceSave()` before leaving page mode. A failed draft save blocks the workspace switch.
+- **Reactive global state** replaces the editor's in-memory theme/navigation configuration after a successful global save, so returning to the page canvas reflects the new site-wide settings without a separate application.
+
+The tenant dashboard is intentionally limited to website/business status and quick actions. Legacy Theme Studio and Navbar Studio URLs perform ownership-checked redirects into the corresponding editor mode.
+
+### 4.11 Page Switching & Settings Flow
 
 The multi-page lifecycle manages dynamic canvas reloading and metadata updates:
 
@@ -635,7 +652,7 @@ Key characteristics:
 - **Homepage Deletion Guard**: Page deletion requires confirmation; if the page is the designated homepage, the deletion request is blocked on the backend with a `422 Unprocessable` response, preventing tenants from being orphaned without a landing page.
 - **Normalized Prop Format**: The block structures are strictly normalized to a flat `props` key format. The registration seeder follows this schema to ensure freshly created tenants load successfully in the editor without schema drift.
 
-### 4.11 Media Management
+### 4.12 Media Management
 
 The editor includes a full media management pipeline via `TenantMediaController`:
 
@@ -646,24 +663,24 @@ The editor includes a full media management pipeline via `TenantMediaController`
 5. **Media Picker**: `MediaPicker.vue` is a modal component embedded in the editor that displays uploaded media in a grid, supports inline upload (drag-and-drop or file selector), and returns the selected image URL to the calling inspector field.
 6. **Block Integration**: `ImageBlock`, `TestimonialBlock` (avatar), and any block with a `'media'`-type inspector field can open the media picker via the `@open-media-picker` event in `ContentInspector.vue`.
 
-### 4.12 Navigation Configuration
+### 4.13 Navigation Configuration
 
 The editor includes a navigation editor for site-wide header/footer chrome outside the block tree:
 
-1. **Storage**: Stored as `navigation_config` JSON on the `Tenant` model with two top-level keys: `header` (logo visibility, nav items, CTA button) and `footer` (copyright text).
+1. **Storage**: Stored as `navigation_config` JSON on the `Tenant` model with two top-level keys: `header` (brand, nav items, menus, actions, and responsive presentation) and `footer` (variant, ordered modules, brand, link groups, callout, social links, appearance, and copyright).
 2. **Save API**: `PATCH /editor/navigation` validates and persists via `TenantNavigationController`.
-3. **Editor UI**: `NavigationSettings.vue` panel in the editor sidebar provides controls for managing the navigation structure.
+3. **Editor UI**: the unified editor's Navigation mode contains Header and Footer tabs. Header provides the full outline, inspector, responsive preview, presets, menu hierarchy, appearance, and interaction controls. Footer provides minimal, columns, callout, and editorial variants plus reorderable brand, links, callout, social, and copyright modules.
 4. **Rendering**: `TenantEditorController` and `TenantPublicSiteController` include `navigation_config` in their tenant props. `SiteHeader.vue` and `SiteFooter.vue` consume that configuration in both the editor canvas and public page.
 5. **Regression coverage**: `TenantNavigationTest` verifies API persistence and confirms that saved navigation is present in both editor and public Inertia responses.
 
-### 4.13 Contact Form Submissions
+### 4.14 Contact Form Submissions
 
 The public contact form block submits to `POST /contact` (no auth required):
 1. **Rate Limited**: 5 attempts per minute per IP address (inlined in `TenantContactController`).
 2. **Storage**: Creates a `ContactSubmission` record with `tenant_id`, optional `page_id`, submitted `form_data` (array), and `ip_address`.
 3. **Response**: Returns JSON success with the submission record.
 
-### 4.14 Design Catalog, Shared Page Layouts, and Site Kits
+### 4.15 Design Catalog, Shared Page Layouts, and Site Kits
 
 The design catalog is an additive composition layer over the existing page, block, theme, and navigation infrastructure. It must not introduce a second renderer, block registry, page model, or publishing workflow.
 
@@ -680,12 +697,18 @@ The first content release is limited to exactly three professional industry site
 The approved initial inventories are:
 
 - **Restaurant** — Home, Menu, About, and Reservations, with a warm editorial theme.
-- **Retail** — Home, Shop, About, and Contact, with a modern minimal editorial theme.
+- **Retail** — Home, Shop, Product, Cart, About, and Contact, with a modern minimal editorial theme.
 - **Hotel** — Home, Rooms, Amenities, and Contact, with a refined hospitality theme.
 
-Restaurant reservations and Hotel stay requests use the existing contact-submission pipeline as enquiries; they do not promise live availability or confirmed bookings. Retail Shop is a presentation layout and does not provide inventory, cart, checkout, or payment behavior.
+Restaurant reservations and Hotel stay requests use the existing contact-submission pipeline as enquiries; they do not promise live availability or confirmed bookings. Retail uses the standard storefront blocks and provider envelope. Fixture mode demonstrates provider-owned catalog, cart, and checkout-handoff behavior, but the kit never claims live inventory, payment, or order placement.
 
-Every initial page layout contains an `ImageBlock` with an empty `src` and descriptive replacement guidance. The editor displays the existing editable placeholder, and the block's existing media-picker integration lets users replace it with an uploaded image. No parallel asset source or image persistence path is introduced.
+Every catalog layout begins with a composable `SectionBlock` hero. The catalog and editor share five pattern keys: `hero-centered`, `hero-split-right`, `hero-split-left`, `hero-editorial`, and `hero-minimal`. Each pattern is an ordinary nested block tree, not a second template runtime. Editable descendants carry a semantic `patternRole` in ordinary props (`eyebrow`, `heading`, `body`, `primaryAction`, `secondaryAction`, or `media`). The section inspector's **Change layout** action creates the selected composition with fresh IDs and transfers role-matched text, button labels/URLs, and image source/alt values before the normal autosave flow persists the result.
+
+Footers remain global chrome outside the page block tree. The shared `SiteFooter.vue` renderer consumes a structured `navigation_config.footer` with a presentation variant and `moduleOrder`; the same component renders editor preview, design-library preview, and public pages. Reordering or hiding footer modules and selecting a footer logo occur in the unified Navigation workspace and save through the existing navigation endpoint.
+
+Every initial page layout contains an `ImageBlock` with an empty `src` and descriptive replacement guidance. The editor displays the existing editable placeholder, and the block's existing media-picker integration lets users replace it with an uploaded image. No parallel asset source or image persistence path is introduced. Empty media placeholders (in `ImageBlock`, `ImageWithTextBlock`, `CollectionListBlock`, and `ProductGridBlock`) render a theme-derived gradient treatment built from the CSS theme tokens so unpopulated kits still look designed; no image files ship with the catalog.
+
+Catalog layouts may also set the optional `reveal` and `revealDelay` presentation props on blocks (see §4.5). These are ordinary block props cloned on application; they animate published pages and kit previews only, never the editor canvas.
 
 Safety rules:
 
@@ -698,14 +721,18 @@ Safety rules:
 
 Workspace eligibility is stored as nullable `tenants.site_setup_completed_at` and also requires that the tenant has no pages, `theme_config`, or `navigation_config`. Historical tenants are backfilled as completed. Successful page create/update/delete/save/publish, theme updates, and navigation updates permanently complete setup; media operations do not because kit application does not remove the media library.
 
-The `/designs` Inertia page receives validated kit summaries and only each kit's homepage block tree for preview. It renders that tree with the existing `RenderPublicNode`, block registry, theme composable, header, and footer. Desktop, tablet, and mobile modes resize the same preview runtime. Empty kit images use the existing `ImageBlock` with a preview-only placeholder flag; public pages still render nothing for an empty source.
+The onboarding-only `/designs` Inertia page receives validated kit summaries and a read-only preview block tree for every page referenced by each kit. A page selector swaps those trees through the existing `RenderPublicNode`, block registry, theme composable, header, and footer; catalog data is never edited or persisted from the preview. Desktop, tablet, and mobile modes resize the same preview runtime, while Fit/100% controls the canvas width. Empty kit images use the existing `ImageBlock` with a preview-only placeholder flag; public pages still render nothing for an empty source. Established workspaces are redirected to the unified editor before catalog data is rendered.
 
-Implementation status: the catalog contract, validation foundation, three styles, fourteen page layouts, three site-kit manifests, dashboard design library, shared-renderer responsive previews, server eligibility lifecycle, transactional kit application (deep-clone ID regeneration, draft-only pages, style/navigation application, DB transaction with rollback), and the "Start from scratch" escape hatch are all implemented.
+Implementation status: the catalog contract, validation foundation, three styles, fourteen section-composed page layouts, three structured footer variants, three site-kit manifests, dashboard design library, shared-renderer responsive previews, server eligibility lifecycle, transactional kit application (deep-clone ID regeneration, draft-only pages, style/navigation application, DB transaction with rollback), and the "Start from scratch" escape hatch are all implemented.
 ## Storefront Blocks in the Standard Editor
 
 Retail storefront composition uses the ordinary page block AST and the existing editor/save/publish/public-rendering pipeline. The registered blocks are Announcement, Image with Text, Collection List, Product Grid, Product Detail, Newsletter, and Store Values. Product and collection blocks contain editable placeholder data plus versioned `sourceKey` bindings.
 
 Commerce hydration is request-time data, separate from page persistence. `CommerceHydrator` walks the selected draft or published block tree, resolves bound resources through `CommerceProvider`, and returns an envelope keyed by block UUID. The fixture provider supplies normalized development products, collections, variants, money, facets, and availability; the null provider returns explicit unavailable states. Neither provider modifies `draft_config` or `published_config`. A future platform integration implements the same provider contract and remains responsible for authoritative prices, inventory, cart totals, and checkout.
+
+`ProductGridBlock` is a smart presentation block with a dedicated Simple/Advanced inspector. Its source, provider sort, and limit select which normalized products are hydrated; its layout, card preset, content order/visibility, surface, responsive columns, image ratio, hover behavior, pagination, and button settings are ordinary presentation props. Grid, carousel, list, and editorial layouts share the same provider data. The builder never exposes product title, description, price, stock, SKU, variant, collection, or image records as editable grid fields. Product-card cart buttons submit only an available provider variant ID and quantity to the existing server cart endpoint.
+
+The fixture provider truthfully exposes the current `featured`, `all`, and `related` sources and supports provider order, price ascending, price descending, and alphabetical sorting. Collection/category/manual/newest/sale/best-seller sources, product-template assignment, reviews, recommendations, and global card components remain future provider/platform capabilities and must not be simulated from presentation data.
 
 The Retail kit contains six ordinary pages: Home, Shop, Product, Cart, About, and Contact. Fixture mode supports product preview selection in the original editor, client-side catalog filtering/sorting/pagination over provider results, variant selection, tenant-scoped server cart mutations, a cart drawer, the editable Cart block, and a non-payment fixture checkout handoff. Cart commands submit variant identifiers and quantities; normalized totals and availability are returned by the provider. Commerce interaction routes return 404 for tenants whose applied navigation configuration does not explicitly enable commerce.
 

@@ -1,16 +1,46 @@
 <script setup lang="ts">
+/* eslint-disable vue/no-mutating-props */
+import InlineText from './InlineText.vue';
+
 defineProps<{ nodeId?: string; blockProps: Record<string, any> }>();
 </script>
 <template>
     <section>
-        <p>{{ blockProps.eyebrow }}</p>
-        <h2>{{ blockProps.heading }}</h2>
-        <div class="body">{{ blockProps.body }}</div>
+        <InlineText
+            tag="p"
+            :value="blockProps.eyebrow"
+            placeholder="Section eyebrow"
+            aria-label="Newsletter eyebrow"
+            @update:value="blockProps.eyebrow = $event"
+        />
+        <InlineText
+            tag="h2"
+            :value="blockProps.heading"
+            placeholder="Newsletter heading"
+            aria-label="Newsletter heading"
+            @update:value="blockProps.heading = $event"
+        />
+        <InlineText
+            tag="div"
+            class="body"
+            :value="blockProps.body"
+            placeholder="Newsletter description"
+            aria-label="Newsletter description"
+            multiline
+            @update:value="blockProps.body = $event"
+        />
         <form @submit.prevent>
             <input
                 type="email"
                 :placeholder="blockProps.placeholder || 'Email address'"
-            /><button>{{ blockProps.buttonLabel || 'Subscribe' }}</button>
+            /><button>
+                <InlineText
+                    :value="blockProps.buttonLabel"
+                    placeholder="Button label"
+                    aria-label="Newsletter button label"
+                    @update:value="blockProps.buttonLabel = $event"
+                />
+            </button>
         </form>
     </section>
 </template>

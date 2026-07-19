@@ -207,6 +207,19 @@ Vue components must have a single root element.
 
 === web-builder project rules ===
 
+# Unified Builder Workflow
+
+The tenant dashboard is a business/site overview, not a design application. Everyday website work happens inside the single `Tenant/Editor` workspace.
+
+1. **One builder** — pages, block sections, navigation, global theme, media access, responsive previews, and publishing must remain inside the editor shell. Do not add separate theme, navbar, media, or publish studios.
+2. **Workspace modes** — the editor supports `pages`, `navigation`, and `theme` modes through `?workspace=`. The Media action opens the existing media manager in the editor. Add future SEO or history experiences as editor modes or panels rather than independent applications.
+3. **Protect page drafts** — switching from page editing to a global workspace must flush the current page draft through the existing force-save operation. Internal page navigation must continue using save-before-switch.
+4. **Global settings** — theme and navigation save through their existing tenant endpoints and immediately update the editor's reactive theme/navigation state. They remain ordinary `Tenant::theme_config` and `Tenant::navigation_config` values.
+5. **Dashboard scope** — show truthful website status, published URL, page counts, theme summary, recent activity when available, and quick actions into the unified builder. Do not restore everyday Kits, Theme Studio, or Navbar Studio navigation.
+6. **Compatibility routes** — legacy `/dashboard/theme` and `/dashboard/navbars` URLs may redirect into the matching editor workspace, but must not render standalone applications.
+7. **Onboarding-only kits** — only server-verified eligible empty tenants may view `/designs`. Established workspaces are redirected to the editor, and the dashboard must not expose kit browsing after setup.
+8. **Truthful business health** — only report capabilities supported by authoritative application data. Do not claim ordering, reservations, inventory, payments, or third-party connections merely because a design mentions them.
+
 # Design Catalog and Site Kit Checklist
 
 Site kits and shared page layouts are composition data for the existing page/block system. They must never create a parallel renderer, block schema, template engine, persistence model, or publish path.
@@ -224,10 +237,13 @@ When adding or changing a design catalog entry:
 9. **Use the media pipeline** — starter images must be ordinary `ImageBlock` nodes. An editable placeholder uses an empty `src` plus useful alt/replacement guidance and is replaced through the existing media picker; do not add a separate kit-asset system.
 10. **Enforce server eligibility** — initial application requires `site_setup_completed_at === null`, no pages, and null theme/navigation configuration. Re-check this condition inside the application transaction (the `ApplySiteKit` action).
 11. **Complete setup on user work** — successful page create/update/delete/save/publish, theme updates, navigation updates, kit application, and "Start from scratch" permanently set `site_setup_completed_at`. Media operations do not. Never reset a completed tenant to pending.
+12. **Compose section patterns** — hero patterns must be ordinary `SectionBlock` trees built from registered child blocks. Use stable `patternKey` values and semantic `patternRole` props so **Change layout** can preserve text, links, and media. Do not add pattern-specific renderers or persistence. Block library **Presets** insert those same trees (plus content/commerce section presets); show them as theme-tinted wireframe thumbnails grouped by job (`heroes` / `content` / `commerce`), never as near-duplicate text cards.
+13. **Layout surfaces** — `LayoutGrid` / `LayoutColumn` must apply their grid/flex styles to the children wrapper (`RenderNode` drop zone / public children box), not to an outer shell that only wraps one child. Otherwise buttons and columns always stack. Drag handles on canvas blocks (and the Layers tree) move any allowed block between containers; set Columns to 2+ for side-by-side.
+14. **Keep footer chrome global** — footer variants and `moduleOrder` belong to `navigation_config.footer`, render through the shared `SiteFooter.vue`, and are edited in the unified Navigation workspace. Footer imagery must use the existing media picker.
 
-New registrations must remain empty and route to the dashboard. Pending empty tenants who directly request the editor are redirected to the design library; do not create starter content during an editor GET request. The `/designs` page offers two exit paths for eligible tenants: "Use this design" applies the selected kit via `POST /designs/site-kits/{kit}/apply`, and "Start from scratch" completes setup via `POST /designs/start-from-scratch` without creating content. Both re-check eligibility on the server and mark setup complete.
+New registrations must remain empty and route to the dashboard. Pending empty tenants who directly request the editor are redirected to the design library; do not create starter content during an editor GET request. The `/designs` page is onboarding-only and redirects established workspaces back to the editor. It offers two exit paths for eligible tenants: "Use this design" applies the selected kit via `POST /designs/site-kits/{kit}/apply`, and "Start from scratch" completes setup via `POST /designs/start-from-scratch` without creating content. Both re-check eligibility on the server and mark setup complete.
 
-The initial Restaurant reservation and Hotel contact layouts are enquiry experiences only. The initial Retail Shop layout is presentational only. Do not describe or implement booking confirmation, live availability, inventory, cart, checkout, or payments unless those capabilities are separately approved and built.
+The initial Restaurant reservation and Hotel contact layouts are enquiry experiences only. Retail may demonstrate fixture-provider catalog, cart, and checkout-handoff behavior through the existing storefront pipeline, but must not claim live inventory, payment, or order placement. Do not describe or implement booking confirmation or live availability unless those capabilities are separately approved and built.
 
 If a kit identity, page inventory, content choice, or destructive behavior is ambiguous, stop and ask. Do not infer product decisions or workspace safety.
 
@@ -305,9 +321,12 @@ The inspector sidebar renders controls dynamically from the `inspectorFields` ar
 |---|---|---|---|
 | `'text'` | Single-line text input | Use for labels, URLs, titles |
 | `'color'` | Native `<input type="color">` + hex text input | Returns 6-digit hex string |
+| `'theme-color'` | Theme-token swatches + full preset palette + custom hex/native picker (`ThemeColorControl`) | Stores a `--theme-*` token string or a hex value. Use for text colors so users can pick black, yellow, brand tokens, or any custom color. Accepts `defaultValue`/`customDefault`. |
+| `'font-size'` | Preset buttons + px slider + advanced responsive input (`FontSizeControl`) | Stores a CSS length or `clamp()` string |
 | `'range'` | Slider | Requires `min` and `max` |
 | `'number'` | Numeric input | Requires `min` and `max` |
-| `'select'` | Dropdown | Requires an `options: [{label, value}]` array |
+| `'select'` | Dropdown | Requires an `options: [{label, value}]` array (option `value` may be a boolean, e.g. a new-tab toggle) |
+| `'columns'` | Segmented button group (1/2/3/4/6) | Requires an `options: [{label, value}]` array of numbers; writes the numeric column count. Used for `LayoutGrid.columns` and `MenuBlock.columns` |
 | `'media'` | Image preview + "Choose Image" button | Opens `MediaPicker` modal; stores the selected image URL |
 | `'repeater'` | Dynamic list of grouped subfields | Requires `subFields: InspectorField[]`; supports add/delete/reorder |
 
@@ -325,6 +344,27 @@ Example `inspectorFields` definition in `config/blocks.php`:
     ]],
 ],
 ```
+
+### Block-specific behaviors
+
+- **`MenuBlock`** — an editable restaurant-style menu. Its `items` repeater is a flat list where each item has `category`, `name`, `description`, and `price`; the component groups items by category (order preserved) and lays categories out across `columns` (1–3). Item name/description/price are inline-editable on the canvas; category labels are edited through the inspector repeater. Fully theme-aware and reveal-friendly. Catalog usage lives in `config/designs.php` via the `$menuBlock` helper (Restaurant Menu page).
+- **`ButtonBlock`** — renders an `<a>` on the public site when `url` is set. `openInNewTab` (boolean select) controls `target="_blank"` + `rel="noopener noreferrer"`; same-tab links (internal `/slug` or external) omit `target`. `variant` and `size` are `select` fields.
+- **`VideoEmbedBlock`** — lite-embed. It shows a thumbnail poster first (YouTube `hqdefault.jpg` derived from the URL, or an optional `posterUrl` media override, or a theme-derived gradient) and only loads the provider `<iframe>` after a click on the public site. The editor canvas always shows the poster and never loads the iframe.
+- **`RichTextBlock`** — TipTap toolbar includes per-selection text color (theme tokens `var(--theme-primary|secondary|text)`, hex presets, native picker, and reset). Colors are stored as inline `style="color: …"` on `<span>` marks via `@tiptap/extension-text-style` and survive save/publish without backend changes.
+
+### Theme workspace one-click palettes
+
+The Theme workspace (`DashboardThemeStudio` / `?workspace=theme`) exposes grouped one-click color palettes: Site kits (Restaurant Warmth, Retail Editorial, Hotel Refined matching `config/designs.php`) and Starter bases. Hover previews the live canvas; click applies all four color slots. Users can still refine primary/secondary/background/text individually afterward.
+
+### Scroll Reveal Animation (`reveal` / `revealDelay` props)
+
+Any block may carry two optional presentation props: `reveal` (one of `fade-up`, `fade-in`, `scale-in`, `slide-left`, `slide-right`) and `revealDelay` (milliseconds, capped at 1200). They drive a one-shot entrance animation on the published site and in kit previews:
+
+- `RenderPublicNode.vue` applies the `v-reveal` directive from `resources/js/lib/reveal.ts`, which uses a shared `IntersectionObserver` and the `.reveal*` classes in `resources/css/app.css`.
+- The editor canvas (`RenderNode.vue`) intentionally ignores these props so blocks are always immediately visible while editing.
+- `prefers-reduced-motion` disables the effect entirely; an unknown or empty `reveal` value is a no-op.
+- The controls live in a fixed "Animation" section at the bottom of `ContentInspector.vue` — do not add `reveal` to per-block `inspectorFields` in `config/blocks.php`.
+- Catalog layouts in `config/designs.php` set these props via the shared helpers (`$withReveal`, staggered delays inside `$featureGrid`/`$galleryGrid`). They are ordinary block props: cloned on kit apply, saved with drafts, and never require backend changes.
 
 ### RenderNode Background Resolution
 

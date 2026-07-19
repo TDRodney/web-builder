@@ -20,6 +20,20 @@ test('storefront blocks are registered for both layout parents and backend nesti
     }
 });
 
+test('store announcement exposes theme-aware and custom color controls', function () {
+    $definition = config('blocks.definitions.AnnouncementBlock');
+    $fields = collect($definition['inspectorFields'])->keyBy('key');
+
+    expect($definition['defaultProps']['barColor'])->toBe('--theme-primary')
+        ->and($definition['defaultProps']['textColor'])->toBe('--theme-bg')
+        ->and($fields['barColor']['type'])->toBe('theme-color')
+        ->and($fields['barColor']['defaultValue'])->toBe('--theme-primary')
+        ->and($fields['barColor']['customDefault'])->toBe('#4f46e5')
+        ->and($fields['textColor']['type'])->toBe('theme-color')
+        ->and($fields['textColor']['defaultValue'])->toBe('--theme-bg')
+        ->and($fields['textColor']['customDefault'])->toBe('#ffffff');
+});
+
 test('retail layouts form a complete editable storefront in the ordinary block schema', function () {
     $layouts = config('designs.page_layouts');
     $types = collect(['retail-home', 'retail-shop', 'retail-product', 'retail-cart'])
@@ -39,4 +53,34 @@ test('storefront starter content retains stable hydration keys and editable medi
     expect($productGrid['props']['sourceKey'])->toBe('featured')
         ->and(collect($productGrid['props']['products'])->pluck('key')->filter()->count())->toBe(4)
         ->and(collect($productGrid['props']['products'])->pluck('imageSrc')->unique()->all())->toBe(['']);
+});
+
+test('product grid keeps commerce source and presentation settings separate', function () {
+    $definition = config('blocks.definitions.ProductGridBlock');
+    $props = $definition['defaultProps'];
+
+    expect($props['sourceKey'])->toBe('featured')
+        ->and($props['sort'])->toBe('featured')
+        ->and($props['layoutType'])->toBe('grid')
+        ->and($props)->toHaveKeys([
+            'desktopColumns',
+            'tabletColumns',
+            'mobileColumns',
+            'tabletImageRatio',
+            'mobileImageRatio',
+            'cardPreset',
+            'cardContent',
+            'hoverEffect',
+            'paginationEnabled',
+        ])
+        ->and(collect($props['cardContent'])->pluck('key')->all())->toBe([
+            'image',
+            'category',
+            'name',
+            'price',
+            'description',
+            'availability',
+            'button',
+        ])
+        ->and($definition['inspectorFields'])->toBe([]);
 });

@@ -1,25 +1,53 @@
 <script setup lang="ts">
+import { computed, inject } from 'vue';
 import draggable from 'vuedraggable';
 
 import RenderNode from '@/components/BuilderBlocks/RenderNode.vue';
 import SiteFooter from '@/components/SiteFooter.vue';
 import SiteHeader from '@/components/SiteHeader.vue';
+import type { NavigationConfig } from '@/types/navigation';
 
-const blocks = defineModel('blocks', {
-    type: Array,
-    required: true,
-});
+type BlockNode = {
+    id: string;
+    type: string;
+    props?: Record<string, unknown>;
+    children?: BlockNode[];
+};
 
-const props = defineProps({
-    navigationConfig: { type: Object, required: true },
-    pages: { type: Array, required: true },
-    tenantName: { type: String, default: 'My Workspace' },
-    themeVars: { type: Object, required: true },
-    canvasMaxWidth: { type: String, required: true },
-    viewMode: { type: String, required: true },
-});
+const blocks = defineModel<BlockNode[]>('blocks', { required: true });
+
+const props = withDefaults(
+    defineProps<{
+        navigationConfig: NavigationConfig;
+        pages: Array<{ id?: number; slug: string; title?: string }>;
+        tenantName?: string;
+        themeVars: Record<string, string>;
+        canvasMaxWidth: string;
+        currentPageSlug: string;
+        viewMode: string;
+    }>(),
+    { tenantName: 'My Workspace' },
+);
 
 const emit = defineEmits(['drag-start', 'drag-end', 'navigate-page']);
+const canvasSelection = inject<{
+    selectNode: (node: BlockNode | null) => void;
+} | null>('canvasSelection', null);
+const isDragging = inject<{ value: boolean } | null>('isDragging', null);
+const dragState = inject<{ source: string | null } | null>('dragState', null);
+const isCanvasDragActive = computed(
+    () => isDragging?.value && dragState?.source !== 'layers',
+);
+
+const handleDragStart = (event: { item?: HTMLElement }): void => {
+    emit('drag-start', event.item?.dataset?.type || null);
+};
+
+const handleListChange = (event: { added?: { element?: BlockNode } }): void => {
+    if (event.added?.element) {
+        canvasSelection?.selectNode(event.added.element);
+    }
+};
 
 const handleCanvasLink = (event: MouseEvent) => {
     const target = event.target;
@@ -76,6 +104,7 @@ const handleCanvasLink = (event: MouseEvent) => {
                         :pages="pages"
                         :tenant-name="tenantName"
                         :is-editable="true"
+                        :current-page-slug="currentPageSlug"
                         @navigate-page="emit('navigate-page', $event)"
                     />
 
@@ -85,9 +114,19 @@ const handleCanvasLink = (event: MouseEvent) => {
                         handle=".drag-handle"
                         ghost-class="drag-ghost"
                         :group="{ name: 'canvas-tree', pull: true, put: true }"
-                        class="canvas-blocks"
-                        @start="emit('drag-start')"
+                        class="canvas-blocks canvas-drop-zone"
+                        :class="{
+                            'canvas-drop-zone-active': isCanvasDragActive,
+                            'canvas-drop-zone-empty': blocks.length === 0,
+                        }"
+                        :data-drop-label="
+                            blocks.length === 0
+                                ? 'Drop your first block here'
+                                : 'Drop block on page'
+                        "
+                        @start="handleDragStart"
                         @end="emit('drag-end')"
+                        @change="handleListChange"
                     >
                         <template #item="{ element }">
                             <RenderNode :node="element" />
@@ -109,19 +148,19 @@ const handleCanvasLink = (event: MouseEvent) => {
     min-width: 0;
     min-height: 0;
     overflow: auto;
-    background-color: #111113;
+    background-color: var(--editor-bg);
     background-image:
-        linear-gradient(45deg, rgb(255 255 255 / 2.2%) 25%, transparent 25%),
-        linear-gradient(-45deg, rgb(255 255 255 / 2.2%) 25%, transparent 25%),
-        linear-gradient(45deg, transparent 75%, rgb(255 255 255 / 2.2%) 75%),
-        linear-gradient(-45deg, transparent 75%, rgb(255 255 255 / 2.2%) 75%);
+        linear-gradient(45deg, rgb(24 24 27 / 2.5%) 25%, transparent 25%),
+        linear-gradient(-45deg, rgb(24 24 27 / 2.5%) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgb(24 24 27 / 2.5%) 75%),
+        linear-gradient(-45deg, transparent 75%, rgb(24 24 27 / 2.5%) 75%);
     background-position:
         0 0,
         0 4px,
         4px -4px,
         -4px 0;
     background-size: 8px 8px;
-    scrollbar-color: #52525b #171719;
+    scrollbar-color: var(--editor-border-strong) var(--editor-bg);
 }
 
 .canvas-stage {
@@ -146,9 +185,9 @@ const handleCanvasLink = (event: MouseEvent) => {
     overflow-x: hidden;
     overflow-y: auto;
     background: #ffffff;
-    border: 1px solid #303033;
-    border-radius: 7px;
-    box-shadow: 0 18px 60px rgb(0 0 0 / 52%);
+    border: 1px solid var(--editor-border);
+    border-radius: 10px;
+    box-shadow: var(--editor-shadow);
     scrollbar-color: #71717a #e4e4e7;
     scrollbar-width: thin;
     transition: max-width 220ms ease;
@@ -166,8 +205,47 @@ const handleCanvasLink = (event: MouseEvent) => {
 }
 
 .canvas-blocks {
+    position: relative;
     flex: 1 0 auto;
     min-height: 160px;
+}
+
+.canvas-drop-zone {
+    transition:
+        background-color 140ms ease,
+        box-shadow 140ms ease;
+}
+
+.canvas-drop-zone-active {
+    background: color-mix(in srgb, var(--editor-accent) 4%, transparent);
+    box-shadow: inset 0 0 0 2px
+        color-mix(in srgb, var(--editor-accent) 42%, transparent);
+}
+
+.canvas-drop-zone-active::after {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    z-index: 40;
+    padding: 5px 8px;
+    color: var(--editor-accent);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    content: attr(data-drop-label);
+    pointer-events: none;
+    background: var(--editor-panel);
+    border: 1px solid color-mix(in srgb, var(--editor-accent) 35%, white);
+    border-radius: 5px;
+    box-shadow: var(--editor-shadow);
+}
+
+.canvas-drop-zone-empty.canvas-drop-zone-active::after {
+    top: 50%;
+    right: auto;
+    bottom: auto;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .canvas-stage-tablet .canvas-frame,
@@ -184,7 +262,8 @@ const handleCanvasLink = (event: MouseEvent) => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .canvas-frame {
+    .canvas-frame,
+    .canvas-drop-zone {
         transition: none;
     }
 }
