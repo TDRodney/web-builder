@@ -247,6 +247,12 @@ initialNavigation.header.actions ??= initialNavigation.header.ctaButton?.show
       ]
     : [];
 initialNavigation.header.items ??= [];
+initialNavigation.header.search ??= {
+    show: false,
+    placeholder: 'Search this site…',
+};
+initialNavigation.header.search.show ??= false;
+initialNavigation.header.search.placeholder ??= 'Search this site…';
 initialNavigation.presets ??= [];
 
 for (const [index, item] of initialNavigation.header.items.entries()) {
@@ -2895,6 +2901,46 @@ async function saveNavbar(): Promise<void> {
                         appearance.
                     </p>
 
+                    <div
+                        v-if="navigationHttp.navigation_config.header.search"
+                        class="mt-3 rounded-[5px] border border-editor-border bg-editor-panel p-2.5"
+                    >
+                        <label class="studio-check">
+                            <input
+                                v-model="
+                                    navigationHttp.navigation_config.header
+                                        .search.show
+                                "
+                                type="checkbox"
+                            />
+                            Show site search
+                        </label>
+                        <p
+                            class="mt-1 text-[10px] leading-4 text-editor-text-muted"
+                        >
+                            Adds a search icon that lets visitors find and open
+                            your published pages.
+                        </p>
+                        <label
+                            v-if="
+                                navigationHttp.navigation_config.header.search
+                                    .show
+                            "
+                            class="studio-field mt-2"
+                        >
+                            <span>Search placeholder</span>
+                            <input
+                                v-model="
+                                    navigationHttp.navigation_config.header
+                                        .search.placeholder
+                                "
+                                type="text"
+                                maxlength="60"
+                                placeholder="Search this site…"
+                            />
+                        </label>
+                    </div>
+
                     <div class="mt-3">
                         <span
                             class="text-[8px] font-bold tracking-[0.1em] text-editor-text-muted uppercase"
@@ -3521,6 +3567,7 @@ async function saveNavbar(): Promise<void> {
                         <div @click.capture="keepPreviewInPlace">
                             <SiteHeader
                                 :navigation-config="previewNavigationConfig"
+                                :pages="pages"
                                 :tenant-name="tenantName"
                                 :is-editable="true"
                                 :preview-responsive-mode="previewMode"

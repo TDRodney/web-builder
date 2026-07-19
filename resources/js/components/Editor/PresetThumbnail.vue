@@ -72,6 +72,76 @@ defineProps<{
             <span class="chip chip-primary" />
         </div>
 
+        <!-- Statement with stats -->
+        <div v-else-if="preview === 'stats'" class="thumb-stage thumb-split">
+            <div class="thumb-copy">
+                <span class="bar bar-xs bar-muted" />
+                <span class="bar bar-lg bar-heading" />
+                <span class="bar bar-sm bar-muted" />
+                <span class="chip chip-primary" />
+            </div>
+            <div class="thumb-stats">
+                <div v-for="n in 3" :key="n" class="thumb-stat">
+                    <span class="bar bar-sm bar-accent" />
+                    <span class="bar bar-xs bar-muted" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Logo strip -->
+        <div v-else-if="preview === 'logos'" class="thumb-stage thumb-logos">
+            <span class="bar bar-xs bar-muted thumb-logos-title" />
+            <div class="thumb-logos-row">
+                <span v-for="n in 5" :key="n" class="thumb-logo" />
+            </div>
+        </div>
+
+        <!-- Testimonials -->
+        <div
+            v-else-if="preview === 'testimonials'"
+            class="thumb-stage thumb-testimonials"
+        >
+            <span class="bar bar-md bar-heading thumb-testimonials-title" />
+            <div class="thumb-grid-3-row">
+                <div v-for="n in 3" :key="n" class="thumb-quote-card">
+                    <span class="thumb-quote-mark">“</span>
+                    <span class="bar bar-sm bar-muted" />
+                    <span class="bar bar-xs bar-heading" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu photo cards -->
+        <div
+            v-else-if="preview === 'menu-cards'"
+            class="thumb-stage thumb-menu-cards"
+        >
+            <span class="bar bar-md bar-heading thumb-menu-cards-title" />
+            <div class="thumb-grid-3-row">
+                <div v-for="n in 3" :key="n" class="thumb-menu-card">
+                    <div class="thumb-media thumb-media-fill" />
+                    <div class="thumb-menu-card-row">
+                        <span class="bar bar-xs bar-heading" />
+                        <span class="bar bar-xs bar-accent thumb-price" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Promo tiles -->
+        <div v-else-if="preview === 'promos'" class="thumb-stage thumb-promos">
+            <div class="thumb-promo thumb-promo-primary">
+                <span class="bar bar-xs bar-light" />
+                <span class="bar bar-md bar-light-strong" />
+                <span class="chip chip-light" />
+            </div>
+            <div class="thumb-promo thumb-promo-secondary">
+                <span class="bar bar-xs bar-light" />
+                <span class="bar bar-md bar-light-strong" />
+                <span class="chip chip-light" />
+            </div>
+        </div>
+
         <!-- Features grid -->
         <div v-else-if="preview === 'features'" class="thumb-stage thumb-grid-3">
             <div v-for="n in 3" :key="n" class="thumb-card">
@@ -324,6 +394,171 @@ defineProps<{
     display: flex;
     gap: 4px;
     margin-top: 2px;
+}
+
+.thumb-stats {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+}
+
+.thumb-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 6px;
+    border-radius: 3px;
+    background: var(--thumb-surface);
+}
+
+.thumb-stat .bar-sm {
+    width: 34%;
+}
+
+.thumb-stat .bar-xs {
+    width: 58%;
+}
+
+.thumb-logos {
+    justify-content: center;
+    align-items: center;
+    gap: 9px;
+}
+
+.thumb-logos-title {
+    width: 34%;
+}
+
+.thumb-logos-row {
+    display: flex;
+    width: 100%;
+    gap: 5px;
+}
+
+.thumb-logo {
+    flex: 1;
+    height: 16px;
+    border-radius: 3px;
+    background: var(--thumb-surface);
+    border: 1px solid
+        color-mix(in srgb, var(--theme-text, #18181b) 12%, transparent);
+}
+
+.thumb-testimonials {
+    justify-content: center;
+    gap: 7px;
+}
+
+.thumb-testimonials-title {
+    align-self: center;
+    width: 48%;
+}
+
+.thumb-grid-3-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+}
+
+.thumb-quote-card {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 6px 6px 7px;
+    border-radius: 3px;
+    background: var(--thumb-surface);
+}
+
+.thumb-quote-mark {
+    font-size: 11px;
+    line-height: 0.7;
+    font-weight: 700;
+    color: var(--thumb-primary);
+}
+
+.thumb-quote-card .bar-sm {
+    width: 86%;
+}
+
+.thumb-quote-card .bar-xs {
+    width: 42%;
+    margin-top: 2px;
+}
+
+.thumb-menu-cards {
+    justify-content: center;
+    gap: 7px;
+}
+
+.thumb-menu-cards-title {
+    align-self: center;
+    width: 44%;
+}
+
+.thumb-menu-card {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-height: 0;
+}
+
+.thumb-menu-card .thumb-media-fill {
+    min-height: 30px;
+}
+
+.thumb-menu-card-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+}
+
+.thumb-menu-card-row .bar-xs {
+    width: 46%;
+}
+
+.thumb-menu-card-row .thumb-price {
+    width: 18% !important;
+}
+
+.thumb-promos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    align-content: center;
+}
+
+.thumb-promo {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    min-height: 58px;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.thumb-promo-primary {
+    background: color-mix(in srgb, var(--thumb-primary) 85%, transparent);
+}
+
+.thumb-promo-secondary {
+    background: color-mix(in srgb, var(--thumb-secondary) 85%, transparent);
+}
+
+.bar-light {
+    background: rgb(255 255 255 / 0.55);
+}
+
+.bar-light-strong {
+    background: rgb(255 255 255 / 0.92);
+}
+
+.chip-light {
+    background: rgb(255 255 255 / 0.9);
+    width: 22px;
+    height: 6px;
 }
 
 .bar {

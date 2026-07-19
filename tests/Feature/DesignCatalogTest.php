@@ -109,7 +109,7 @@ test('every approved page layout includes an editable media placeholder', functi
 });
 
 test('every approved page layout uses a composed section pattern with preserved content roles', function () {
-    $supportedPatterns = ['hero-centered', 'hero-split-right', 'hero-split-left', 'hero-editorial', 'hero-minimal'];
+    $supportedPatterns = ['hero-centered', 'hero-split-right', 'hero-split-left', 'hero-editorial', 'hero-minimal', 'hero-stats'];
 
     foreach (config('designs.page_layouts') as $layout) {
         $section = collect(flattenDesignNodes($layout['blocks']))

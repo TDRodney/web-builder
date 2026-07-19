@@ -18,7 +18,12 @@ export type PresetPreview =
     | 'faq'
     | 'menu'
     | 'collections'
-    | 'products';
+    | 'products'
+    | 'stats'
+    | 'logos'
+    | 'testimonials'
+    | 'promos'
+    | 'menu-cards';
 
 /** Job-based grouping shown in the Presets tab. */
 export type PresetGroup = 'heroes' | 'content' | 'commerce';
@@ -251,6 +256,417 @@ export const blockPresets: BlockPreset[] = [
                     padding: 40,
                     backgroundColor: 'transparent',
                 },
+            },
+        ],
+    },
+    {
+        key: 'menu-cards',
+        label: 'Menu photo cards',
+        description: 'Dish photos with names and prices in a row.',
+        group: 'content',
+        preview: 'menu-cards',
+        category: 'sections',
+        blocks: [
+            {
+                type: 'LayoutGrid',
+                id: '__preset__',
+                props: {
+                    columns: 1,
+                    gap: '1.75rem',
+                    padding: 40,
+                    backgroundColor: 'transparent',
+                },
+                children: [
+                    {
+                        type: 'AtomicText',
+                        id: '__preset__',
+                        props: {
+                            content: 'Explore our cuisine',
+                            fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+                            color: '--theme-text',
+                            fontFamily: 'heading',
+                            fontWeight: '700',
+                            textAlign: 'center',
+                            padding: 0,
+                            backgroundColor: 'transparent',
+                        },
+                    },
+                    {
+                        type: 'LayoutGrid',
+                        id: '__preset__',
+                        props: {
+                            columns: 3,
+                            gap: '1.5rem',
+                            padding: 0,
+                            backgroundColor: 'transparent',
+                            alignItems: 'stretch',
+                        },
+                        children: [
+                            ['Signature grilled chicken', '$14', '15 mins'],
+                            ['Margherita pizza', '$12', '45 mins'],
+                            ['Shrimp scampi pasta', '$14', '30 mins'],
+                        ].map(([name, price, meta]) => ({
+                            type: 'LayoutColumn',
+                            id: '__preset__',
+                            props: {
+                                padding: 0,
+                                backgroundColor: 'transparent',
+                                gap: '8px',
+                                verticalAlign: 'start',
+                                horizontalAlign: 'stretch',
+                            },
+                            children: [
+                                {
+                                    type: 'ImageBlock',
+                                    id: '__preset__',
+                                    props: {
+                                        src: '',
+                                        alt: `Replace with a photo of ${name.toLowerCase()}`,
+                                        objectFit: 'cover',
+                                        borderRadius:
+                                            'var(--theme-border-radius)',
+                                        width: '100%',
+                                        height: '220px',
+                                        padding: 0,
+                                        backgroundColor: 'transparent',
+                                    },
+                                },
+                                {
+                                    type: 'LayoutGrid',
+                                    id: '__preset__',
+                                    props: {
+                                        columns: 2,
+                                        gap: '12px',
+                                        padding: 0,
+                                        backgroundColor: 'transparent',
+                                        alignItems: 'center',
+                                        stackOnNarrow: false,
+                                    },
+                                    children: [
+                                        {
+                                            type: 'AtomicText',
+                                            id: '__preset__',
+                                            props: {
+                                                content: name,
+                                                fontSize: '17px',
+                                                color: '--theme-text',
+                                                fontFamily: 'heading',
+                                                fontWeight: '700',
+                                                padding: 0,
+                                                backgroundColor: 'transparent',
+                                            },
+                                        },
+                                        {
+                                            type: 'AtomicText',
+                                            id: '__preset__',
+                                            props: {
+                                                content: price,
+                                                fontSize: '17px',
+                                                color: '--theme-primary',
+                                                fontFamily: 'heading',
+                                                fontWeight: '700',
+                                                textAlign: 'right',
+                                                padding: 0,
+                                                backgroundColor: 'transparent',
+                                            },
+                                        },
+                                    ],
+                                },
+                                {
+                                    type: 'AtomicText',
+                                    id: '__preset__',
+                                    props: {
+                                        content: meta,
+                                        fontSize: '13px',
+                                        color: '--theme-text',
+                                        fontFamily: 'body',
+                                        fontWeight: '400',
+                                        padding: 0,
+                                        backgroundColor: 'transparent',
+                                    },
+                                },
+                            ],
+                        })),
+                    },
+                ],
+            },
+        ],
+    },
+    {
+        key: 'logo-strip',
+        label: 'Logo strip',
+        description: 'A row of partner or press logos.',
+        group: 'content',
+        preview: 'logos',
+        category: 'sections',
+        blocks: [
+            {
+                type: 'LayoutGrid',
+                id: '__preset__',
+                props: {
+                    columns: 1,
+                    gap: '1.75rem',
+                    padding: 40,
+                    backgroundColor: 'transparent',
+                },
+                children: [
+                    {
+                        type: 'AtomicText',
+                        id: '__preset__',
+                        props: {
+                            content: 'Trusted by great brands',
+                            fontSize: '13px',
+                            color: '--theme-text',
+                            fontFamily: 'body',
+                            fontWeight: '700',
+                            letterSpacing: '0.14em',
+                            textAlign: 'center',
+                            padding: 0,
+                            backgroundColor: 'transparent',
+                        },
+                    },
+                    {
+                        type: 'LayoutGrid',
+                        id: '__preset__',
+                        props: {
+                            columns: 6,
+                            gap: '1.5rem',
+                            padding: 0,
+                            backgroundColor: 'transparent',
+                            alignItems: 'center',
+                        },
+                        children: Array.from({ length: 6 }, (_, index) => ({
+                            type: 'ImageBlock',
+                            id: '__preset__',
+                            props: {
+                                src: '',
+                                alt: `Brand logo ${index + 1} — replace from your media library`,
+                                objectFit: 'contain',
+                                borderRadius: '0px',
+                                width: '100%',
+                                height: '48px',
+                                padding: 0,
+                                backgroundColor: 'transparent',
+                            },
+                        })),
+                    },
+                ],
+            },
+        ],
+    },
+    {
+        key: 'testimonials-row',
+        label: 'Testimonials',
+        description: 'Three customer quotes side by side.',
+        group: 'content',
+        preview: 'testimonials',
+        category: 'sections',
+        blocks: [
+            {
+                type: 'LayoutGrid',
+                id: '__preset__',
+                props: {
+                    columns: 1,
+                    gap: '1.75rem',
+                    padding: 40,
+                    backgroundColor: 'transparent',
+                },
+                children: [
+                    {
+                        type: 'AtomicText',
+                        id: '__preset__',
+                        props: {
+                            content: 'Loved by our customers',
+                            fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+                            color: '--theme-text',
+                            fontFamily: 'heading',
+                            fontWeight: '700',
+                            textAlign: 'center',
+                            padding: 0,
+                            backgroundColor: 'transparent',
+                        },
+                    },
+                    {
+                        type: 'LayoutGrid',
+                        id: '__preset__',
+                        props: {
+                            columns: 3,
+                            gap: '1.5rem',
+                            padding: 0,
+                            backgroundColor: 'transparent',
+                            alignItems: 'stretch',
+                        },
+                        children: [
+                            {
+                                type: 'TestimonialBlock',
+                                id: '__preset__',
+                                props: {
+                                    quote: 'Beautifully made and incredibly practical. Every detail feels thoughtful.',
+                                    authorName: 'Olivia R.',
+                                    authorRole: 'Verified customer',
+                                    avatarSrc: '',
+                                    padding: 10,
+                                    backgroundColor: 'transparent',
+                                },
+                            },
+                            {
+                                type: 'TestimonialBlock',
+                                id: '__preset__',
+                                props: {
+                                    quote: 'Exactly what I was looking for. The quality has held up wonderfully.',
+                                    authorName: 'Daniel M.',
+                                    authorRole: 'Verified customer',
+                                    avatarSrc: '',
+                                    padding: 10,
+                                    backgroundColor: 'transparent',
+                                },
+                            },
+                            {
+                                type: 'TestimonialBlock',
+                                id: '__preset__',
+                                props: {
+                                    quote: 'Fast, friendly service and a product I recommend to everyone.',
+                                    authorName: 'Amara K.',
+                                    authorRole: 'Verified customer',
+                                    avatarSrc: '',
+                                    padding: 10,
+                                    backgroundColor: 'transparent',
+                                },
+                            },
+                        ],
+                    },
+                ],
+            },
+        ],
+    },
+    {
+        key: 'promo-tiles',
+        label: 'Promo tiles',
+        description: 'Two bold offer tiles with calls to action.',
+        group: 'commerce',
+        preview: 'promos',
+        category: 'sections',
+        blocks: [
+            {
+                type: 'LayoutGrid',
+                id: '__preset__',
+                props: {
+                    columns: 2,
+                    gap: '1.5rem',
+                    padding: 40,
+                    backgroundColor: 'transparent',
+                    alignItems: 'stretch',
+                },
+                children: [
+                    {
+                        type: 'LayoutColumn',
+                        id: '__preset__',
+                        props: {
+                            padding: 36,
+                            backgroundColor: 'var(--theme-primary)',
+                            gap: '10px',
+                            verticalAlign: 'center',
+                            horizontalAlign: 'start',
+                        },
+                        children: [
+                            {
+                                type: 'AtomicText',
+                                id: '__preset__',
+                                props: {
+                                    content: 'Limited time',
+                                    fontSize: '12px',
+                                    color: '#ffffff',
+                                    fontFamily: 'body',
+                                    fontWeight: '700',
+                                    letterSpacing: '0.14em',
+                                    padding: 0,
+                                    backgroundColor: 'transparent',
+                                },
+                            },
+                            {
+                                type: 'AtomicText',
+                                id: '__preset__',
+                                props: {
+                                    content: 'Season sale — up to 15% off',
+                                    fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)',
+                                    color: '#ffffff',
+                                    fontFamily: 'heading',
+                                    fontWeight: '700',
+                                    lineHeight: '1.1',
+                                    padding: 0,
+                                    backgroundColor: 'transparent',
+                                },
+                            },
+                            {
+                                type: 'ButtonBlock',
+                                id: '__preset__',
+                                props: {
+                                    label: 'Shop the sale',
+                                    variant: 'secondary',
+                                    url: '/shop',
+                                    size: 'md',
+                                    alignment: 'start',
+                                    padding: 0,
+                                    backgroundColor: 'transparent',
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        type: 'LayoutColumn',
+                        id: '__preset__',
+                        props: {
+                            padding: 36,
+                            backgroundColor: 'var(--theme-secondary)',
+                            gap: '10px',
+                            verticalAlign: 'center',
+                            horizontalAlign: 'start',
+                        },
+                        children: [
+                            {
+                                type: 'AtomicText',
+                                id: '__preset__',
+                                props: {
+                                    content: 'New arrivals',
+                                    fontSize: '12px',
+                                    color: '#ffffff',
+                                    fontFamily: 'body',
+                                    fontWeight: '700',
+                                    letterSpacing: '0.14em',
+                                    padding: 0,
+                                    backgroundColor: 'transparent',
+                                },
+                            },
+                            {
+                                type: 'AtomicText',
+                                id: '__preset__',
+                                props: {
+                                    content: 'Fresh picks for the season',
+                                    fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)',
+                                    color: '#ffffff',
+                                    fontFamily: 'heading',
+                                    fontWeight: '700',
+                                    lineHeight: '1.1',
+                                    padding: 0,
+                                    backgroundColor: 'transparent',
+                                },
+                            },
+                            {
+                                type: 'ButtonBlock',
+                                id: '__preset__',
+                                props: {
+                                    label: 'Browse new in',
+                                    variant: 'primary',
+                                    url: '/shop',
+                                    size: 'md',
+                                    alignment: 'start',
+                                    padding: 0,
+                                    backgroundColor: 'transparent',
+                                },
+                            },
+                        ],
+                    },
+                ],
             },
         ],
     },

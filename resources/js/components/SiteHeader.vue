@@ -6,10 +6,11 @@ import {
     Grid2X2,
     Menu,
     MoreHorizontal,
+    Search,
     ShoppingBag,
     X,
 } from '@lucide/vue';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import type {
     NavigationAction,
@@ -20,7 +21,7 @@ import type {
 const props = withDefaults(
     defineProps<{
         navigationConfig?: NavigationConfig;
-        pages?: Array<{ slug?: string }>;
+        pages?: Array<{ slug?: string; title?: string }>;
         tenantName?: string;
         isEditable?: boolean;
         showCart?: boolean;
@@ -363,11 +364,68 @@ const isItemActive = (item: NavigationItem): boolean => {
     return activePageSlug.value === (item.slug || 'home');
 };
 
+const searchEnabled = computed(
+    () => props.navigationConfig?.header?.search?.show === true,
+);
+const searchPlaceholder = computed(
+    () =>
+        props.navigationConfig?.header?.search?.placeholder ||
+        'Search this site…',
+);
+const searchOpen = ref(false);
+const searchQuery = ref('');
+const searchInput = ref<HTMLInputElement | null>(null);
+
+const searchablePages = computed(() =>
+    props.pages.filter((entry) => entry.slug || entry.title),
+);
+
+const searchResults = computed(() => {
+    const query = searchQuery.value.trim().toLowerCase();
+
+    if (!query) {
+        return searchablePages.value.slice(0, 8);
+    }
+
+    return searchablePages.value
+        .filter(
+            (entry) =>
+                (entry.title || '').toLowerCase().includes(query) ||
+                (entry.slug || '').toLowerCase().includes(query),
+        )
+        .slice(0, 8);
+});
+
+const toggleSearch = (): void => {
+    searchOpen.value = !searchOpen.value;
+
+    if (searchOpen.value) {
+        mobileMenuOpen.value = false;
+        megaMenuOpen.value = false;
+        searchQuery.value = '';
+        nextTick(() => searchInput.value?.focus());
+    }
+};
+
+const closeSearch = (): void => {
+    searchOpen.value = false;
+    searchQuery.value = '';
+};
+
+const selectSearchResult = (slug?: string): void => {
+    closeSearch();
+
+    if (props.isEditable) {
+        emit('navigate-page', slug || 'home');
+    }
+};
+
 watch(
     () => page.url,
     () => {
         mobileMenuOpen.value = false;
         megaMenuOpen.value = false;
+        searchOpen.value = false;
     },
 );
 </script>
@@ -669,6 +727,19 @@ watch(
 
             <div class="header-actions">
                 <button
+                    v-if="searchEnabled"
+                    type="button"
+                    class="action-button search-action"
+                    :aria-expanded="searchOpen"
+                    aria-label="Search this site"
+                    title="Search"
+                    @click="toggleSearch"
+                >
+                    <X v-if="searchOpen" :size="20" :stroke-width="1.8" />
+                    <Search v-else :size="20" :stroke-width="1.8" />
+                </button>
+
+                <button
                     v-if="showCart"
                     type="button"
                     class="action-button cart-action"
@@ -782,6 +853,50 @@ watch(
                     <Grid2X2 v-else-if="mobileMenuIcon === 'grid'" :size="18" />
                     <Menu v-else :size="20" />
                 </button>
+            </div>
+
+            <div
+                v-if="searchEnabled && searchOpen"
+                class="search-panel"
+                role="search"
+                @keydown.esc="closeSearch"
+            >
+                <input
+                    ref="searchInput"
+                    v-model="searchQuery"
+                    type="search"
+                    class="search-input"
+                    :placeholder="searchPlaceholder"
+                    aria-label="Search pages"
+                />
+                <ul v-if="searchResults.length" class="search-results">
+                    <li
+                        v-for="result in searchResults"
+                        :key="result.slug || result.title"
+                    >
+                        <component
+                            :is="isEditable ? 'button' : Link"
+                            :type="isEditable ? 'button' : undefined"
+                            :href="getPageUrl(result.slug)"
+                            class="search-result-link"
+                            @click="selectSearchResult(result.slug)"
+                        >
+                            <span class="search-result-title">
+                                {{ result.title || result.slug }}
+                            </span>
+                            <span class="search-result-slug">
+                                /{{
+                                    result.slug === 'home'
+                                        ? ''
+                                        : result.slug || ''
+                                }}
+                            </span>
+                        </component>
+                    </li>
+                </ul>
+                <p v-else class="search-empty">
+                    No pages match “{{ searchQuery }}”.
+                </p>
             </div>
 
             <div v-show="mobileMenuOpen" class="mobile-panel">
@@ -1269,10 +1384,102 @@ watch(
 }
 
 .cart-action,
+.search-action,
 .mobile-toggle {
     position: relative;
     width: 2.75rem;
     height: 2.75rem;
+}
+
+.search-panel {
+    position: absolute;
+    top: calc(100% + 0.55rem);
+    right: 0;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: min(100%, 22rem);
+    padding: 0.75rem;
+    font-family: var(--theme-font-body, sans-serif);
+    color: var(--theme-text, #0f172a);
+    background: var(--theme-bg, #ffffff);
+    border: 1px solid color-mix(in srgb, var(--theme-text) 12%, transparent);
+    border-radius: calc(var(--theme-border-radius, 8px) * 1.5);
+    box-shadow: 0 20px 50px
+        color-mix(in srgb, var(--theme-text) 18%, transparent);
+}
+
+.search-input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    font: inherit;
+    font-size: 0.9rem;
+    color: inherit;
+    background: color-mix(in srgb, var(--theme-text) 5%, transparent);
+    border: 1px solid color-mix(in srgb, var(--theme-text) 14%, transparent);
+    border-radius: calc(var(--theme-border-radius, 8px) * 0.9);
+}
+
+.search-input:focus {
+    outline: 2px solid var(--navbar-focus-color, var(--theme-primary));
+    outline-offset: 1px;
+}
+
+.search-results {
+    display: grid;
+    max-height: 16rem;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    gap: 2px;
+    list-style: none;
+}
+
+.search-result-link {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.5rem 0.65rem;
+    font: inherit;
+    font-size: 0.88rem;
+    color: inherit;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: calc(var(--theme-border-radius, 8px) * 0.75);
+    gap: 0.75rem;
+    transition: background-color 140ms ease;
+}
+
+.search-result-link:hover,
+.search-result-link:focus-visible {
+    background: color-mix(in srgb, var(--theme-primary) 12%, transparent);
+}
+
+.search-result-title {
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.search-result-slug {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    opacity: 0.6;
+}
+
+.search-empty {
+    padding: 0.4rem 0.65rem;
+    margin: 0;
+    font-size: 0.85rem;
+    opacity: 0.7;
 }
 
 .cart-count {

@@ -297,6 +297,117 @@ test('section pattern and content presets shaped payloads save successfully', fu
         ->and($page->draft_config[2]['type'])->toBe('ProductGridBlock');
 });
 
+test('stat hero, logo strip, testimonials, and promo tile preset payloads save successfully', function () {
+    $payload = [
+        [
+            'id' => 'section-hero-stats',
+            'type' => 'SectionBlock',
+            'props' => [
+                'patternKey' => 'hero-stats',
+                'padding' => 0,
+                'sectionPadding' => 72,
+                'backgroundColor' => 'transparent',
+                'contentWidth' => 1180,
+                'minHeight' => 560,
+                'verticalAlign' => 'center',
+                'textAlign' => 'left',
+            ],
+            'children' => [
+                [
+                    'id' => 'stats-grid',
+                    'type' => 'LayoutGrid',
+                    'props' => ['padding' => 0, 'backgroundColor' => 'transparent', 'columns' => 2, 'gap' => '2rem', 'columnTemplate' => 'wide-left'],
+                    'children' => [
+                        [
+                            'id' => 'stats-callouts',
+                            'type' => 'LayoutColumn',
+                            'props' => ['padding' => 0, 'backgroundColor' => 'transparent', 'gap' => '14px'],
+                            'children' => [
+                                [
+                                    'id' => 'stat-one-value',
+                                    'type' => 'AtomicText',
+                                    'props' => ['patternRole' => 'statOneValue', 'content' => '10k+', 'color' => '--theme-primary', 'padding' => 0, 'backgroundColor' => 'transparent'],
+                                    'children' => [],
+                                ],
+                                [
+                                    'id' => 'stat-one-label',
+                                    'type' => 'AtomicText',
+                                    'props' => ['patternRole' => 'statOneLabel', 'content' => 'Happy customers', 'color' => '--theme-text', 'padding' => 0, 'backgroundColor' => 'transparent'],
+                                    'children' => [],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+        [
+            'id' => 'logo-strip',
+            'type' => 'LayoutGrid',
+            'props' => ['padding' => 40, 'backgroundColor' => 'transparent', 'columns' => 6, 'gap' => '1.5rem'],
+            'children' => [
+                [
+                    'id' => 'logo-1',
+                    'type' => 'ImageBlock',
+                    'props' => ['src' => '', 'alt' => 'Brand logo 1 — replace from your media library', 'objectFit' => 'contain', 'height' => '48px', 'padding' => 0, 'backgroundColor' => 'transparent'],
+                    'children' => [],
+                ],
+            ],
+        ],
+        [
+            'id' => 'testimonials-row',
+            'type' => 'LayoutGrid',
+            'props' => ['padding' => 40, 'backgroundColor' => 'transparent', 'columns' => 3, 'gap' => '1.5rem'],
+            'children' => [
+                [
+                    'id' => 'quote-1',
+                    'type' => 'TestimonialBlock',
+                    'props' => ['quote' => 'Beautifully made.', 'authorName' => 'Olivia R.', 'authorRole' => 'Verified customer', 'avatarSrc' => '', 'padding' => 10, 'backgroundColor' => 'transparent'],
+                    'children' => [],
+                ],
+            ],
+        ],
+        [
+            'id' => 'promo-tiles',
+            'type' => 'LayoutGrid',
+            'props' => ['padding' => 40, 'backgroundColor' => 'transparent', 'columns' => 2, 'gap' => '1.5rem'],
+            'children' => [
+                [
+                    'id' => 'promo-tile-1',
+                    'type' => 'LayoutColumn',
+                    'props' => ['padding' => 36, 'backgroundColor' => 'var(--theme-primary)', 'gap' => '10px'],
+                    'children' => [
+                        [
+                            'id' => 'promo-heading',
+                            'type' => 'AtomicText',
+                            'props' => ['content' => 'Season sale — up to 15% off', 'color' => '#ffffff', 'padding' => 0, 'backgroundColor' => 'transparent'],
+                            'children' => [],
+                        ],
+                        [
+                            'id' => 'promo-cta',
+                            'type' => 'ButtonBlock',
+                            'props' => ['label' => 'Shop the sale', 'variant' => 'secondary', 'url' => '/shop', 'size' => 'md', 'padding' => 0, 'backgroundColor' => 'transparent'],
+                            'children' => [],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ];
+
+    $this->postJson("http://{$this->tenant->subdomain}.domain.localhost/editor/save", [
+        'page_id' => $this->page->id,
+        'draft_config' => $payload,
+    ])->assertOk()->assertJson(['status' => 'success']);
+
+    $page = $this->page->refresh();
+
+    expect($page->draft_config[0]['props']['patternKey'])->toBe('hero-stats')
+        ->and($page->draft_config[1]['children'][0]['type'])->toBe('ImageBlock')
+        ->and($page->draft_config[2]['children'][0]['type'])->toBe('TestimonialBlock')
+        ->and($page->draft_config[3]['children'][0]['props']['backgroundColor'])->toBe('var(--theme-primary)');
+});
+
 test('rich text with inline selection color survives save and publish', function () {
     $payload = [
         [

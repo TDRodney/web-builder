@@ -17,6 +17,7 @@ provide('isEditable', false);
 const props = defineProps({
     tenant: Object,
     page: Object,
+    pages: { type: Array, default: () => [] },
     commerce_hydration: Object,
     commerce_cart: Object,
     commerce_enabled: Boolean,
@@ -51,6 +52,7 @@ const { cssVars: themeVars, fontUrl } = useTheme(
     >
         <SiteHeader
             :navigation-config="props.tenant.navigation_config"
+            :pages="props.pages"
             :tenant-name="props.tenant.subdomain"
             :is-editable="false"
             :current-page-slug="props.page.slug"

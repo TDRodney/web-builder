@@ -134,6 +134,10 @@ export interface NavigationHeaderConfig {
         hoverEffect?: NavbarHoverEffect;
     };
     actions?: NavigationAction[];
+    search?: {
+        show?: boolean;
+        placeholder?: string;
+    };
     showLogo?: boolean;
     items?: NavigationItem[];
     ctaButton?: {

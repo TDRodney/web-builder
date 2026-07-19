@@ -565,6 +565,114 @@ test('invalid advanced navbar controls are rejected', function () {
         ]);
 });
 
+test('tenant owner can enable header site search with a custom placeholder', function () {
+    $user = User::factory()->create();
+    $tenant = Tenant::factory()->create(['user_id' => $user->id]);
+
+    $this->actingAs($user)
+        ->patchJson("http://{$tenant->subdomain}.domain.localhost/editor/navigation", [
+            'navigation_config' => [
+                'header' => [
+                    'items' => [],
+                    'search' => ['show' => true, 'placeholder' => 'Find a page…'],
+                ],
+                'footer' => ['copyright' => ''],
+            ],
+        ])
+        ->assertOk()
+        ->assertJsonPath('navigation_config.header.search.show', true)
+        ->assertJsonPath('navigation_config.header.search.placeholder', 'Find a page…');
+
+    expect($tenant->refresh()->navigation_config['header']['search']['show'])->toBeTrue();
+});
+
+test('overlong search placeholders are rejected', function () {
+    $user = User::factory()->create();
+    $tenant = Tenant::factory()->create(['user_id' => $user->id]);
+
+    $this->actingAs($user)
+        ->patchJson("http://{$tenant->subdomain}.domain.localhost/editor/navigation", [
+            'navigation_config' => [
+                'header' => [
+                    'items' => [],
+                    'search' => ['show' => true, 'placeholder' => str_repeat('a', 61)],
+                ],
+                'footer' => ['copyright' => ''],
+            ],
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['navigation_config.header.search.placeholder']);
+});
+
+test('public page receives published page titles and slugs when search is enabled', function () {
+    $tenant = Tenant::factory()->create([
+        'navigation_config' => [
+            'header' => ['search' => ['show' => true]],
+            'footer' => [],
+        ],
+    ]);
+    $publishedBlock = [[
+        'id' => 'hero-1',
+        'type' => 'HeroBlock',
+        'props' => ['padding' => 40, 'backgroundColor' => 'transparent', 'headline' => 'Hi', 'subheadline' => ''],
+        'children' => [],
+    ]];
+    $tenant->pages()->create([
+        'slug' => 'home',
+        'title' => 'Home',
+        'is_homepage' => true,
+        'draft_config' => [],
+        'published_config' => $publishedBlock,
+    ]);
+    $tenant->pages()->create([
+        'slug' => 'menu',
+        'title' => 'Menu',
+        'is_homepage' => false,
+        'draft_config' => [],
+        'published_config' => $publishedBlock,
+    ]);
+    $tenant->pages()->create([
+        'slug' => 'draft-only',
+        'title' => 'Draft Only',
+        'is_homepage' => false,
+        'draft_config' => [],
+    ]);
+
+    $this->get("http://{$tenant->subdomain}.domain.localhost/")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Tenant/PublicPage')
+            ->has('pages', 2)
+            ->where('pages.0.slug', 'home')
+            ->where('pages.1.title', 'Menu')
+        );
+});
+
+test('public page omits the searchable page list when search is disabled', function () {
+    $tenant = Tenant::factory()->create([
+        'navigation_config' => ['header' => [], 'footer' => []],
+    ]);
+    $tenant->pages()->create([
+        'slug' => 'home',
+        'title' => 'Home',
+        'is_homepage' => true,
+        'draft_config' => [],
+        'published_config' => [[
+            'id' => 'hero-1',
+            'type' => 'HeroBlock',
+            'props' => ['padding' => 40, 'backgroundColor' => 'transparent', 'headline' => 'Hi', 'subheadline' => ''],
+            'children' => [],
+        ]],
+    ]);
+
+    $this->get("http://{$tenant->subdomain}.domain.localhost/")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Tenant/PublicPage')
+            ->has('pages', 0)
+        );
+});
+
 test('non-owner cannot save navigation configuration', function () {
     $userA = User::factory()->create();
     $tenantA = Tenant::factory()->create(['user_id' => $userA->id]);

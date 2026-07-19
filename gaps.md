@@ -159,7 +159,8 @@ The previous statement that `RichTextBlock` only had a raw HTML textarea is obso
 - drag-from-library insertion into root and allowed nested canvas targets;
 - reusable inline plain-text editing across the common kit content blocks;
 - duplicate, delete, move, copy, paste, and wrap actions;
-- eight presets: five composable hero patterns, Features Grid, FAQ Accordion Row, and the legacy Hero with CTA;
+- grouped presets: six composable hero patterns (including the stat hero), Features Grid, FAQ Accordion, Menu, Menu Photo Cards, Logo Strip, Testimonials, Collections, Product Grid, and Promo Tiles;
+- optional header site search (published-page title/slug lookup toggled in the Navigation workspace);
 - editor and public block-level error boundaries;
 - desktop, tablet, and mobile preview modes.
 

@@ -43,9 +43,14 @@ class TenantPublicSiteController extends Controller
             : [];
         $commerceEnabled = (bool) data_get($tenant->navigation_config, 'commerce.enabled', false);
 
+        $searchEnabled = (bool) data_get($tenant->navigation_config, 'header.search.show', false);
+
         return Inertia::render('Tenant/PublicPage', [
             'tenant' => $tenant->only(['id', 'subdomain', 'theme_config', 'navigation_config']),
             'page' => $page,
+            'pages' => $searchEnabled
+                ? Page::query()->whereNotNull('published_config')->orderBy('sort_order')->get(['title', 'slug'])
+                : [],
             'commerce_hydration' => $this->commerceHydrator->hydrate($tenant, $page->published_config, $sourceOverrides),
             'commerce_cart' => $commerceEnabled ? $this->cartManager->current($tenant)['cart'] : null,
             'commerce_enabled' => $commerceEnabled,

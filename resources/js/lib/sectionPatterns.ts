@@ -5,7 +5,8 @@ export type SectionPatternKey =
     | 'hero-split-right'
     | 'hero-split-left'
     | 'hero-editorial'
-    | 'hero-minimal';
+    | 'hero-minimal'
+    | 'hero-stats';
 
 export interface SectionPattern {
     key: SectionPatternKey;
@@ -119,6 +120,30 @@ const actionsNode = (
         buttonNode('secondaryAction', 'Learn more', 'outline', alignment),
     ],
 });
+
+const statNode = (
+    role: string,
+    value: string,
+    label: string,
+): PresetBlockNode =>
+    columnNode(
+        `__${role}-stat__`,
+        [
+            textNode(`${role}Value`, value, {
+                fontSize: 'clamp(1.9rem, 3.5vw, 2.75rem)',
+                fontFamily: 'heading',
+                fontWeight: '700',
+                lineHeight: '1.05',
+                letterSpacing: '-0.02em',
+                color: '--theme-primary',
+            }),
+            textNode(`${role}Label`, label, {
+                fontSize: '14px',
+                lineHeight: '1.4',
+            }),
+        ],
+        { gap: '4px', verticalAlign: 'start' },
+    );
 
 const heroCopy = (alignment: 'left' | 'center' = 'left') => [
     textNode('eyebrow', 'A thoughtful introduction', {
@@ -349,6 +374,40 @@ export const sectionPatterns: SectionPattern[] = [
             { minHeight: 420, contentWidth: 1040 },
         ),
     },
+    {
+        key: 'hero-stats',
+        label: 'Statement with stats',
+        description: 'Copy and actions beside three proof-point callouts.',
+        node: sectionNode('hero-stats', [
+            {
+                id: '__stats-grid__',
+                type: 'LayoutGrid',
+                props: {
+                    padding: 0,
+                    backgroundColor: 'transparent',
+                    columns: 2,
+                    gap: 'clamp(2rem, 6vw, 6rem)',
+                    columnTemplate: 'wide-left',
+                    alignItems: 'center',
+                },
+                children: [
+                    columnNode('__stats-copy__', [
+                        ...heroCopy(),
+                        actionsNode('__stats-actions__'),
+                    ]),
+                    columnNode(
+                        '__stats-callouts__',
+                        [
+                            statNode('statOne', '10k+', 'Happy customers'),
+                            statNode('statTwo', '4.9', 'Average rating'),
+                            statNode('statThree', '24/7', 'Support on hand'),
+                        ],
+                        { gap: '14px', verticalAlign: 'center' },
+                    ),
+                ],
+            },
+        ]),
+    },
 ];
 
 const contentKeysByType: Record<string, string[]> = {
@@ -437,6 +496,7 @@ const heroPreviewByKey: Record<SectionPatternKey, BlockPreset['preview']> = {
     'hero-split-left': 'split-left',
     'hero-editorial': 'editorial',
     'hero-minimal': 'minimal',
+    'hero-stats': 'stats',
 };
 
 export const heroPatternPresets: BlockPreset[] = sectionPatterns.map(
