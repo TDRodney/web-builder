@@ -7,6 +7,7 @@ import {
     surfaceStylesForBlock,
 } from '@/lib/layoutSurface';
 import { vReveal } from '@/lib/reveal';
+import { resolveThemeColor } from '@/lib/themeColor';
 import RenderPublicNode from './RenderPublicNode.vue';
 
 const props = defineProps({
@@ -44,6 +45,10 @@ const surfaceIsGrid = computed(() => isGridSurface(surfaceStyles.value));
 const surfaceStacksOnNarrow = computed(() =>
     stacksOnNarrow(surfaceStyles.value),
 );
+
+const resolvedBgColor = computed(() =>
+    resolveThemeColor(props.node.props?.backgroundColor, 'transparent'),
+);
 </script>
 
 <template>
@@ -51,7 +56,7 @@ const surfaceStacksOnNarrow = computed(() =>
         v-reveal="{ type: node.props?.reveal, delay: node.props?.revealDelay }"
         :style="{
             padding: (node.props?.padding ?? 0) + 'px',
-            backgroundColor: node.props?.backgroundColor ?? 'transparent',
+            backgroundColor: resolvedBgColor,
             marginTop: node.props?.marginTop !== undefined ? node.props.marginTop + 'px' : undefined,
             marginBottom: node.props?.marginBottom !== undefined ? node.props.marginBottom + 'px' : undefined,
             opacity: node.props?.opacity !== undefined ? node.props.opacity / 100 : undefined,

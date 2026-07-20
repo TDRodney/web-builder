@@ -12,6 +12,31 @@ test('atomic text exposes simple font size controls with advanced values preserv
         ->and($definition['defaultProps']['fontSize'])->toBe('16px');
 });
 
+test('all inspector fields use supported control types and groups', function () {
+    $supportedTypes = ['text', 'textarea', 'theme-color', 'font-size', 'range', 'number', 'select', 'segmented', 'toggle', 'columns', 'media', 'repeater'];
+    $supportedGroups = ['content', 'style'];
+
+    foreach (config('blocks.definitions') as $type => $definition) {
+        foreach ($definition['inspectorFields'] as $field) {
+            expect(in_array($field['type'], $supportedTypes, true))
+                ->toBeTrue("{$type}.{$field['key']} uses unsupported type {$field['type']}");
+
+            if (array_key_exists('group', $field)) {
+                expect(in_array($field['group'], $supportedGroups, true))
+                    ->toBeTrue("{$type}.{$field['key']} uses unsupported group {$field['group']}");
+            }
+
+            if (in_array($field['type'], ['select', 'segmented', 'columns'], true)) {
+                expect($field['options'])->toBeArray()->not->toBeEmpty();
+            }
+
+            if ($field['type'] === 'repeater') {
+                expect($field['subFields'])->toBeArray()->not->toBeEmpty();
+            }
+        }
+    }
+});
+
 test('authenticated tenant owners can save a valid block schema configuration', function () {
     $user = User::factory()->create();
     $tenant = Tenant::factory()->withHomePage()->create(['user_id' => $user->id]);

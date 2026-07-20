@@ -21,10 +21,12 @@ export function gridSurfaceStyles(
 
     const templateValue =
         columnTemplate === 'wide-left'
-            ? 'minmax(0, 1.35fr) minmax(0, 0.65fr)'
+            ? 'minmax(0, 1.2fr) minmax(0, 1fr)'
             : columnTemplate === 'wide-right'
-              ? 'minmax(0, 0.65fr) minmax(0, 1.35fr)'
-              : `repeat(${columns}, minmax(0, 1fr))`;
+              ? 'minmax(0, 1fr) minmax(0, 1.2fr)'
+              : columnTemplate === 'auto-fit'
+                ? 'repeat(auto-fit, minmax(min(100%, 11rem), 1fr))'
+                : `repeat(${columns}, minmax(0, 1fr))`;
 
     return {
         display: 'grid',

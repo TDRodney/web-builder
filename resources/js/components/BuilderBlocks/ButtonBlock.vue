@@ -28,23 +28,71 @@ const linkRel = computed(() =>
     tag.value === 'a' && openInNewTab.value ? 'noopener noreferrer' : undefined,
 );
 
-const attrs = computed(() => {
+const resolveColor = (value) => {
+    if (!value) {
+        return null;
+    }
+
+    return String(value).startsWith('--') ? `var(${value})` : String(value);
+};
+
+const variantBase = computed(() => {
     const v = props.blockProps?.variant || 'primary';
-    const primary = 'var(--theme-primary)';
-    const secondary = 'var(--theme-secondary)';
 
-    let style = {};
-
-    if (v === 'primary') {
-        style = { backgroundColor: primary, color: 'white' };
-    } else if (v === 'secondary') {
-        style = { backgroundColor: secondary, color: 'white' };
-    } else if (v === 'outline') {
-        style = {
-            border: '2px solid ' + primary,
-            color: primary,
-            backgroundColor: 'transparent',
+    if (v === 'secondary') {
+        return {
+            bg: 'var(--theme-secondary)',
+            text: '#ffffff',
+            outline: false,
         };
+    }
+
+    if (v === 'outline') {
+        return { bg: 'transparent', text: 'var(--theme-primary)', outline: true };
+    }
+
+    return { bg: 'var(--theme-primary)', text: '#ffffff', outline: false };
+});
+
+const hasCustomHover = computed(
+    () =>
+        Boolean(props.blockProps?.hoverBackgroundColor) ||
+        Boolean(props.blockProps?.hoverTextColor),
+);
+
+const attrs = computed(() => {
+    const base = variantBase.value;
+    const bg = resolveColor(props.blockProps?.backgroundColor) ?? base.bg;
+    // A "None" background with the filled variants' white text would be
+    // invisible on light pages, so fall back to the primary theme color.
+    const transparentFallbackText =
+        bg === 'transparent' && !base.outline
+            ? 'var(--theme-primary)'
+            : base.text;
+    const text =
+        resolveColor(props.blockProps?.textColor) ?? transparentFallbackText;
+    const hoverBg =
+        resolveColor(props.blockProps?.hoverBackgroundColor) ?? bg;
+    const hoverText =
+        resolveColor(props.blockProps?.hoverTextColor) ?? text;
+
+    const style = {
+        backgroundColor: bg,
+        color: text,
+        '--btn-hover-bg': hoverBg,
+        '--btn-hover-text': hoverText,
+    };
+
+    const radius = props.blockProps?.borderRadius;
+
+    if (radius !== undefined && radius !== null && radius !== '') {
+        style.borderRadius =
+            typeof radius === 'number' ? `${radius}px` : String(radius);
+    }
+
+    if (base.outline) {
+        // Outline accent follows the text color so the border stays in sync.
+        style.border = '2px solid ' + text;
     }
 
     return style;
@@ -86,8 +134,9 @@ const alignmentClass = computed(() => {
             :rel="linkRel"
             :style="attrs"
             :class="[
-                'theme-btn inline-block text-center font-semibold transition-all',
+                'theme-btn inline-block max-w-full text-center font-semibold transition-all',
                 sizeClasses,
+                { 'theme-btn--hover-custom': hasCustomHover },
             ]"
         >
             <InlineText
@@ -103,10 +152,20 @@ const alignmentClass = computed(() => {
 
 <style scoped>
 .theme-btn {
+    box-sizing: border-box;
+    max-width: 100%;
     border-radius: var(--theme-border-radius, 8px);
     transition: all 0.15s ease;
+    /* Wrap at word boundaries only — never split letters inside a narrow cell. */
+    overflow-wrap: normal;
+    word-break: normal;
 }
 .theme-btn:hover {
     filter: brightness(0.9);
+}
+.theme-btn--hover-custom:hover {
+    background-color: var(--btn-hover-bg);
+    color: var(--btn-hover-text);
+    filter: none;
 }
 </style>

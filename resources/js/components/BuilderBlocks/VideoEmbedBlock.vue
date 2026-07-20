@@ -247,8 +247,8 @@ const activate = () => {
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  background: color-mix(in srgb, var(--theme-text, #0f172a) 5%, transparent);
-  border: 2px dashed color-mix(in srgb, var(--theme-text, #0f172a) 15%, transparent);
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--theme-text, #0f172a) 18%, transparent);
   border-radius: var(--theme-border-radius, 8px);
 }
 

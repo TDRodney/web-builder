@@ -142,25 +142,35 @@ provide('hoveredNodeId', hoveredNodeId);
 
 const viewMode = ref('desktop');
 const sidebarOpen = ref(false);
-const sidebarCollapsed = ref(
-    localStorage.getItem('editor-sidebar-collapsed') === 'true',
-);
-const inspectorCollapsed = ref(
-    localStorage.getItem('editor-inspector-collapsed') === 'true',
-);
+const readLocalFlag = (key) =>
+    typeof localStorage !== 'undefined' && localStorage.getItem(key) === 'true';
+const writeLocalFlag = (key, value) => {
+    if (typeof localStorage === 'undefined') {
+        return;
+    }
+
+    localStorage.setItem(key, value ? 'true' : 'false');
+};
+// Defaults stay false during SSR; preferences hydrate in onMounted.
+const sidebarCollapsed = ref(false);
+const inspectorCollapsed = ref(false);
 const inspectorMobileOpen = ref(false);
 
 watch(sidebarCollapsed, (val) => {
-    localStorage.setItem('editor-sidebar-collapsed', val ? 'true' : 'false');
+    writeLocalFlag('editor-sidebar-collapsed', val);
 });
 
 watch(inspectorCollapsed, (val) => {
-    localStorage.setItem('editor-inspector-collapsed', val ? 'true' : 'false');
+    writeLocalFlag('editor-inspector-collapsed', val);
 });
 
 // Selecting a block on a small screen slides the inspector in over the canvas.
 watch(selectedNode, (node) => {
-    if (node && window.innerWidth <= 1100) {
+    if (
+        node &&
+        typeof window !== 'undefined' &&
+        window.innerWidth <= 1100
+    ) {
         inspectorMobileOpen.value = true;
     }
 });
@@ -290,6 +300,8 @@ const handleNavigationSaved = (savedNavigationConfig) => {
 };
 
 onMounted(() => {
+    sidebarCollapsed.value = readLocalFlag('editor-sidebar-collapsed');
+    inspectorCollapsed.value = readLocalFlag('editor-inspector-collapsed');
     window.addEventListener('keydown', handleKeyDown);
 });
 onUnmounted(() => {
@@ -1007,21 +1019,33 @@ const handleSetHomepage = async (page) => {
 };
 // Media picker state
 const showMediaPicker = ref(false);
-const mediaPickerFieldKey = ref('');
+// Either a prop key string, or { fieldKey, index, subKey } for repeater items.
+const mediaPickerTarget = ref('');
 
-const openMediaPicker = (fieldKey) => {
-    mediaPickerFieldKey.value = fieldKey;
+const openMediaPicker = (target) => {
+    mediaPickerTarget.value = target;
     showMediaPicker.value = true;
 };
 
 const openMediaLibrary = () => {
-    mediaPickerFieldKey.value = '';
+    mediaPickerTarget.value = '';
     showMediaPicker.value = true;
 };
 
 const onMediaSelected = (item) => {
-    if (selectedBlock.value && mediaPickerFieldKey.value) {
-        selectedBlock.value.props[mediaPickerFieldKey.value] = item.url;
+    const target = mediaPickerTarget.value;
+
+    if (selectedBlock.value && target) {
+        if (typeof target === 'string') {
+            selectedBlock.value.props[target] = item.url;
+        } else {
+            const entry =
+                selectedBlock.value.props[target.fieldKey]?.[target.index];
+
+            if (entry) {
+                entry[target.subKey] = item.url;
+            }
+        }
     }
 
     showMediaPicker.value = false;

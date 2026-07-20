@@ -1,17 +1,28 @@
 <script setup lang="ts">
-import { Check } from '@lucide/vue';
-import { computed } from 'vue';
+import { Check, ChevronDown, RotateCcw } from '@lucide/vue';
+import { computed, ref } from 'vue';
 
 const props = withDefaults(
     defineProps<{
         modelValue?: string | null;
         defaultValue?: string;
         customDefault?: string;
+        /** Hide the large swatch grid until expanded. Better for dense inspectors. */
+        compact?: boolean;
+        /** Allow clearing back to an empty value (e.g. button "follow variant"). */
+        clearable?: boolean;
+        clearLabel?: string;
+        /** Offer an explicit "None" choice that stores 'transparent'. */
+        allowTransparent?: boolean;
     }>(),
     {
         modelValue: null,
         defaultValue: '--theme-primary',
         customDefault: '#18181b',
+        compact: false,
+        clearable: false,
+        clearLabel: 'Use preset',
+        allowTransparent: false,
     },
 );
 
@@ -94,17 +105,70 @@ const presetColors = [
 ];
 
 const hexPattern = /^#[0-9a-f]{6}$/i;
-const currentValue = computed(
-    () => props.modelValue || props.defaultValue || props.customDefault,
+const showPalette = ref(!props.compact);
+
+const hasExplicitValue = computed(
+    () => typeof props.modelValue === 'string' && props.modelValue.length > 0,
 );
+
+const currentValue = computed(() => {
+    if (hasExplicitValue.value) {
+        return props.modelValue as string;
+    }
+
+    return props.defaultValue || props.customDefault;
+});
+
+const isThemeToken = computed(() =>
+    String(currentValue.value).startsWith('--'),
+);
+
+const isTransparent = computed(() => currentValue.value === 'transparent');
+
+const displayLabel = computed(() => {
+    if (isTransparent.value) {
+        return 'None (transparent)';
+    }
+
+    if (isThemeToken.value) {
+        const match = themeColors.find(
+            (color) => color.value === currentValue.value,
+        );
+
+        return `Theme · ${match?.label ?? 'Token'}`;
+    }
+
+    return null;
+});
+
 const customColor = computed(() =>
     hexPattern.test(currentValue.value)
         ? currentValue.value
         : props.customDefault,
 );
 
+const swatchPreview = computed(() => {
+    if (isTransparent.value) {
+        return 'transparent';
+    }
+
+    if (hexPattern.test(currentValue.value)) {
+        return currentValue.value;
+    }
+
+    if (isThemeToken.value) {
+        return `var(${currentValue.value})`;
+    }
+
+    return props.customDefault;
+});
+
 const chooseColor = (value: string): void => {
     emit('update:modelValue', value);
+};
+
+const clearColor = (): void => {
+    emit('update:modelValue', '');
 };
 
 const updateNativeColor = (event: Event): void => {
@@ -121,12 +185,14 @@ const commitHexColor = (event: Event): void => {
         return;
     }
 
-    input.value = customColor.value;
+    input.value = hexPattern.test(currentValue.value)
+        ? currentValue.value
+        : customColor.value;
 };
 </script>
 
 <template>
-    <div class="grid gap-3">
+    <div class="grid gap-2">
         <div class="grid grid-cols-2 gap-1.5">
             <button
                 v-for="color in themeColors"
@@ -134,18 +200,96 @@ const commitHexColor = (event: Event): void => {
                 type="button"
                 class="relative min-h-8 rounded-[5px] border px-2 text-[9px] font-semibold transition"
                 :class="
-                    currentValue === color.value
+                    hasExplicitValue && currentValue === color.value
                         ? 'border-editor-text bg-editor-text text-white'
                         : 'border-editor-border bg-editor-panel text-editor-text-muted hover:border-editor-border-strong hover:text-editor-text'
                 "
-                :aria-pressed="currentValue === color.value"
+                :aria-pressed="hasExplicitValue && currentValue === color.value"
                 @click="chooseColor(color.value)"
             >
                 {{ color.label }}
             </button>
+            <button
+                v-if="allowTransparent"
+                type="button"
+                class="relative col-span-2 min-h-8 rounded-[5px] border px-2 text-[9px] font-semibold transition"
+                :class="
+                    hasExplicitValue && isTransparent
+                        ? 'border-editor-text bg-editor-text text-white'
+                        : 'border-editor-border bg-editor-panel text-editor-text-muted hover:border-editor-border-strong hover:text-editor-text'
+                "
+                :aria-pressed="hasExplicitValue && isTransparent"
+                @click="chooseColor('transparent')"
+            >
+                None (transparent)
+            </button>
         </div>
 
-        <div class="grid grid-cols-8 gap-1.5" aria-label="Preset colors">
+        <div class="flex items-center gap-2">
+            <span
+                class="h-9 w-11 shrink-0 rounded-[5px] border border-editor-border shadow-[inset_0_0_0_1px_rgb(255_255_255/0.12)]"
+                :class="{ 'transparent-swatch': isTransparent }"
+                :style="
+                    isTransparent ? {} : { backgroundColor: swatchPreview }
+                "
+                aria-hidden="true"
+            />
+            <input
+                type="color"
+                :value="customColor"
+                class="h-9 w-11 shrink-0 cursor-pointer rounded-[5px] border border-editor-border bg-transparent p-0.5"
+                aria-label="Choose any color"
+                @input="updateNativeColor"
+            />
+            <input
+                v-if="!displayLabel"
+                type="text"
+                :value="customColor"
+                class="h-9 min-w-0 flex-1 rounded-[5px] border border-editor-border bg-editor-panel px-2.5 font-mono text-[10px] text-editor-text outline-none focus:border-editor-text"
+                aria-label="Custom hex color"
+                maxlength="7"
+                placeholder="#18181b"
+                @change="commitHexColor"
+            />
+            <span
+                v-else
+                class="flex h-9 min-w-0 flex-1 items-center rounded-[5px] border border-editor-border bg-editor-panel px-2.5 text-[10px] font-semibold text-editor-text-muted"
+            >
+                {{ displayLabel }}
+            </span>
+            <button
+                v-if="clearable && hasExplicitValue"
+                type="button"
+                class="inline-flex h-9 shrink-0 items-center gap-1 rounded-[5px] border border-editor-border bg-editor-panel px-2 text-[9px] font-semibold text-editor-text-muted transition hover:border-editor-border-strong hover:text-editor-text"
+                :title="clearLabel"
+                @click="clearColor"
+            >
+                <RotateCcw :size="12" :stroke-width="2.25" />
+                <span class="sr-only">{{ clearLabel }}</span>
+            </button>
+        </div>
+
+        <button
+            v-if="compact"
+            type="button"
+            class="inline-flex h-7 items-center justify-center gap-1 rounded-[5px] border border-editor-border bg-editor-panel px-2 text-[9px] font-semibold text-editor-text-muted transition hover:border-editor-border-strong hover:text-editor-text"
+            :aria-expanded="showPalette"
+            @click="showPalette = !showPalette"
+        >
+            {{ showPalette ? 'Hide palette' : 'More colors' }}
+            <ChevronDown
+                :size="12"
+                :stroke-width="2.25"
+                class="transition"
+                :class="{ 'rotate-180': showPalette }"
+            />
+        </button>
+
+        <div
+            v-if="showPalette"
+            class="grid grid-cols-8 gap-1.5"
+            aria-label="Preset colors"
+        >
             <button
                 v-for="color in presetColors"
                 :key="color"
@@ -153,12 +297,16 @@ const commitHexColor = (event: Event): void => {
                 class="relative aspect-square min-w-0 rounded-[4px] border border-black/10 shadow-[inset_0_0_0_1px_rgb(255_255_255/0.14)] transition hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-editor-text"
                 :style="{ backgroundColor: color }"
                 :aria-label="`Use ${color}`"
-                :aria-pressed="currentValue.toLowerCase() === color"
+                :aria-pressed="
+                    hasExplicitValue && currentValue.toLowerCase() === color
+                "
                 :title="color"
                 @click="chooseColor(color)"
             >
                 <span
-                    v-if="currentValue.toLowerCase() === color"
+                    v-if="
+                        hasExplicitValue && currentValue.toLowerCase() === color
+                    "
                     class="absolute inset-0 flex items-center justify-center"
                 >
                     <Check
@@ -173,24 +321,22 @@ const commitHexColor = (event: Event): void => {
                 </span>
             </button>
         </div>
-
-        <div class="flex items-center gap-2">
-            <input
-                type="color"
-                :value="customColor"
-                class="h-9 w-11 shrink-0 cursor-pointer rounded-[5px] border border-editor-border bg-transparent p-0.5"
-                aria-label="Choose any color"
-                @input="updateNativeColor"
-            />
-            <input
-                type="text"
-                :value="customColor"
-                class="h-9 min-w-0 flex-1 rounded-[5px] border border-editor-border bg-editor-panel px-2.5 font-mono text-[10px] text-editor-text outline-none focus:border-editor-text"
-                aria-label="Custom hex color"
-                maxlength="7"
-                placeholder="#18181b"
-                @change="commitHexColor"
-            />
-        </div>
     </div>
 </template>
+
+<style scoped>
+.transparent-swatch {
+    background-color: #ffffff;
+    background-image:
+        linear-gradient(45deg, #d4d4d8 25%, transparent 25%),
+        linear-gradient(-45deg, #d4d4d8 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #d4d4d8 75%),
+        linear-gradient(-45deg, transparent 75%, #d4d4d8 75%);
+    background-size: 8px 8px;
+    background-position:
+        0 0,
+        0 4px,
+        4px -4px,
+        -4px 0;
+}
+</style>

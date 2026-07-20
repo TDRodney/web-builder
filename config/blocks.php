@@ -20,22 +20,22 @@ return [
                 'overlayOpacity' => 0,
             ],
             'inspectorFields' => [
-                ['key' => 'sectionPadding', 'label' => 'Section Padding (px)', 'type' => 'range', 'min' => 24, 'max' => 160],
-                ['key' => 'contentWidth', 'label' => 'Content Width (px)', 'type' => 'number', 'min' => 640, 'max' => 1600],
-                ['key' => 'minHeight', 'label' => 'Minimum Height (px)', 'type' => 'range', 'min' => 240, 'max' => 900],
-                ['key' => 'verticalAlign', 'label' => 'Vertical Alignment', 'type' => 'select', 'options' => [
+                ['key' => 'sectionPadding', 'label' => 'Section Padding (px)', 'type' => 'range', 'min' => 24, 'max' => 160, 'group' => 'style'],
+                ['key' => 'contentWidth', 'label' => 'Content Width (px)', 'type' => 'number', 'min' => 640, 'max' => 1600, 'group' => 'style'],
+                ['key' => 'minHeight', 'label' => 'Minimum Height (px)', 'type' => 'range', 'min' => 240, 'max' => 900, 'group' => 'style'],
+                ['key' => 'verticalAlign', 'label' => 'Vertical Alignment', 'type' => 'segmented', 'group' => 'style', 'options' => [
                     ['label' => 'Top', 'value' => 'start'],
                     ['label' => 'Center', 'value' => 'center'],
                     ['label' => 'Bottom', 'value' => 'end'],
                 ]],
-                ['key' => 'textAlign', 'label' => 'Text Alignment', 'type' => 'select', 'options' => [
+                ['key' => 'textAlign', 'label' => 'Text Alignment', 'type' => 'segmented', 'group' => 'style', 'options' => [
                     ['label' => 'Left', 'value' => 'left'],
                     ['label' => 'Center', 'value' => 'center'],
                     ['label' => 'Right', 'value' => 'right'],
                 ]],
-                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
-                ['key' => 'backgroundImage', 'label' => 'Background Image', 'type' => 'media'],
-                ['key' => 'overlayOpacity', 'label' => 'Image Overlay (%)', 'type' => 'range', 'min' => 0, 'max' => 80],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'allowTransparent' => true, 'defaultValue' => 'transparent', 'customDefault' => '#f4f4f5'],
+                ['key' => 'backgroundImage', 'label' => 'Background Image', 'type' => 'media', 'group' => 'style'],
+                ['key' => 'overlayOpacity', 'label' => 'Image Overlay (%)', 'type' => 'range', 'min' => 0, 'max' => 80, 'group' => 'style'],
             ],
             'allowedChildren' => [
                 'HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock', 'ImageBlock',
@@ -59,17 +59,17 @@ return [
                 'align' => 'center',
             ],
             'inspectorFields' => [
-                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 10, 'max' => 150],
-                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
                 ['key' => 'headline', 'label' => 'Headline Text', 'type' => 'text', 'placeholder' => 'Enter headline'],
                 ['key' => 'subheadline', 'label' => 'Subheadline Text', 'type' => 'text', 'placeholder' => 'Enter subheadline'],
-                ['key' => 'fontFamily', 'label' => 'Headline Font', 'type' => 'select', 'options' => [
+                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 10, 'max' => 150, 'group' => 'style'],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'allowTransparent' => true, 'defaultValue' => 'transparent', 'customDefault' => '#f4f4f5'],
+                ['key' => 'fontFamily', 'label' => 'Headline Font', 'type' => 'segmented', 'group' => 'style', 'options' => [
                     ['label' => 'Heading', 'value' => 'heading'],
                     ['label' => 'Body', 'value' => 'body'],
                 ]],
-                ['key' => 'headlineColor', 'label' => 'Headline Color', 'type' => 'theme-color', 'defaultValue' => '--theme-text'],
-                ['key' => 'subheadlineColor', 'label' => 'Subheadline Color', 'type' => 'theme-color', 'defaultValue' => '--theme-text'],
-                ['key' => 'align', 'label' => 'Alignment', 'type' => 'select', 'options' => [
+                ['key' => 'headlineColor', 'label' => 'Headline Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'defaultValue' => '--theme-text'],
+                ['key' => 'subheadlineColor', 'label' => 'Subheadline Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'defaultValue' => '--theme-text'],
+                ['key' => 'align', 'label' => 'Alignment', 'type' => 'segmented', 'group' => 'style', 'options' => [
                     ['label' => 'Left', 'value' => 'left'],
                     ['label' => 'Center', 'value' => 'center'],
                     ['label' => 'Right', 'value' => 'right'],
@@ -91,16 +91,16 @@ return [
                 'bodyColor' => '',
             ],
             'inspectorFields' => [
-                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 10, 'max' => 150],
-                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
                 ['key' => 'title', 'label' => 'Feature Title', 'type' => 'text', 'placeholder' => 'Enter title'],
                 ['key' => 'body', 'label' => 'Feature Body', 'type' => 'textarea', 'placeholder' => 'Enter description'],
-                ['key' => 'fontFamily', 'label' => 'Title Font', 'type' => 'select', 'options' => [
+                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 10, 'max' => 150, 'group' => 'style'],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'allowTransparent' => true, 'defaultValue' => 'transparent', 'customDefault' => '#f4f4f5'],
+                ['key' => 'fontFamily', 'label' => 'Title Font', 'type' => 'segmented', 'group' => 'style', 'options' => [
                     ['label' => 'Heading', 'value' => 'heading'],
                     ['label' => 'Body', 'value' => 'body'],
                 ]],
-                ['key' => 'titleColor', 'label' => 'Title Color', 'type' => 'theme-color', 'defaultValue' => '--theme-text'],
-                ['key' => 'bodyColor', 'label' => 'Body Color', 'type' => 'theme-color', 'defaultValue' => '--theme-text'],
+                ['key' => 'titleColor', 'label' => 'Title Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'defaultValue' => '--theme-text'],
+                ['key' => 'bodyColor', 'label' => 'Body Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'defaultValue' => '--theme-text'],
             ],
         ],
         'AtomicText' => [
@@ -122,45 +122,45 @@ return [
                 'maxWidth' => 'none',
             ],
             'inspectorFields' => [
-                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 10, 'max' => 150],
-                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
                 ['key' => 'content', 'label' => 'Text Content', 'type' => 'textarea', 'placeholder' => 'Enter text'],
-                ['key' => 'fontSize', 'label' => 'Font Size', 'type' => 'font-size'],
-                ['key' => 'color', 'label' => 'Text Color', 'type' => 'theme-color', 'defaultValue' => '--theme-text'],
-                ['key' => 'fontFamily', 'label' => 'Font Family', 'type' => 'select', 'options' => [
+                ['key' => 'fontSize', 'label' => 'Font Size', 'type' => 'font-size', 'group' => 'style'],
+                ['key' => 'color', 'label' => 'Text Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'defaultValue' => '--theme-text'],
+                ['key' => 'fontFamily', 'label' => 'Font Family', 'type' => 'segmented', 'group' => 'style', 'options' => [
                     ['label' => 'Body', 'value' => 'body'],
                     ['label' => 'Heading', 'value' => 'heading'],
                 ]],
-                ['key' => 'fontWeight', 'label' => 'Font Weight', 'type' => 'select', 'options' => [
+                ['key' => 'fontWeight', 'label' => 'Font Weight', 'type' => 'select', 'group' => 'style', 'options' => [
                     ['label' => 'Regular', 'value' => '400'],
                     ['label' => 'Medium', 'value' => '500'],
                     ['label' => 'Semibold', 'value' => '600'],
                     ['label' => 'Bold', 'value' => '700'],
                     ['label' => 'Extra bold', 'value' => '800'],
                 ]],
-                ['key' => 'lineHeight', 'label' => 'Line Height', 'type' => 'select', 'options' => [
+                ['key' => 'lineHeight', 'label' => 'Line Height', 'type' => 'select', 'group' => 'style', 'options' => [
                     ['label' => 'Tight (1.2)', 'value' => '1.2'],
                     ['label' => 'Normal (1.4)', 'value' => '1.4'],
                     ['label' => 'Relaxed (1.6)', 'value' => '1.6'],
                     ['label' => 'Loose (2.0)', 'value' => '2.0'],
                 ]],
-                ['key' => 'letterSpacing', 'label' => 'Letter Spacing', 'type' => 'select', 'options' => [
+                ['key' => 'letterSpacing', 'label' => 'Letter Spacing', 'type' => 'select', 'group' => 'style', 'options' => [
                     ['label' => 'Normal (0em)', 'value' => '0em'],
                     ['label' => 'Wide (0.05em)', 'value' => '0.05em'],
                     ['label' => 'Widest (0.1em)', 'value' => '0.1em'],
                 ]],
-                ['key' => 'textAlign', 'label' => 'Text Alignment', 'type' => 'select', 'options' => [
-                    ['label' => 'Inherit', 'value' => 'inherit'],
+                ['key' => 'textAlign', 'label' => 'Text Alignment', 'type' => 'segmented', 'group' => 'style', 'options' => [
+                    ['label' => 'Auto', 'value' => 'inherit'],
                     ['label' => 'Left', 'value' => 'left'],
                     ['label' => 'Center', 'value' => 'center'],
                     ['label' => 'Right', 'value' => 'right'],
                 ]],
-                ['key' => 'maxWidth', 'label' => 'Maximum Width', 'type' => 'select', 'options' => [
+                ['key' => 'maxWidth', 'label' => 'Maximum Width', 'type' => 'select', 'group' => 'style', 'options' => [
                     ['label' => 'Full container width', 'value' => 'none'],
                     ['label' => 'Narrow (480px)', 'value' => '480px'],
                     ['label' => 'Prose (680px)', 'value' => '680px'],
                     ['label' => 'Wide (960px)', 'value' => '960px'],
                 ]],
+                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 10, 'max' => 150, 'group' => 'style'],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'allowTransparent' => true, 'defaultValue' => 'transparent', 'customDefault' => '#f4f4f5'],
             ],
         ],
         'LayoutGrid' => [
@@ -178,34 +178,34 @@ return [
                 'stackOnNarrow' => true,
             ],
             'inspectorFields' => [
-                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 10, 'max' => 150],
-                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
-                ['key' => 'columns', 'label' => 'Columns', 'type' => 'columns', 'options' => [
+                ['key' => 'columns', 'label' => 'Columns', 'type' => 'columns', 'group' => 'style', 'options' => [
                     ['label' => '1', 'value' => 1],
                     ['label' => '2', 'value' => 2],
                     ['label' => '3', 'value' => 3],
                     ['label' => '4', 'value' => 4],
                     ['label' => '6', 'value' => 6],
                 ]],
-                ['key' => 'gap', 'label' => 'Gap Size', 'type' => 'select', 'options' => [
+                ['key' => 'columnTemplate', 'label' => 'Column Proportions', 'type' => 'segmented', 'group' => 'style', 'options' => [
+                    ['label' => 'Equal', 'value' => 'equal'],
+                    ['label' => 'Wide left', 'value' => 'wide-left'],
+                    ['label' => 'Wide right', 'value' => 'wide-right'],
+                ]],
+                ['key' => 'gap', 'label' => 'Gap Size', 'type' => 'select', 'group' => 'style', 'options' => [
                     ['label' => 'None (0px)', 'value' => '0px'],
                     ['label' => 'Small (12px)', 'value' => '12px'],
                     ['label' => 'Medium (16px)', 'value' => '1rem'],
                     ['label' => 'Large (24px)', 'value' => '24px'],
                     ['label' => 'Extra Large (40px)', 'value' => '40px'],
                 ]],
-                ['key' => 'columnTemplate', 'label' => 'Column Proportions', 'type' => 'select', 'options' => [
-                    ['label' => 'Equal', 'value' => 'equal'],
-                    ['label' => 'Wide left', 'value' => 'wide-left'],
-                    ['label' => 'Wide right', 'value' => 'wide-right'],
-                ]],
-                ['key' => 'alignItems', 'label' => 'Vertical Alignment', 'type' => 'select', 'options' => [
+                ['key' => 'alignItems', 'label' => 'Vertical Alignment', 'type' => 'segmented', 'group' => 'style', 'options' => [
                     ['label' => 'Stretch', 'value' => 'stretch'],
                     ['label' => 'Top', 'value' => 'start'],
                     ['label' => 'Center', 'value' => 'center'],
                     ['label' => 'Bottom', 'value' => 'end'],
                 ]],
-                ['key' => 'stackOnNarrow', 'label' => 'Stack on mobile', 'type' => 'toggle'],
+                ['key' => 'stackOnNarrow', 'label' => 'Stack on mobile', 'type' => 'toggle', 'group' => 'style'],
+                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 10, 'max' => 150, 'group' => 'style'],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'allowTransparent' => true, 'defaultValue' => 'transparent', 'customDefault' => '#f4f4f5'],
             ],
             'allowedChildren' => [
                 'HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock', 'ImageBlock',
@@ -229,9 +229,7 @@ return [
                 'horizontalAlign' => 'stretch',
             ],
             'inspectorFields' => [
-                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 10, 'max' => 150],
-                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
-                ['key' => 'span', 'label' => 'Grid Column Span', 'type' => 'select', 'options' => [
+                ['key' => 'span', 'label' => 'Grid Column Span', 'type' => 'select', 'group' => 'style', 'options' => [
                     ['label' => 'Auto', 'value' => 'auto'],
                     ['label' => '1 Column', 'value' => '1'],
                     ['label' => '2 Columns', 'value' => '2'],
@@ -241,26 +239,28 @@ return [
                     ['label' => '8 Columns', 'value' => '8'],
                     ['label' => '12 Columns', 'value' => '12'],
                 ]],
-                ['key' => 'width', 'label' => 'Width (e.g. auto, 100%)', 'type' => 'text'],
-                ['key' => 'height', 'label' => 'Height (e.g. auto, 200px)', 'type' => 'text'],
-                ['key' => 'gap', 'label' => 'Gap Size', 'type' => 'select', 'options' => [
+                ['key' => 'width', 'label' => 'Width (e.g. auto, 100%)', 'type' => 'text', 'group' => 'style'],
+                ['key' => 'height', 'label' => 'Height (e.g. auto, 200px)', 'type' => 'text', 'group' => 'style'],
+                ['key' => 'gap', 'label' => 'Gap Size', 'type' => 'select', 'group' => 'style', 'options' => [
                     ['label' => 'None (0px)', 'value' => '0px'],
                     ['label' => 'Small (12px)', 'value' => '12px'],
                     ['label' => 'Medium (16px)', 'value' => '16px'],
                     ['label' => 'Large (24px)', 'value' => '24px'],
                 ]],
-                ['key' => 'verticalAlign', 'label' => 'Vertical Alignment', 'type' => 'select', 'options' => [
+                ['key' => 'verticalAlign', 'label' => 'Vertical Alignment', 'type' => 'segmented', 'group' => 'style', 'options' => [
                     ['label' => 'Top', 'value' => 'start'],
                     ['label' => 'Center', 'value' => 'center'],
                     ['label' => 'Bottom', 'value' => 'end'],
-                    ['label' => 'Space between', 'value' => 'space-between'],
+                    ['label' => 'Between', 'value' => 'space-between'],
                 ]],
-                ['key' => 'horizontalAlign', 'label' => 'Horizontal Alignment', 'type' => 'select', 'options' => [
+                ['key' => 'horizontalAlign', 'label' => 'Horizontal Alignment', 'type' => 'segmented', 'group' => 'style', 'options' => [
                     ['label' => 'Stretch', 'value' => 'stretch'],
                     ['label' => 'Left', 'value' => 'start'],
                     ['label' => 'Center', 'value' => 'center'],
                     ['label' => 'Right', 'value' => 'end'],
                 ]],
+                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 10, 'max' => 150, 'group' => 'style'],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'allowTransparent' => true, 'defaultValue' => 'transparent', 'customDefault' => '#f4f4f5'],
             ],
             'allowedChildren' => [
                 'HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock', 'ImageBlock',
@@ -280,26 +280,42 @@ return [
                 'openInNewTab' => false,
                 'size' => 'md',
                 'alignment' => 'center',
+                'borderRadius' => '',
+                'backgroundColor' => '',
+                'textColor' => '',
+                'hoverBackgroundColor' => '',
+                'hoverTextColor' => '',
             ],
             'inspectorFields' => [
                 ['key' => 'label', 'label' => 'Button Text', 'type' => 'text', 'placeholder' => 'Enter button text'],
                 ['key' => 'url', 'label' => 'Link URL', 'type' => 'text', 'placeholder' => 'https://... or /about'],
                 ['key' => 'openInNewTab', 'label' => 'Open link in new tab', 'type' => 'toggle'],
-                ['key' => 'variant', 'label' => 'Variant', 'type' => 'select', 'options' => [
+                ['key' => 'variant', 'label' => 'Style preset', 'type' => 'segmented', 'group' => 'style', 'options' => [
                     ['label' => 'Primary', 'value' => 'primary'],
                     ['label' => 'Secondary', 'value' => 'secondary'],
                     ['label' => 'Outline', 'value' => 'outline'],
                 ]],
-                ['key' => 'size', 'label' => 'Size', 'type' => 'select', 'options' => [
+                ['key' => 'size', 'label' => 'Size', 'type' => 'segmented', 'group' => 'style', 'options' => [
                     ['label' => 'Small', 'value' => 'sm'],
                     ['label' => 'Medium', 'value' => 'md'],
                     ['label' => 'Large', 'value' => 'lg'],
                 ]],
-                ['key' => 'alignment', 'label' => 'Alignment', 'type' => 'select', 'options' => [
+                ['key' => 'alignment', 'label' => 'Alignment', 'type' => 'segmented', 'group' => 'style', 'options' => [
                     ['label' => 'Left', 'value' => 'start'],
                     ['label' => 'Center', 'value' => 'center'],
                     ['label' => 'Right', 'value' => 'end'],
                 ]],
+                ['key' => 'borderRadius', 'label' => 'Corners', 'type' => 'select', 'group' => 'style', 'options' => [
+                    ['label' => 'Theme default', 'value' => ''],
+                    ['label' => 'Square', 'value' => '0px'],
+                    ['label' => 'Soft', 'value' => '8px'],
+                    ['label' => 'Rounded', 'value' => '16px'],
+                    ['label' => 'Pill', 'value' => '9999px'],
+                ]],
+                ['key' => 'textColor', 'label' => 'Text / outline color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'clearable' => true, 'clearLabel' => 'Use preset', 'defaultValue' => '--theme-primary', 'customDefault' => '#4f46e5'],
+                ['key' => 'backgroundColor', 'label' => 'Background color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'clearable' => true, 'clearLabel' => 'Use preset', 'allowTransparent' => true, 'defaultValue' => '--theme-primary', 'customDefault' => '#4f46e5'],
+                ['key' => 'hoverBackgroundColor', 'label' => 'Hover background', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'clearable' => true, 'clearLabel' => 'Use preset', 'allowTransparent' => true, 'defaultValue' => '--theme-secondary', 'customDefault' => '#0ea5e9'],
+                ['key' => 'hoverTextColor', 'label' => 'Hover text color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'clearable' => true, 'clearLabel' => 'Use preset', 'defaultValue' => '#ffffff', 'customDefault' => '#ffffff'],
             ],
         ],
         'DividerBlock' => [
@@ -313,9 +329,9 @@ return [
                 'margin' => 16,
             ],
             'inspectorFields' => [
-                ['key' => 'thickness', 'label' => 'Thickness (px)', 'type' => 'range', 'min' => 1, 'max' => 8],
-                ['key' => 'color', 'label' => 'Color', 'type' => 'color'],
-                ['key' => 'margin', 'label' => 'Margin (px)', 'type' => 'range', 'min' => 0, 'max' => 60],
+                ['key' => 'thickness', 'label' => 'Thickness (px)', 'type' => 'range', 'min' => 1, 'max' => 8, 'group' => 'style'],
+                ['key' => 'color', 'label' => 'Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'defaultValue' => '#cbd5e1', 'customDefault' => '#cbd5e1'],
+                ['key' => 'margin', 'label' => 'Margin (px)', 'type' => 'range', 'min' => 0, 'max' => 60, 'group' => 'style'],
             ],
         ],
         'SpacerBlock' => [
@@ -327,7 +343,7 @@ return [
                 'height' => 24,
             ],
             'inspectorFields' => [
-                ['key' => 'height', 'label' => 'Height (px)', 'type' => 'range', 'min' => 4, 'max' => 200],
+                ['key' => 'height', 'label' => 'Height (px)', 'type' => 'range', 'min' => 4, 'max' => 200, 'group' => 'style'],
             ],
         ],
         'ImageBlock' => [
@@ -348,23 +364,23 @@ return [
             'inspectorFields' => [
                 ['key' => 'src',          'label' => 'Image',           'type' => 'media'],
                 ['key' => 'alt',          'label' => 'Alt Text',         'type' => 'text', 'placeholder' => 'Describe the image...'],
-                ['key' => 'objectFit',    'label' => 'Object Fit',       'type' => 'select', 'options' => [
+                ['key' => 'objectFit',    'label' => 'Object Fit',       'type' => 'segmented', 'group' => 'style', 'options' => [
                     ['label' => 'Cover',   'value' => 'cover'],
                     ['label' => 'Contain', 'value' => 'contain'],
                     ['label' => 'Fill',    'value' => 'fill'],
                 ]],
-                ['key' => 'width',        'label' => 'Width',            'type' => 'select', 'options' => [
+                ['key' => 'width',        'label' => 'Width',            'type' => 'select', 'group' => 'style', 'options' => [
                     ['label' => 'Full width (100%)', 'value' => '100%'],
                     ['label' => 'Auto',              'value' => 'auto'],
                     ['label' => 'Half width (50%)',  'value' => '50%'],
                 ]],
-                ['key' => 'height',       'label' => 'Height',           'type' => 'select', 'options' => [
+                ['key' => 'height',       'label' => 'Height',           'type' => 'select', 'group' => 'style', 'options' => [
                     ['label' => 'Medium (300px)', 'value' => '300px'],
                     ['label' => 'Small (200px)',  'value' => '200px'],
                     ['label' => 'Large (450px)',  'value' => '450px'],
                     ['label' => 'Auto height',    'value' => 'auto'],
                 ]],
-                ['key' => 'borderRadius', 'label' => 'Border Radius',    'type' => 'select', 'options' => [
+                ['key' => 'borderRadius', 'label' => 'Border Radius',    'type' => 'select', 'group' => 'style', 'options' => [
                     ['label' => 'Theme default',             'value' => 'var(--theme-border-radius)'],
                     ['label' => 'None (0px)',                'value' => '0px'],
                     ['label' => 'Small (4px)',               'value' => '4px'],
@@ -372,8 +388,8 @@ return [
                     ['label' => 'Large (16px)',              'value' => '16px'],
                     ['label' => 'Pill / Round (9999px)',     'value' => '9999px'],
                 ]],
-                ['key' => 'padding',      'label' => 'Padding (px)',     'type' => 'range', 'min' => 0, 'max' => 100],
-                ['key' => 'backgroundColor', 'label' => 'Background',   'type' => 'color'],
+                ['key' => 'padding',      'label' => 'Padding (px)',     'type' => 'range', 'min' => 0, 'max' => 100, 'group' => 'style'],
+                ['key' => 'backgroundColor', 'label' => 'Background',   'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'allowTransparent' => true, 'defaultValue' => 'transparent', 'customDefault' => '#f4f4f5'],
             ],
         ],
         'RichTextBlock' => [
@@ -387,8 +403,8 @@ return [
                 'backgroundColor' => 'transparent',
             ],
             'inspectorFields' => [
-                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150],
-                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
+                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150, 'group' => 'style'],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'allowTransparent' => true, 'defaultValue' => 'transparent', 'customDefault' => '#f4f4f5'],
             ],
         ],
         'VideoEmbedBlock' => [
@@ -412,14 +428,14 @@ return [
                     ['label' => 'Loom', 'value' => 'loom'],
                     ['label' => 'Direct / Raw', 'value' => 'raw'],
                 ]],
-                ['key' => 'aspectRatio', 'label' => 'Aspect Ratio', 'type' => 'select', 'options' => [
+                ['key' => 'aspectRatio', 'label' => 'Aspect Ratio', 'type' => 'segmented', 'group' => 'style', 'options' => [
                     ['label' => '16:9', 'value' => '16/9'],
                     ['label' => '4:3', 'value' => '4/3'],
                     ['label' => '1:1', 'value' => '1/1'],
                 ]],
                 ['key' => 'posterUrl', 'label' => 'Thumbnail (optional)', 'type' => 'media'],
-                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150],
-                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
+                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150, 'group' => 'style'],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'allowTransparent' => true, 'defaultValue' => 'transparent', 'customDefault' => '#f4f4f5'],
             ],
         ],
         'FAQBlock' => [
@@ -440,8 +456,8 @@ return [
                     ['key' => 'question', 'label' => 'Question', 'type' => 'text', 'placeholder' => 'Enter question'],
                     ['key' => 'answer', 'label' => 'Answer', 'type' => 'textarea', 'placeholder' => 'Enter answer'],
                 ]],
-                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150],
-                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
+                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150, 'group' => 'style'],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'allowTransparent' => true, 'defaultValue' => 'transparent', 'customDefault' => '#f4f4f5'],
             ],
         ],
         'TestimonialBlock' => [
@@ -462,8 +478,8 @@ return [
                 ['key' => 'authorName', 'label' => 'Author Name', 'type' => 'text', 'placeholder' => 'Enter name'],
                 ['key' => 'authorRole', 'label' => 'Author Role / Company', 'type' => 'text', 'placeholder' => 'Enter role'],
                 ['key' => 'avatarSrc', 'label' => 'Avatar Image', 'type' => 'media'],
-                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150],
-                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
+                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150, 'group' => 'style'],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'allowTransparent' => true, 'defaultValue' => 'transparent', 'customDefault' => '#f4f4f5'],
             ],
         ],
         'PricingTableBlock' => [
@@ -505,8 +521,8 @@ return [
                     ['key' => 'ctaUrl', 'label' => 'Button Link', 'type' => 'text'],
                     ['key' => 'isPopular', 'label' => 'Popular / Highlighted', 'type' => 'toggle'],
                 ]],
-                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150],
-                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
+                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150, 'group' => 'style'],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'allowTransparent' => true, 'defaultValue' => 'transparent', 'customDefault' => '#f4f4f5'],
             ],
         ],
         'ContactFormBlock' => [
@@ -538,8 +554,8 @@ return [
                     ['key' => 'placeholder', 'label' => 'Placeholder', 'type' => 'text'],
                     ['key' => 'required', 'label' => 'Required', 'type' => 'toggle'],
                 ]],
-                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150],
-                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
+                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150, 'group' => 'style'],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'allowTransparent' => true, 'defaultValue' => 'transparent', 'customDefault' => '#f4f4f5'],
             ],
         ],
         'AnnouncementBlock' => [
@@ -553,8 +569,8 @@ return [
             ],
             'inspectorFields' => [
                 ['key' => 'text', 'label' => 'Announcement', 'type' => 'text'],
-                ['key' => 'barColor', 'label' => 'Bar Color', 'type' => 'theme-color', 'defaultValue' => '--theme-primary', 'customDefault' => '#4f46e5'],
-                ['key' => 'textColor', 'label' => 'Text Color', 'type' => 'theme-color', 'defaultValue' => '--theme-bg', 'customDefault' => '#ffffff'],
+                ['key' => 'barColor', 'label' => 'Bar Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'defaultValue' => '--theme-primary', 'customDefault' => '#4f46e5'],
+                ['key' => 'textColor', 'label' => 'Text Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'defaultValue' => '--theme-bg', 'customDefault' => '#ffffff'],
             ],
         ],
         'ImageWithTextBlock' => [
@@ -563,7 +579,7 @@ return [
             'inspectorFields' => [
                 ['key' => 'eyebrow', 'label' => 'Eyebrow', 'type' => 'text'], ['key' => 'heading', 'label' => 'Heading', 'type' => 'text'], ['key' => 'body', 'label' => 'Body', 'type' => 'textarea'],
                 ['key' => 'imageSrc', 'label' => 'Image', 'type' => 'media'], ['key' => 'imageAlt', 'label' => 'Image Alt', 'type' => 'text'],
-                ['key' => 'imagePosition', 'label' => 'Image Position', 'type' => 'select', 'options' => [['label' => 'Left', 'value' => 'left'], ['label' => 'Right', 'value' => 'right']]],
+                ['key' => 'imagePosition', 'label' => 'Image Position', 'type' => 'segmented', 'group' => 'style', 'options' => [['label' => 'Left', 'value' => 'left'], ['label' => 'Right', 'value' => 'right']]],
                 ['key' => 'linkLabel', 'label' => 'Link Label', 'type' => 'text'], ['key' => 'linkUrl', 'label' => 'Link URL', 'type' => 'text'],
             ],
         ],
@@ -677,7 +693,7 @@ return [
             'inspectorFields' => [
                 ['key' => 'heading', 'label' => 'Heading', 'type' => 'text', 'placeholder' => 'Our Menu'],
                 ['key' => 'subheading', 'label' => 'Subheading', 'type' => 'text', 'placeholder' => 'Freshly prepared'],
-                ['key' => 'columns', 'label' => 'Columns', 'type' => 'columns', 'options' => [
+                ['key' => 'columns', 'label' => 'Columns', 'type' => 'columns', 'group' => 'style', 'options' => [
                     ['label' => '1', 'value' => 1],
                     ['label' => '2', 'value' => 2],
                     ['label' => '3', 'value' => 3],
@@ -688,8 +704,8 @@ return [
                     ['key' => 'description', 'label' => 'Description', 'type' => 'textarea', 'placeholder' => 'Short description'],
                     ['key' => 'price', 'label' => 'Price', 'type' => 'text', 'placeholder' => '$0'],
                 ]],
-                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150],
-                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
+                ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150, 'group' => 'style'],
+                ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'allowTransparent' => true, 'defaultValue' => 'transparent', 'customDefault' => '#f4f4f5'],
             ],
         ],
     ],

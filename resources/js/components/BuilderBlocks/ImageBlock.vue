@@ -70,8 +70,9 @@ const showMediaPlaceholders = inject('showMediaPlaceholders', false);
 }
 
 /*
- * Placeholder is built from theme tokens so empty kits still look designed:
- * a soft primary→secondary wash over the theme background plus fine grain.
+ * Empty-image chrome must stay truthful to the live page: no grey wash.
+ * Live sites omit the slot entirely; the editor only draws a light dashed
+ * outline so the block is still selectable without changing page color.
  */
 .image-placeholder {
     position: relative;
@@ -84,61 +85,31 @@ const showMediaPlaceholders = inject('showMediaPlaceholders', false);
     padding: 1.5rem;
     overflow: hidden;
     cursor: default;
-    background:
-        radial-gradient(
-            120% 90% at 15% 0%,
-            color-mix(in srgb, var(--theme-primary, #6366f1) 16%, transparent)
-                0%,
-            transparent 60%
-        ),
-        radial-gradient(
-            110% 100% at 90% 100%,
-            color-mix(
-                    in srgb,
-                    var(--theme-secondary, #a78bfa) 20%,
-                    transparent
-                )
-                0%,
-            transparent 55%
-        ),
-        color-mix(in srgb, var(--theme-text, #1e293b) 4%, transparent);
-}
-
-.image-placeholder::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background-image: repeating-linear-gradient(
-        -45deg,
-        color-mix(in srgb, var(--theme-text, #1e293b) 4%, transparent) 0px,
-        color-mix(in srgb, var(--theme-text, #1e293b) 4%, transparent) 1px,
-        transparent 1px,
-        transparent 9px
-    );
+    background: transparent;
+    border: 1px dashed
+        color-mix(in srgb, var(--theme-text, #1e293b) 18%, transparent);
 }
 
 .placeholder-badge {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 3rem;
-    height: 3rem;
+    width: 2.75rem;
+    height: 2.75rem;
     border-radius: 9999px;
     background: color-mix(
         in srgb,
-        var(--theme-primary, #6366f1) 12%,
+        var(--theme-text, #1e293b) 4%,
         transparent
     );
     border: 1px solid
-        color-mix(in srgb, var(--theme-primary, #6366f1) 24%, transparent);
+        color-mix(in srgb, var(--theme-text, #1e293b) 12%, transparent);
 }
 
 .placeholder-icon {
-    width: 1.4rem;
-    height: 1.4rem;
-    color: var(--theme-primary, #6366f1);
-    opacity: 0.85;
+    width: 1.25rem;
+    height: 1.25rem;
+    color: color-mix(in srgb, var(--theme-text, #334155) 55%, transparent);
 }
 
 .placeholder-caption {
@@ -148,7 +119,7 @@ const showMediaPlaceholders = inject('showMediaPlaceholders', false);
     line-height: 1.45;
     text-align: center;
     font-family: var(--theme-font-body, sans-serif);
-    color: color-mix(in srgb, var(--theme-text, #334155) 72%, transparent);
+    color: color-mix(in srgb, var(--theme-text, #334155) 55%, transparent);
 }
 
 .placeholder-hint {
@@ -157,6 +128,6 @@ const showMediaPlaceholders = inject('showMediaPlaceholders', false);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     font-family: var(--theme-font-body, sans-serif);
-    color: color-mix(in srgb, var(--theme-text, #334155) 48%, transparent);
+    color: color-mix(in srgb, var(--theme-text, #334155) 40%, transparent);
 }
 </style>

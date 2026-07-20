@@ -465,6 +465,29 @@ test('menu, button link, and video thumbnail props save and publish', function (
                 'openInNewTab' => true,
                 'size' => 'lg',
                 'alignment' => 'center',
+                'backgroundColor' => '#fbbf24',
+                'textColor' => '--theme-text',
+                'hoverBackgroundColor' => '#f59e0b',
+                'hoverTextColor' => '#ffffff',
+                'borderRadius' => '9999px',
+            ],
+            'children' => [],
+        ],
+        [
+            'id' => 'button-ghost',
+            'type' => 'ButtonBlock',
+            'props' => [
+                'label' => 'Learn more',
+                'variant' => 'primary',
+                'url' => '/about',
+                'openInNewTab' => false,
+                'size' => 'md',
+                'alignment' => 'center',
+                'backgroundColor' => 'transparent',
+                'textColor' => '',
+                'hoverBackgroundColor' => '',
+                'hoverTextColor' => '',
+                'borderRadius' => '',
             ],
             'children' => [],
         ],
@@ -497,7 +520,13 @@ test('menu, button link, and video thumbnail props save and publish', function (
     expect($page->published_config[0]['props']['items'][0]['name'])->toBe('Garden plate')
         ->and($page->published_config[0]['props']['columns'])->toBe(2)
         ->and($page->published_config[1]['props']['openInNewTab'])->toBeTrue()
-        ->and($page->published_config[2]['props']['provider'])->toBe('youtube');
+        ->and($page->published_config[1]['props']['backgroundColor'])->toBe('#fbbf24')
+        ->and($page->published_config[1]['props']['hoverBackgroundColor'])->toBe('#f59e0b')
+        ->and($page->published_config[1]['props']['textColor'])->toBe('--theme-text')
+        ->and($page->published_config[1]['props']['borderRadius'])->toBe('9999px')
+        ->and($page->published_config[2]['props']['backgroundColor'])->toBe('transparent')
+        ->and($page->published_config[2]['props']['textColor'])->toBeNull()
+        ->and($page->published_config[3]['props']['provider'])->toBe('youtube');
 });
 
 test('inline edits to nested pricing and contact fields survive save and publish', function () {

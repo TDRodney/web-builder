@@ -47,6 +47,7 @@ Route::domain(config('app.central_domain', 'domain.localhost'))->group(function 
 
             return Inertia::render('CentralDashboard', [
                 'tenant' => null,
+                'public_url' => null,
                 'central_navigation' => [
                     'account_settings_url' => route('profile.edit'),
                     'logout_url' => route('logout'),
@@ -78,6 +79,7 @@ Route::domain('{tenant}.'.config('app.central_domain', 'domain.localhost'))
 
                 return Inertia::render('CentralDashboard', [
                     'tenant' => $tenant->only(['id', 'subdomain']),
+                    'public_url' => request()->getSchemeAndHttpHost(),
                     'theme_config' => $tenant->theme_config,
                     'navigation_config' => $tenant->navigation_config,
                     'can_apply_site_kit' => $tenant->isEligibleForInitialSiteKit(),

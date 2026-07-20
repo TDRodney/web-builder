@@ -62,23 +62,14 @@ const isEditable = inject('isEditable', false);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: color-mix(in srgb, var(--theme-text) 8%, transparent);
-    color: color-mix(in srgb, var(--theme-text) 55%, transparent);
+    background: transparent;
+    border: 1px dashed
+        color-mix(in srgb, var(--theme-text) 18%, transparent);
+    color: color-mix(in srgb, var(--theme-text) 45%, transparent);
     font-family: var(--theme-font-body);
 }
 .media-empty {
-    background:
-        radial-gradient(
-            120% 90% at 20% 0%,
-            color-mix(in srgb, var(--theme-primary) 14%, transparent) 0%,
-            transparent 60%
-        ),
-        radial-gradient(
-            110% 100% at 85% 100%,
-            color-mix(in srgb, var(--theme-secondary) 18%, transparent) 0%,
-            transparent 55%
-        ),
-        color-mix(in srgb, var(--theme-text) 5%, transparent);
+    background: transparent;
 }
 .media-hint {
     padding: 0 1.5rem;

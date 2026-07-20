@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, useSlots } from 'vue';
+import { resolveThemeColor } from '@/lib/themeColor';
 
 const props = defineProps({
     nodeId: { type: String, required: true },
@@ -17,7 +18,8 @@ const sectionStyle = computed(() => ({
     '--section-align': props.blockProps.verticalAlign ?? 'center',
     '--section-text-align': props.blockProps.textAlign ?? 'left',
     '--section-overlay-opacity': `${(props.blockProps.overlayOpacity ?? 0) / 100}`,
-    backgroundColor: props.blockProps.backgroundColor || 'transparent',
+    backgroundColor:
+        resolveThemeColor(props.blockProps.backgroundColor) ?? 'transparent',
     backgroundImage: props.blockProps.backgroundImage
         ? `url(${props.blockProps.backgroundImage})`
         : undefined,

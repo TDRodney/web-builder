@@ -172,7 +172,7 @@ export const blockPresets: BlockPreset[] = [
                         id: '__preset__',
                         props: {
                             content: 'Frequently asked questions',
-                            fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+                            fontSize: 'clamp(1.5rem, 3.5cqw, 2.25rem)',
                             color: '--theme-text',
                             fontFamily: 'heading',
                             fontWeight: '700',
@@ -282,7 +282,7 @@ export const blockPresets: BlockPreset[] = [
                         id: '__preset__',
                         props: {
                             content: 'Explore our cuisine',
-                            fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+                            fontSize: 'clamp(1.5rem, 3.5cqw, 2.25rem)',
                             color: '--theme-text',
                             fontFamily: 'heading',
                             fontWeight: '700',
@@ -477,7 +477,7 @@ export const blockPresets: BlockPreset[] = [
                         id: '__preset__',
                         props: {
                             content: 'Loved by our customers',
-                            fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+                            fontSize: 'clamp(1.5rem, 3.5cqw, 2.25rem)',
                             color: '--theme-text',
                             fontFamily: 'heading',
                             fontWeight: '700',
@@ -588,7 +588,7 @@ export const blockPresets: BlockPreset[] = [
                                 id: '__preset__',
                                 props: {
                                     content: 'Season sale — up to 15% off',
-                                    fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)',
+                                    fontSize: 'clamp(1.4rem, 3cqw, 2.1rem)',
                                     color: '#ffffff',
                                     fontFamily: 'heading',
                                     fontWeight: '700',
@@ -642,7 +642,7 @@ export const blockPresets: BlockPreset[] = [
                                 id: '__preset__',
                                 props: {
                                     content: 'Fresh picks for the season',
-                                    fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)',
+                                    fontSize: 'clamp(1.4rem, 3cqw, 2.1rem)',
                                     color: '#ffffff',
                                     fontFamily: 'heading',
                                     fontWeight: '700',

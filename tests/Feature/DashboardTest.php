@@ -50,6 +50,7 @@ test('authenticated users can visit the dashboard', function () {
             ->component('CentralDashboard')
             ->where('tenant.id', $tenant->id)
             ->where('tenant.subdomain', 'test-tenant')
+            ->where('public_url', fn (mixed $url): bool => is_string($url) && str_contains($url, 'test-tenant.'))
             ->where('theme_config', $themeConfig)
             ->where('navigation_config', $navigationConfig)
             ->where('can_apply_site_kit', false)

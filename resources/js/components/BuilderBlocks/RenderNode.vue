@@ -11,6 +11,7 @@ import {
     surfaceStacksOnNarrow as stacksOnNarrow,
     surfaceStylesForBlock,
 } from '@/lib/layoutSurface';
+import { resolveThemeColor } from '@/lib/themeColor';
 import BlockToolbar from './BlockToolbar.vue';
 import RenderNode from './RenderNode.vue';
 
@@ -99,9 +100,40 @@ onErrorCaptured((err) => {
     return false;
 });
 
-const isHovered = ref(false);
 const isSelected = computed(() => selectedBlock?.value?.id === props.node.id);
-const isTreeHovered = computed(() => hoveredNodeId?.value === props.node.id);
+/** Only the deepest block under the pointer owns hover chrome (shared with Layers). */
+const isPrimaryHover = computed(() => hoveredNodeId?.value === props.node.id);
+const showDragChrome = computed(
+    () => isPrimaryHover.value || isSelected.value,
+);
+/** Action icons only after click-select — avoids stacked toolbars on nested hover. */
+const showActionToolbar = computed(() => isSelected.value);
+
+const setCanvasHover = () => {
+    if (hoveredNodeId && !isDragging?.value) {
+        hoveredNodeId.value = props.node.id;
+    }
+};
+
+const clearCanvasHover = (event) => {
+    if (!hoveredNodeId) {
+        return;
+    }
+
+    const related = event.relatedTarget;
+
+    if (
+        related instanceof Node &&
+        event.currentTarget instanceof Node &&
+        event.currentTarget.contains(related)
+    ) {
+        return;
+    }
+
+    if (hoveredNodeId.value === props.node.id) {
+        hoveredNodeId.value = null;
+    }
+};
 
 const selectBlock = (node) => {
     if (canvasSelection) {
@@ -112,6 +144,10 @@ const selectBlock = (node) => {
 };
 const handleDragStart = () => {
     canvasDrag?.start(props.node.type);
+
+    if (hoveredNodeId) {
+        hoveredNodeId.value = null;
+    }
 };
 
 const handleDragEnd = () => {
@@ -145,7 +181,7 @@ const resolvedBgColor = computed(() => {
         return 'transparent';
     }
 
-    return bg;
+    return resolveThemeColor(bg);
 });
 </script>
 
@@ -155,8 +191,8 @@ const resolvedBgColor = computed(() => {
         :data-node-id="node.id"
         :data-selected="isSelected ? 'true' : 'false'"
         @click.stop="selectBlock(node)"
-        @mouseenter="isHovered = true"
-        @mouseleave="isHovered = false"
+        @mouseover.stop="setCanvasHover"
+        @mouseout="clearCanvasHover"
         :style="{
             padding: (node.props?.padding ?? 0) + 'px',
             backgroundColor: resolvedBgColor,
@@ -167,15 +203,15 @@ const resolvedBgColor = computed(() => {
         }"
         class="editor-block-node relative my-2 cursor-pointer border-2 border-transparent transition-[border-color,background-color]"
         :class="{
-            'editor-block-node-active': isHovered || isSelected,
-            'editor-block-node-tree-hovered': isTreeHovered,
+            'editor-block-node-hover': isPrimaryHover && !isSelected,
+            'editor-block-node-active': isSelected,
         }"
     >
-        <!-- Dedicated drag handle displaying block label and grip icon -->
+        <!-- Type label + drag handle: deepest hover or selection only -->
         <div
             class="block-drag-handle drag-handle absolute top-2 left-2 z-20 flex cursor-grab items-center gap-1.5 border border-slate-700/50 bg-slate-900/90 px-2 py-1 text-xs font-semibold text-slate-200 shadow-lg backdrop-blur-sm transition-opacity select-none active:cursor-grabbing"
             :class="
-                isHovered
+                showDragChrome
                     ? 'pointer-events-auto opacity-100'
                     : 'pointer-events-none opacity-0'
             "
@@ -184,8 +220,8 @@ const resolvedBgColor = computed(() => {
             <span>{{ blockLabel }}</span>
         </div>
 
-        <!-- Action buttons toolbar -->
-        <BlockToolbar :node-id="node.id" :visible="isHovered" />
+        <!-- Full actions only when this block is selected -->
+        <BlockToolbar :node-id="node.id" :visible="showActionToolbar" />
 
         <div
             v-if="hasError"
@@ -262,14 +298,14 @@ const resolvedBgColor = computed(() => {
     border-radius: 3px;
 }
 
+.editor-block-node-hover {
+    border-color: color-mix(in srgb, #7890b5 55%, transparent);
+    box-shadow: 0 0 0 1px rgb(120 144 181 / 12%);
+}
+
 .editor-block-node-active {
     border-color: #7890b5;
     box-shadow: 0 0 0 1px rgb(120 144 181 / 18%);
-}
-
-.editor-block-node-tree-hovered {
-    border-color: color-mix(in srgb, #7890b5 60%, transparent);
-    box-shadow: 0 0 0 3px rgb(120 144 181 / 14%);
 }
 
 .block-drag-handle {

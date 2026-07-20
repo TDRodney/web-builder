@@ -61,7 +61,7 @@ const { cssVars: themeVars, fontUrl } = useTheme(
             @open-cart="commerceCart.open"
         />
 
-        <main class="flex-grow">
+        <main class="public-site-runtime flex-grow">
             <RenderPublicNode
                 v-for="block in page.published_config"
                 :key="block.id"
@@ -79,3 +79,14 @@ const { cssVars: themeVars, fontUrl } = useTheme(
         />
     </div>
 </template>
+
+<style scoped>
+/*
+ * Blocks use container-relative units (cqw) and @container queries
+ * (e.g. LayoutGrid stack-on-narrow). The editor canvas is an inline-size
+ * container, so the public page must be one too for identical behavior.
+ */
+.public-site-runtime {
+    container-type: inline-size;
+}
+</style>

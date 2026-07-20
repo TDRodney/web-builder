@@ -53,7 +53,7 @@ const buttonNode = (
         label,
         variant,
         url: '#',
-        size: 'lg',
+        size: 'md',
         alignment,
         padding: 0,
         backgroundColor: 'transparent',
@@ -71,7 +71,7 @@ const imageNode = (role: string, alt: string): PresetBlockNode => ({
         objectFit: 'cover',
         borderRadius: 'var(--theme-border-radius)',
         width: '100%',
-        height: '520px',
+        height: 'clamp(220px, 36cqw, 400px)',
         padding: 0,
         backgroundColor: 'transparent',
     },
@@ -99,21 +99,26 @@ const columnNode = (
     children,
 });
 
+/**
+ * CTAs stack vertically inside the copy column. A 2-column button grid
+ * collapses into mid-word wrapping whenever the split copy track is
+ * narrower than ~280px (the common case for image-left / wide-image layouts).
+ */
 const actionsNode = (
     id: string,
     alignment: 'start' | 'center' = 'start',
 ): PresetBlockNode => ({
     id,
-    type: 'LayoutGrid',
+    type: 'LayoutColumn',
     props: {
         padding: 0,
         backgroundColor: 'transparent',
-        columns: 2,
-        gap: '12px',
-        columnTemplate: 'equal',
-        alignItems: 'center',
-        width: 'min(100%, 420px)',
-        stackOnNarrow: false,
+        span: 'auto',
+        width: '100%',
+        height: 'auto',
+        gap: '10px',
+        verticalAlign: 'start',
+        horizontalAlign: alignment === 'center' ? 'center' : 'start',
     },
     children: [
         buttonNode('primaryAction', 'Explore', 'primary', alignment),
@@ -130,7 +135,7 @@ const statNode = (
         `__${role}-stat__`,
         [
             textNode(`${role}Value`, value, {
-                fontSize: 'clamp(1.9rem, 3.5vw, 2.75rem)',
+                fontSize: 'clamp(1.6rem, 3.2cqw, 2.5rem)',
                 fontFamily: 'heading',
                 fontWeight: '700',
                 lineHeight: '1.05',
@@ -154,22 +159,22 @@ const heroCopy = (alignment: 'left' | 'center' = 'left') => [
         maxWidth: alignment === 'center' ? '60ch' : '42rem',
     }),
     textNode('heading', 'A clear statement that earns attention', {
-        fontSize: 'clamp(3rem, 7vw, 6.75rem)',
+        fontSize: 'clamp(2rem, 5cqw, 4rem)',
         fontFamily: 'heading',
         fontWeight: '700',
-        lineHeight: '0.96',
-        letterSpacing: '-0.045em',
+        lineHeight: '1.05',
+        letterSpacing: '-0.035em',
         textAlign: alignment,
-        maxWidth: alignment === 'center' ? '13ch' : '11ch',
+        maxWidth: alignment === 'center' ? '16ch' : '18ch',
     }),
     textNode(
         'body',
         'Support the headline with a concise description that gives visitors a reason to continue.',
         {
-            fontSize: '18px',
-            lineHeight: '1.6',
+            fontSize: '17px',
+            lineHeight: '1.55',
             textAlign: alignment,
-            maxWidth: alignment === 'center' ? '58ch' : '42rem',
+            maxWidth: alignment === 'center' ? '42ch' : '36ch',
         },
     ),
 ];
@@ -229,8 +234,8 @@ export const sectionPatterns: SectionPattern[] = [
                     padding: 0,
                     backgroundColor: 'transparent',
                     columns: 2,
-                    gap: 'clamp(2rem, 6vw, 6rem)',
-                    columnTemplate: 'wide-left',
+                    gap: 'clamp(1.5rem, 4cqw, 3.5rem)',
+                    columnTemplate: 'equal',
                     alignItems: 'center',
                 },
                 children: [
@@ -260,8 +265,8 @@ export const sectionPatterns: SectionPattern[] = [
                     padding: 0,
                     backgroundColor: 'transparent',
                     columns: 2,
-                    gap: 'clamp(2rem, 6vw, 6rem)',
-                    columnTemplate: 'wide-left',
+                    gap: 'clamp(1.5rem, 4cqw, 3.5rem)',
+                    columnTemplate: 'equal',
                     alignItems: 'center',
                 },
                 children: [
@@ -297,12 +302,12 @@ export const sectionPatterns: SectionPattern[] = [
                         'heading',
                         'Make the first screen unmistakably yours',
                         {
-                            fontSize: 'clamp(3.8rem, 10vw, 9rem)',
+                            fontSize: 'clamp(2.25rem, 6cqw, 4.75rem)',
                             fontFamily: 'heading',
                             fontWeight: '700',
-                            lineHeight: '0.86',
-                            letterSpacing: '-0.055em',
-                            maxWidth: '12ch',
+                            lineHeight: '0.95',
+                            letterSpacing: '-0.04em',
+                            maxWidth: '14ch',
                         },
                     ),
                     {
@@ -312,8 +317,8 @@ export const sectionPatterns: SectionPattern[] = [
                             padding: 0,
                             backgroundColor: 'transparent',
                             columns: 2,
-                            gap: 'clamp(2rem, 7vw, 7rem)',
-                            columnTemplate: 'wide-right',
+                            gap: 'clamp(1.5rem, 4cqw, 3.5rem)',
+                            columnTemplate: 'equal',
                             alignItems: 'end',
                         },
                         children: [
@@ -356,12 +361,12 @@ export const sectionPatterns: SectionPattern[] = [
                         letterSpacing: '0.14em',
                     }),
                     textNode('heading', 'Simple, direct, memorable', {
-                        fontSize: 'clamp(2.75rem, 6vw, 5.5rem)',
+                        fontSize: 'clamp(1.85rem, 4.5cqw, 3.5rem)',
                         fontFamily: 'heading',
                         fontWeight: '700',
-                        lineHeight: '0.98',
-                        letterSpacing: '-0.04em',
-                        maxWidth: '13ch',
+                        lineHeight: '1.05',
+                        letterSpacing: '-0.035em',
+                        maxWidth: '16ch',
                     }),
                     textNode(
                         'body',
@@ -386,8 +391,8 @@ export const sectionPatterns: SectionPattern[] = [
                     padding: 0,
                     backgroundColor: 'transparent',
                     columns: 2,
-                    gap: 'clamp(2rem, 6vw, 6rem)',
-                    columnTemplate: 'wide-left',
+                    gap: 'clamp(1.5rem, 4cqw, 3.5rem)',
+                    columnTemplate: 'equal',
                     alignItems: 'center',
                 },
                 children: [

@@ -315,29 +315,33 @@ The theme is injected as CSS custom properties on the canvas root `.canvas-runti
 
 ### Inspector Fields (Editor Sidebar Controls)
 
-The inspector sidebar renders controls dynamically from the `inspectorFields` array in `config/blocks.php`. Supported field types:
+The inspector renders controls dynamically from the `inspectorFields` array in `config/blocks.php` through a single shared renderer, `InspectorField.vue` (used for every block, including `SectionBlock`). Each field takes an optional `'group'` key — `'content'` (default) or `'style'` — and `ContentInspector.vue` renders the groups as collapsible **Content** / **Style & Layout** sections plus a fixed **Effects** section (scroll-reveal animation). Content opens by default; if a block has only style fields, Style opens instead. Supported field types:
 
 | `type` | Renders As | Notes |
 |---|---|---|---|
 | `'text'` | Single-line text input | Use for labels, URLs, titles |
-| `'color'` | Native `<input type="color">` + hex text input | Returns 6-digit hex string |
-| `'theme-color'` | Theme-token swatches + full preset palette + custom hex/native picker (`ThemeColorControl`) | Stores a `--theme-*` token string or a hex value. Use for text colors so users can pick black, yellow, brand tokens, or any custom color. Accepts `defaultValue`/`customDefault`. |
+| `'theme-color'` | Collapsed swatch row (swatch + value summary) that expands to `ThemeColorControl` (theme tokens + preset palette + custom hex/native picker) | Stores a `--theme-*` token string, a hex value, or `'transparent'`. Supports `defaultValue`/`customDefault`, `compact` (palette behind **More colors**; on by default inside the row), `clearable` (reset to empty so the block can fall back to a preset; summary shows "Auto"), and `allowTransparent` (adds a **None (transparent)** choice). Block-wrapper `backgroundColor` fields use `defaultValue => 'transparent'` + `allowTransparent`. |
 | `'font-size'` | Preset buttons + px slider + advanced responsive input (`FontSizeControl`) | Stores a CSS length or `clamp()` string |
-| `'range'` | Slider | Requires `min` and `max` |
+| `'range'` | Slider + numeric input | Requires `min` and `max` |
 | `'number'` | Numeric input | Requires `min` and `max` |
-| `'select'` | Dropdown | Requires an `options: [{label, value}]` array (option `value` may be a boolean, e.g. a new-tab toggle) |
+| `'select'` | Dropdown | Requires an `options: [{label, value}]` array. Use only for long lists (5+ options); prefer `'segmented'` or `'toggle'` otherwise |
+| `'segmented'` | Segmented button group | Requires `options: [{label, value}]`; use for alignment, font family, variant, size, and other short mutually-exclusive choices |
+| `'toggle'` | Switch on a single row with the label | Writes a boolean (e.g. `openInNewTab`, `stackOnNarrow`) |
 | `'columns'` | Segmented button group (1/2/3/4/6) | Requires an `options: [{label, value}]` array of numbers; writes the numeric column count. Used for `LayoutGrid.columns` and `MenuBlock.columns` |
-| `'media'` | Image preview + "Choose Image" button | Opens `MediaPicker` modal; stores the selected image URL |
-| `'repeater'` | Dynamic list of grouped subfields | Requires `subFields: InspectorField[]`; supports add/delete/reorder |
+| `'media'` | Image preview + "Choose Image" button | Opens `MediaPicker` modal; stores the selected image URL. Also supported inside repeater `subFields` (the picker event carries `{fieldKey, index, subKey}`) |
+| `'repeater'` | Collapsible list of items | Requires `subFields: InspectorField[]`; items collapse to a summary row (first text values) with move/duplicate/delete actions; one item expands at a time |
+
+The legacy `'color'` type (raw native picker) still renders as a fallback but has no remaining uses — all color fields are `'theme-color'`. Because theme tokens are stored as bare `--theme-*` strings, anything consuming color props directly must resolve them via `resolveThemeColor()` from `resources/js/lib/themeColor.ts` (already wired into `RenderNode`, `RenderPublicNode`, `SectionBlock`, and `DividerBlock`).
 
 Example `inspectorFields` definition in `config/blocks.php`:
 
 ```php
 'inspectorFields' => [
-    ['key' => 'padding',         'label' => 'Padding (px)',   'type' => 'range',  'min' => 0, 'max' => 150],
-    ['key' => 'backgroundColor', 'label' => 'Background',     'type' => 'color'],
     ['key' => 'label',           'label' => 'Button Text',    'type' => 'text',   'placeholder' => 'Click me'],
-    ['key' => 'variant',         'label' => 'Variant',        'type' => 'select', 'options' => [
+    ['key' => 'openInNewTab',    'label' => 'Open in new tab', 'type' => 'toggle'],
+    ['key' => 'padding',         'label' => 'Padding (px)',   'type' => 'range',  'min' => 0, 'max' => 150, 'group' => 'style'],
+    ['key' => 'backgroundColor', 'label' => 'Background',     'type' => 'theme-color', 'group' => 'style', 'compact' => true, 'allowTransparent' => true, 'defaultValue' => 'transparent', 'customDefault' => '#f4f4f5'],
+    ['key' => 'variant',         'label' => 'Variant',        'type' => 'segmented', 'group' => 'style', 'options' => [
         ['label' => 'Primary',   'value' => 'primary'],
         ['label' => 'Secondary', 'value' => 'secondary'],
         ['label' => 'Outline',   'value' => 'outline'],
@@ -356,9 +360,13 @@ Toggle values stored as strings (`'yes'`/`'true'`) are normalized to actual bool
 ### Block-specific behaviors
 
 - **`MenuBlock`** — an editable restaurant-style menu. Its `items` repeater is a flat list where each item has `category`, `name`, `description`, and `price`; the component groups items by category (order preserved) and lays categories out across `columns` (1–3). Item name/description/price are inline-editable on the canvas; category labels are edited through the inspector repeater. Fully theme-aware and reveal-friendly. Catalog usage lives in `config/designs.php` via the `$menuBlock` helper (Restaurant Menu page).
-- **`ButtonBlock`** — renders an `<a>` on the public site when `url` is set. `openInNewTab` (boolean select) controls `target="_blank"` + `rel="noopener noreferrer"`; same-tab links (internal `/slug` or external) omit `target`. `variant` and `size` are `select` fields.
+- **`ButtonBlock`** — renders an `<a>` on the public site when `url` is set. `openInNewTab` (toggle) controls `target="_blank"` + `rel="noopener noreferrer"`; same-tab links (internal `/slug` or external) omit `target`. `variant` (primary/secondary/outline) and `size` are `segmented` presets. Optional `theme-color` overrides — `backgroundColor`, `textColor`, `hoverBackgroundColor`, `hoverTextColor` — use the compact color control (theme tokens + hex; full palette behind **More colors**) and a clear action to fall back to the variant. Optional `borderRadius` select (`''` / `0px` / `8px` / `16px` / `9999px`) overrides the theme corner token on that button only; leave Theme default to inherit `--theme-border-radius`. Empty color values fall back to the variant; any custom hover color switches from the default `brightness(0.9)` filter to explicit hover colors via `--btn-hover-bg` / `--btn-hover-text`. For the outline variant the border follows the resolved text color. Background and hover-background use `allowTransparent`, so a button can have no fill at all; when a filled variant gets a transparent background without a custom text color, the text falls back to `--theme-primary` so it stays visible.
 - **`VideoEmbedBlock`** — lite-embed. It shows a thumbnail poster first (YouTube `hqdefault.jpg` derived from the URL, or an optional `posterUrl` media override, or a theme-derived gradient) and only loads the provider `<iframe>` after a click on the public site. The editor canvas always shows the poster and never loads the iframe.
 - **`RichTextBlock`** — TipTap toolbar includes per-selection text color (theme tokens `var(--theme-primary|secondary|text)`, hex presets, native picker, and reset). Colors are stored as inline `style="color: …"` on `<span>` marks via `@tiptap/extension-text-style` and survive save/publish without backend changes.
+
+### Responsive sizing in presets and patterns (`cqw`, not `vw`)
+
+The editor canvas (`.canvas-runtime`), the design-library preview, and the public page `<main class="public-site-runtime">` are all `container-type: inline-size` containers. Catalog layouts, section patterns, and block presets must size display type, hero image heights, and large gaps with **container-relative `cqw` units** (e.g. `clamp(2rem, 5cqw, 4rem)`), never `vw` — `vw` measures the whole window, so inserted sections render comically large inside the editor canvas and ignore the device-preview width. Split heroes use **equal** columns (not `wide-left` / `wide-right` at 65/35) so copy never starves beside media. Dual CTAs are a **stacked `LayoutColumn`**, not a 2-column button grid — side-by-side buttons crush and mid-word-wrap inside a half-width copy track. `ButtonBlock` is `max-width: 100%` and wraps at word boundaries only. The same container also makes `@container`-based stack-on-narrow rules work on the published site.
 
 ### Theme workspace one-click palettes
 

@@ -66,6 +66,7 @@ const props = defineProps<{
         id: number;
         subdomain: string;
     } | null;
+    public_url?: string | null;
     theme_config?: ThemeConfig | null;
     navigation_config?: NavigationConfig | null;
     can_apply_site_kit?: boolean;
@@ -112,15 +113,30 @@ const hiddenPageCount = computed(
 
 const hasPublishedSite = computed(() => summary.value.published_page_count > 0);
 
-const tenantPublicUrl = computed(() =>
-    props.tenant ? window.location.origin : '',
-);
+const tenantPublicUrl = computed(() => {
+    if (props.public_url) {
+        return props.public_url;
+    }
 
-const workspaceHost = computed(() =>
-    tenantPublicUrl.value
-        ? new URL(tenantPublicUrl.value).host
-        : 'No workspace assigned',
-);
+    // Client-only fallback for older payloads; avoid reading window during SSR.
+    if (props.tenant && typeof window !== 'undefined') {
+        return window.location.origin;
+    }
+
+    return '';
+});
+
+const workspaceHost = computed(() => {
+    if (!tenantPublicUrl.value) {
+        return 'No workspace assigned';
+    }
+
+    try {
+        return new URL(tenantPublicUrl.value).host;
+    } catch {
+        return tenantPublicUrl.value.replace(/^https?:\/\//, '');
+    }
+});
 
 const primaryWorkspaceUrl = computed(() => {
     if (!props.tenant) {

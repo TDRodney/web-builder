@@ -85,19 +85,19 @@ const handleCanvasLink = (event: MouseEvent) => {
         <div class="canvas-stage" :class="`canvas-stage-${viewMode}`">
             <div
                 class="canvas-frame"
-                :style="{ maxWidth: canvasMaxWidth }"
+                :style="[
+                    themeVars,
+                    {
+                        maxWidth: canvasMaxWidth,
+                        backgroundColor: themeVars['--theme-bg'],
+                        color: themeVars['--theme-text'],
+                    },
+                ]"
                 :data-preview-mode="viewMode"
             >
                 <div
                     class="canvas-runtime"
                     @click.capture="handleCanvasLink"
-                    :style="[
-                        themeVars,
-                        {
-                            backgroundColor: themeVars['--theme-bg'],
-                            color: themeVars['--theme-text'],
-                        },
-                    ]"
                 >
                     <SiteHeader
                         :navigation-config="navigationConfig"
@@ -184,7 +184,8 @@ const handleCanvasLink = (event: MouseEvent) => {
     min-height: 420px;
     overflow-x: hidden;
     overflow-y: auto;
-    background: #ffffff;
+    /* Page color comes from --theme-bg via inline style — never hardcode white. */
+    background: var(--theme-bg, #ffffff);
     border: 1px solid var(--editor-border);
     border-radius: 10px;
     box-shadow: var(--editor-shadow);
