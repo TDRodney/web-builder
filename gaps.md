@@ -1,6 +1,6 @@
 # Web Builder — Current Gap Analysis and Roadmap
 
-> Last reconciled: 2026-07-18.
+> Last reconciled: 2026-07-20.
 >
 > Sources checked: the active application code, `spec.md`, `AGENTS.md`, routes, migrations, models, controllers, Vue components, factories, and feature tests. Where documentation and code disagree, the active code is treated as authoritative.
 
@@ -13,7 +13,7 @@ The project has a working multi-tenant website-builder core:
 - subdomain-based tenant isolation;
 - authentication, registration, 2FA, and passkeys;
 - multi-page CRUD with a configurable homepage;
-- a 15-block drag-and-drop editor;
+- a 25-block drag-and-drop editor;
 - draft, autosave, undo/redo, and publish flows;
 - shared Vue rendering for the editor and public site;
 - block presets and in-canvas block actions;
@@ -33,14 +33,14 @@ The v1 information architecture is now unified: the tenant dashboard is an overv
 | Area | Status | Summary |
 |---|---|---|
 | Multi-page management | Complete | CRUD, switching, metadata, homepage selection, and deletion guard are implemented |
-| Block editor | Mostly complete | 15 block types, presets, toolbar, schema validation, and TipTap are implemented; 6 specialized blocks remain |
+| Block editor | Mostly complete | 25 block types, presets, toolbar, schema validation, and TipTap are implemented; 6 specialized blocks remain |
 | Media pipeline | Core complete | Upload, tenant isolation, thumbnails, picker, and deletion work; production optimization features remain |
 | Theming | Core complete | Theme persistence, unified-builder controls, CSS variables, and curated Google Fonts work |
 | General site settings | Mostly missing | Site identity, social, analytics, SEO defaults, and custom domains are not modeled |
 | Navigation | Core complete | API, editor UI, external links, editor propagation, and public propagation are implemented |
 | SEO | Mostly missing | Responsive public rendering and `<html lang>` exist; page metadata, sitemap, robots, canonical, and OG data do not |
 | History/collaboration | Missing | Client undo/redo exists, but no persistent revisions, audit trail, or publish diff |
-| Testing/infrastructure | Good foundation | 181 tests pass and 1 is skipped; production database and several integration/SEO tests remain |
+| Testing/infrastructure | Good foundation | 205 tests pass and 1 is skipped; production database and several integration/SEO tests remain |
 
 ---
 
@@ -114,7 +114,7 @@ Remaining quality improvements, not blockers for the original gap:
 
 ### Status: Mostly Complete
 
-### Implemented Block Types: 15
+### Implemented Block Types: 25
 
 | Block Type | Status | Notes |
 |---|---|---|
@@ -128,12 +128,21 @@ Remaining quality improvements, not blockers for the original gap:
 | `DividerBlock` | Done | Thickness, color, and margin controls |
 | `SpacerBlock` | Done | Adjustable vertical spacing |
 | `ImageBlock` | Done | Connected to the media picker |
-| `RichTextBlock` | Done | TipTap WYSIWYG with headings, lists, bold, and italic |
+| `RichTextBlock` | Done | TipTap WYSIWYG with headings, lists, bold, italic, and per-selection text color |
 | `VideoEmbedBlock` | Done | YouTube, Vimeo, Loom, and raw video support |
 | `FAQBlock` | Done | Repeater-driven accordion content |
 | `TestimonialBlock` | Done | Quote, author, role, and media-picker avatar |
 | `PricingTableBlock` | Done | Repeater-driven plans |
 | `ContactFormBlock` | Done | Public submission endpoint and rate limiting |
+| `MenuBlock` | Done | Editable restaurant menu with category grouping |
+| `AnnouncementBlock` | Done | Store announcement bar with theme-color controls |
+| `ImageWithTextBlock` | Done | Editorial image-text split with image position toggle |
+| `CollectionListBlock` | Done | Commerce-hydratable collection cards with repeater |
+| `ProductGridBlock` | Done | Smart presentation block with Simple/Advanced inspector |
+| `ProductDetailBlock` | Done | Commerce-hydratable product page block |
+| `CartBlock` | Done | Editable shopping cart page block |
+| `NewsletterBlock` | Done | Newsletter signup with editable copy |
+| `TrustValuesBlock` | Done | Repeater-driven store values |
 
 The previous statement that `RichTextBlock` only had a raw HTML textarea is obsolete. TipTap is installed and integrated. The stored block property remains HTML, and the public renderer intentionally renders that HTML.
 
@@ -170,6 +179,14 @@ The previous statement that `RichTextBlock` only had a raw HTML textarea is obso
 - [ ] Sanitize or explicitly trust-and-document stored rich-text HTML before public rendering.
 - [ ] Expand TipTap controls only if needed: links, undo/redo inside rich text, blockquote, alignment, and media.
 - [ ] Add frontend component tests for complex repeaters and nested drag/drop behavior.
+
+### Recent Inspector Improvements (Implemented)
+
+- Added `textarea` and `toggle` inspector field types.
+- Upgraded free-text styling properties (`lineHeight`, `letterSpacing`, `maxWidth`, `gap`, `span`, `width`, `height`, `borderRadius`) to visual `select` dropdowns with curated presets.
+- Added `ensureDefaultProps` auto-hydration in `ContentInspector.vue` to initialize missing block props on selection and normalize toggle string values to booleans.
+- Added universal wrapper properties (`opacity`, `marginTop`, `marginBottom`, `borderRadius`) to `RenderNode.vue` and `RenderPublicNode.vue`.
+- Added block library keyword search for filtering blocks and presets.
 
 ---
 
@@ -374,11 +391,11 @@ page_revisions
 
 ### Status: Good Development Baseline, Production Work Pending
 
-Current verified baseline on 2026-07-18:
+Current verified baseline on 2026-07-20:
 
-- **181 tests passed**;
+- **205 tests passed**;
 - **1 test skipped**;
-- **1,089 assertions**;
+- **1,950 assertions**;
 - production Vite build completed successfully;
 - ESLint passes for the unified-builder files changed in this refactor;
 - repository-wide ESLint remains blocked by 105 pre-existing errors in legacy Vue/block files;

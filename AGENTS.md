@@ -345,6 +345,14 @@ Example `inspectorFields` definition in `config/blocks.php`:
 ],
 ```
 
+### Inspector Auto-Hydration (`ensureDefaultProps`)
+
+`ContentInspector.vue` watches the selected block and auto-initializes any `inspectorField` key missing from `selectedBlock.props`. The fallback priority is:
+1. The matching key in `defaultProps` from `config/blocks.php`.
+2. A type-appropriate fallback: first `options[].value` for `select`, `false` for `toggle`, `field.min` for `range`/`number`, or `''` for text fields.
+
+Toggle values stored as strings (`'yes'`/`'true'`) are normalized to actual booleans. This prevents blank inspector controls when new fields are added to existing block definitions.
+
 ### Block-specific behaviors
 
 - **`MenuBlock`** — an editable restaurant-style menu. Its `items` repeater is a flat list where each item has `category`, `name`, `description`, and `price`; the component groups items by category (order preserved) and lays categories out across `columns` (1–3). Item name/description/price are inline-editable on the canvas; category labels are edited through the inspector repeater. Fully theme-aware and reveal-friendly. Catalog usage lives in `config/designs.php` via the `$menuBlock` helper (Restaurant Menu page).
