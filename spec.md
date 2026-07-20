@@ -1,6 +1,6 @@
 # Web Builder — Ground-Truth Project Specification
 
-> Last reconciled with the active codebase on 2026-07-18. Implemented behavior is documented, and known implementation/documentation mismatches are called out explicitly.
+> Last reconciled with the active codebase on 2026-07-20. Implemented behavior is documented, and known implementation/documentation mismatches are called out explicitly.
 
 ---
 
@@ -263,10 +263,11 @@ interface BlockNode {
 }
 ```
 
-#### Implemented Block Types (15 total)
+#### Implemented Block Types (25 total)
 
 | Block Type | Leaf/Container | Key Props |
 |---|---|---|
+| `SectionBlock` | Container | `patternKey`, `sectionPadding`, `contentWidth`, `minHeight`, `verticalAlign`, `textAlign`, `backgroundImage`, `overlayOpacity`, `padding`, `backgroundColor` + `children[]` |
 | `HeroBlock` | Leaf | `headline`, `subheadline`, `padding`, `backgroundColor` |
 | `FeatureBlock` | Leaf | `title`, `body`, `padding`, `backgroundColor` |
 | `AtomicText` | Leaf | `content`, `fontSize`, `color`, `padding`, `backgroundColor` |
@@ -283,6 +284,14 @@ interface BlockNode {
 | `PricingTableBlock` | Leaf | `plans[]` (title/price/period/features/ctaText/ctaUrl/isPopular), `padding`, `backgroundColor` |
 | `ContactFormBlock` | Leaf | `fields[]` (type/label/placeholder/required), `submitLabel`, `successMessage`, `padding`, `backgroundColor` |
 | `MenuBlock` | Leaf | `heading`, `subheading`, `columns` (1-3), `items[]` (category/name/description/price grouped by category), `padding`, `backgroundColor`; used by the Restaurant Menu kit page |
+| `AnnouncementBlock` | Leaf | `text`, `barColor`, `textColor`, `padding`, `backgroundColor` |
+| `ImageWithTextBlock` | Leaf | `eyebrow`, `heading`, `body`, `imageSrc`, `imageAlt`, `imagePosition` (left/right), `linkLabel`, `linkUrl`, `padding`, `backgroundColor` |
+| `CollectionListBlock` | Leaf | `eyebrow`, `heading`, `sourceKey`, `collections[]` (title/subtitle/imageSrc/imageAlt/url), `padding`, `backgroundColor`; commerce-hydratable via `bindingVersion`/`sourceKey` |
+| `ProductGridBlock` | Leaf | `eyebrow`, `heading`, `sourceKey`, `sort`, `limit`, `layoutType` (grid/carousel/list/editorial), `desktopColumns`, `tabletColumns`, `mobileColumns`, `cardPreset`, `cardContent[]`, `products[]`, `padding`, `backgroundColor`; commerce-hydratable smart presentation block with Simple/Advanced inspector |
+| `ProductDetailBlock` | Leaf | `sourceKey`, `vendor`, `title`, `priceLabel`, `description`, `options[]`, `images[]`, `buttonLabel`, `meta`, `padding`, `backgroundColor`; commerce-hydratable |
+| `CartBlock` | Leaf | `eyebrow`, `heading`, `body`, `emptyHeading`, `emptyBody`, `continueUrl`, `checkoutLabel`, `padding`, `backgroundColor` |
+| `NewsletterBlock` | Leaf | `eyebrow`, `heading`, `body`, `placeholder`, `buttonLabel`, `padding`, `backgroundColor` |
+| `TrustValuesBlock` | Leaf | `items[]` (title/body repeater), `padding`, `backgroundColor` |
 
 ---
 
@@ -501,7 +510,9 @@ The [RenderNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/res
 - Wraps block instances in interactive outlines, hover drag handles (the entire [BlockToolbar](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/BlockToolbar.vue) area doubles as the `.drag-handle`), and nests child structures in `vuedraggable` templates.
 - Renders a floating [BlockToolbar](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/BlockToolbar.vue) on hover/select with actions: duplicate, delete (two-click confirmation), move up/down, copy to clipboard, paste, wrap in container. All actions are provided via `provide('blockActions', ...)` from `Editor.vue`.
 - Employs a Vue `onErrorCaptured` error boundary that intercepts dynamic rendering crashes, logs diagnostics to the console, and displays a localized block-level placeholder box to ensure editor stability.
-- Directs `Editor.vue` to render dynamic inspector controls (color, sliders, ranges, fields) dynamically based on the active block definition in the registry.
+- Directs `Editor.vue` to render dynamic inspector controls (`text`, `textarea`, `toggle`, `color`, `theme-color`, `font-size`, `columns`, `range`, `number`, `select`, `media`, `repeater`) dynamically based on the active block definition in the registry.
+- Auto-initializes missing block props (`ensureDefaultProps`) when a block is selected: any `inspectorField` key absent from `selectedBlock.props` is populated from `defaultProps` or a type-appropriate fallback (first option for `select`, `false` for `toggle`, `min` for `range`/`number`). Toggle string values (`'yes'`/`'true'`) are normalized to booleans. This prevents blank inspector controls when new fields are added to existing block definitions.
+- Applies universal design wrapper properties (`opacity`, `marginTop`, `marginBottom`, `borderRadius`) in the wrapper style binding, cascading to `RenderPublicNode.vue` for identical published page rendering.
 
 The [RenderPublicNode.vue](file:///c:/Users/Z.BOOK/Desktop/things/code/web-builder/resources/js/components/BuilderBlocks/RenderPublicNode.vue) component drives the public layout page:
 - Uses the same `<component :is>` mapping to resolve the exact same block component files.

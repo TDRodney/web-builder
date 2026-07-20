@@ -94,7 +94,7 @@ return [
                 ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 10, 'max' => 150],
                 ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
                 ['key' => 'title', 'label' => 'Feature Title', 'type' => 'text', 'placeholder' => 'Enter title'],
-                ['key' => 'body', 'label' => 'Feature Body', 'type' => 'text', 'placeholder' => 'Enter description'],
+                ['key' => 'body', 'label' => 'Feature Body', 'type' => 'textarea', 'placeholder' => 'Enter description'],
                 ['key' => 'fontFamily', 'label' => 'Title Font', 'type' => 'select', 'options' => [
                     ['label' => 'Heading', 'value' => 'heading'],
                     ['label' => 'Body', 'value' => 'body'],
@@ -124,7 +124,7 @@ return [
             'inspectorFields' => [
                 ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 10, 'max' => 150],
                 ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
-                ['key' => 'content', 'label' => 'Text Content', 'type' => 'text', 'placeholder' => 'Enter text'],
+                ['key' => 'content', 'label' => 'Text Content', 'type' => 'textarea', 'placeholder' => 'Enter text'],
                 ['key' => 'fontSize', 'label' => 'Font Size', 'type' => 'font-size'],
                 ['key' => 'color', 'label' => 'Text Color', 'type' => 'theme-color', 'defaultValue' => '--theme-text'],
                 ['key' => 'fontFamily', 'label' => 'Font Family', 'type' => 'select', 'options' => [
@@ -138,15 +138,29 @@ return [
                     ['label' => 'Bold', 'value' => '700'],
                     ['label' => 'Extra bold', 'value' => '800'],
                 ]],
-                ['key' => 'lineHeight', 'label' => 'Line Height', 'type' => 'text'],
-                ['key' => 'letterSpacing', 'label' => 'Letter Spacing', 'type' => 'text'],
+                ['key' => 'lineHeight', 'label' => 'Line Height', 'type' => 'select', 'options' => [
+                    ['label' => 'Tight (1.2)', 'value' => '1.2'],
+                    ['label' => 'Normal (1.4)', 'value' => '1.4'],
+                    ['label' => 'Relaxed (1.6)', 'value' => '1.6'],
+                    ['label' => 'Loose (2.0)', 'value' => '2.0'],
+                ]],
+                ['key' => 'letterSpacing', 'label' => 'Letter Spacing', 'type' => 'select', 'options' => [
+                    ['label' => 'Normal (0em)', 'value' => '0em'],
+                    ['label' => 'Wide (0.05em)', 'value' => '0.05em'],
+                    ['label' => 'Widest (0.1em)', 'value' => '0.1em'],
+                ]],
                 ['key' => 'textAlign', 'label' => 'Text Alignment', 'type' => 'select', 'options' => [
                     ['label' => 'Inherit', 'value' => 'inherit'],
                     ['label' => 'Left', 'value' => 'left'],
                     ['label' => 'Center', 'value' => 'center'],
                     ['label' => 'Right', 'value' => 'right'],
                 ]],
-                ['key' => 'maxWidth', 'label' => 'Maximum Width', 'type' => 'text'],
+                ['key' => 'maxWidth', 'label' => 'Maximum Width', 'type' => 'select', 'options' => [
+                    ['label' => 'Full container width', 'value' => 'none'],
+                    ['label' => 'Narrow (480px)', 'value' => '480px'],
+                    ['label' => 'Prose (680px)', 'value' => '680px'],
+                    ['label' => 'Wide (960px)', 'value' => '960px'],
+                ]],
             ],
         ],
         'LayoutGrid' => [
@@ -173,7 +187,13 @@ return [
                     ['label' => '4', 'value' => 4],
                     ['label' => '6', 'value' => 6],
                 ]],
-                ['key' => 'gap', 'label' => 'Gap Size (e.g. 1rem, 16px)', 'type' => 'text'],
+                ['key' => 'gap', 'label' => 'Gap Size', 'type' => 'select', 'options' => [
+                    ['label' => 'None (0px)', 'value' => '0px'],
+                    ['label' => 'Small (12px)', 'value' => '12px'],
+                    ['label' => 'Medium (16px)', 'value' => '1rem'],
+                    ['label' => 'Large (24px)', 'value' => '24px'],
+                    ['label' => 'Extra Large (40px)', 'value' => '40px'],
+                ]],
                 ['key' => 'columnTemplate', 'label' => 'Column Proportions', 'type' => 'select', 'options' => [
                     ['label' => 'Equal', 'value' => 'equal'],
                     ['label' => 'Wide left', 'value' => 'wide-left'],
@@ -185,10 +205,7 @@ return [
                     ['label' => 'Center', 'value' => 'center'],
                     ['label' => 'Bottom', 'value' => 'end'],
                 ]],
-                ['key' => 'stackOnNarrow', 'label' => 'Stack on mobile', 'type' => 'select', 'options' => [
-                    ['label' => 'Yes — one column when narrow', 'value' => true],
-                    ['label' => 'No — keep side by side', 'value' => false],
-                ]],
+                ['key' => 'stackOnNarrow', 'label' => 'Stack on mobile', 'type' => 'toggle'],
             ],
             'allowedChildren' => [
                 'HeroBlock', 'FeatureBlock', 'LayoutGrid', 'LayoutColumn', 'AtomicText', 'ButtonBlock', 'DividerBlock', 'SpacerBlock', 'ImageBlock',
@@ -214,10 +231,24 @@ return [
             'inspectorFields' => [
                 ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 10, 'max' => 150],
                 ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
-                ['key' => 'span', 'label' => 'Grid Column Span (1-12) or Flex Basis', 'type' => 'text'],
+                ['key' => 'span', 'label' => 'Grid Column Span', 'type' => 'select', 'options' => [
+                    ['label' => 'Auto', 'value' => 'auto'],
+                    ['label' => '1 Column', 'value' => '1'],
+                    ['label' => '2 Columns', 'value' => '2'],
+                    ['label' => '3 Columns', 'value' => '3'],
+                    ['label' => '4 Columns', 'value' => '4'],
+                    ['label' => '6 Columns', 'value' => '6'],
+                    ['label' => '8 Columns', 'value' => '8'],
+                    ['label' => '12 Columns', 'value' => '12'],
+                ]],
                 ['key' => 'width', 'label' => 'Width (e.g. auto, 100%)', 'type' => 'text'],
                 ['key' => 'height', 'label' => 'Height (e.g. auto, 200px)', 'type' => 'text'],
-                ['key' => 'gap', 'label' => 'Gap', 'type' => 'text'],
+                ['key' => 'gap', 'label' => 'Gap Size', 'type' => 'select', 'options' => [
+                    ['label' => 'None (0px)', 'value' => '0px'],
+                    ['label' => 'Small (12px)', 'value' => '12px'],
+                    ['label' => 'Medium (16px)', 'value' => '16px'],
+                    ['label' => 'Large (24px)', 'value' => '24px'],
+                ]],
                 ['key' => 'verticalAlign', 'label' => 'Vertical Alignment', 'type' => 'select', 'options' => [
                     ['label' => 'Top', 'value' => 'start'],
                     ['label' => 'Center', 'value' => 'center'],
@@ -253,10 +284,7 @@ return [
             'inspectorFields' => [
                 ['key' => 'label', 'label' => 'Button Text', 'type' => 'text', 'placeholder' => 'Enter button text'],
                 ['key' => 'url', 'label' => 'Link URL', 'type' => 'text', 'placeholder' => 'https://... or /about'],
-                ['key' => 'openInNewTab', 'label' => 'Open link in new tab', 'type' => 'select', 'options' => [
-                    ['label' => 'Same tab', 'value' => false],
-                    ['label' => 'New tab', 'value' => true],
-                ]],
+                ['key' => 'openInNewTab', 'label' => 'Open link in new tab', 'type' => 'toggle'],
                 ['key' => 'variant', 'label' => 'Variant', 'type' => 'select', 'options' => [
                     ['label' => 'Primary', 'value' => 'primary'],
                     ['label' => 'Secondary', 'value' => 'secondary'],
@@ -325,9 +353,25 @@ return [
                     ['label' => 'Contain', 'value' => 'contain'],
                     ['label' => 'Fill',    'value' => 'fill'],
                 ]],
-                ['key' => 'width',        'label' => 'Width',            'type' => 'text'],
-                ['key' => 'height',       'label' => 'Height',           'type' => 'text'],
-                ['key' => 'borderRadius', 'label' => 'Border Radius',    'type' => 'text'],
+                ['key' => 'width',        'label' => 'Width',            'type' => 'select', 'options' => [
+                    ['label' => 'Full width (100%)', 'value' => '100%'],
+                    ['label' => 'Auto',              'value' => 'auto'],
+                    ['label' => 'Half width (50%)',  'value' => '50%'],
+                ]],
+                ['key' => 'height',       'label' => 'Height',           'type' => 'select', 'options' => [
+                    ['label' => 'Medium (300px)', 'value' => '300px'],
+                    ['label' => 'Small (200px)',  'value' => '200px'],
+                    ['label' => 'Large (450px)',  'value' => '450px'],
+                    ['label' => 'Auto height',    'value' => 'auto'],
+                ]],
+                ['key' => 'borderRadius', 'label' => 'Border Radius',    'type' => 'select', 'options' => [
+                    ['label' => 'Theme default',             'value' => 'var(--theme-border-radius)'],
+                    ['label' => 'None (0px)',                'value' => '0px'],
+                    ['label' => 'Small (4px)',               'value' => '4px'],
+                    ['label' => 'Medium (8px)',              'value' => '8px'],
+                    ['label' => 'Large (16px)',              'value' => '16px'],
+                    ['label' => 'Pill / Round (9999px)',     'value' => '9999px'],
+                ]],
                 ['key' => 'padding',      'label' => 'Padding (px)',     'type' => 'range', 'min' => 0, 'max' => 100],
                 ['key' => 'backgroundColor', 'label' => 'Background',   'type' => 'color'],
             ],
@@ -394,7 +438,7 @@ return [
             'inspectorFields' => [
                 ['key' => 'items', 'label' => 'FAQ Items', 'type' => 'repeater', 'subFields' => [
                     ['key' => 'question', 'label' => 'Question', 'type' => 'text', 'placeholder' => 'Enter question'],
-                    ['key' => 'answer', 'label' => 'Answer', 'type' => 'text', 'placeholder' => 'Enter answer'],
+                    ['key' => 'answer', 'label' => 'Answer', 'type' => 'textarea', 'placeholder' => 'Enter answer'],
                 ]],
                 ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150],
                 ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
@@ -414,7 +458,7 @@ return [
                 'backgroundColor' => 'transparent',
             ],
             'inspectorFields' => [
-                ['key' => 'quote', 'label' => 'Quote Text', 'type' => 'text', 'placeholder' => 'Enter testimonial quote'],
+                ['key' => 'quote', 'label' => 'Quote Text', 'type' => 'textarea', 'placeholder' => 'Enter testimonial quote'],
                 ['key' => 'authorName', 'label' => 'Author Name', 'type' => 'text', 'placeholder' => 'Enter name'],
                 ['key' => 'authorRole', 'label' => 'Author Role / Company', 'type' => 'text', 'placeholder' => 'Enter role'],
                 ['key' => 'avatarSrc', 'label' => 'Avatar Image', 'type' => 'media'],
@@ -459,10 +503,7 @@ return [
                     ['key' => 'features', 'label' => 'Features (comma-separated)', 'type' => 'text'],
                     ['key' => 'ctaText', 'label' => 'Button Label', 'type' => 'text'],
                     ['key' => 'ctaUrl', 'label' => 'Button Link', 'type' => 'text'],
-                    ['key' => 'isPopular', 'label' => 'Popular / Highlighted', 'type' => 'select', 'options' => [
-                        ['label' => 'No', 'value' => 'no'],
-                        ['label' => 'Yes', 'value' => 'yes'],
-                    ]],
+                    ['key' => 'isPopular', 'label' => 'Popular / Highlighted', 'type' => 'toggle'],
                 ]],
                 ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150],
                 ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
@@ -486,7 +527,7 @@ return [
             ],
             'inspectorFields' => [
                 ['key' => 'submitLabel', 'label' => 'Submit Button Text', 'type' => 'text'],
-                ['key' => 'successMessage', 'label' => 'Success Message', 'type' => 'text'],
+                ['key' => 'successMessage', 'label' => 'Success Message', 'type' => 'textarea'],
                 ['key' => 'fields', 'label' => 'Form Fields', 'type' => 'repeater', 'subFields' => [
                     ['key' => 'type', 'label' => 'Field Type', 'type' => 'select', 'options' => [
                         ['label' => 'Text', 'value' => 'text'],
@@ -495,10 +536,7 @@ return [
                     ]],
                     ['key' => 'label', 'label' => 'Label', 'type' => 'text'],
                     ['key' => 'placeholder', 'label' => 'Placeholder', 'type' => 'text'],
-                    ['key' => 'required', 'label' => 'Required', 'type' => 'select', 'options' => [
-                        ['label' => 'Yes', 'value' => 'yes'],
-                        ['label' => 'No', 'value' => 'no'],
-                    ]],
+                    ['key' => 'required', 'label' => 'Required', 'type' => 'toggle'],
                 ]],
                 ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150],
                 ['key' => 'backgroundColor', 'label' => 'Background Color', 'type' => 'color'],
@@ -523,7 +561,7 @@ return [
             'type' => 'ImageWithTextBlock', 'label' => 'Image with Text', 'category' => 'content', 'icon' => 'panel-left',
             'defaultProps' => ['eyebrow' => 'Our story', 'heading' => 'Made to be lived with', 'body' => 'Add an editorial story about the collection.', 'imageSrc' => '', 'imageAlt' => '', 'imagePosition' => 'left', 'linkLabel' => 'Learn more', 'linkUrl' => '/about', 'padding' => 0, 'backgroundColor' => 'transparent'],
             'inspectorFields' => [
-                ['key' => 'eyebrow', 'label' => 'Eyebrow', 'type' => 'text'], ['key' => 'heading', 'label' => 'Heading', 'type' => 'text'], ['key' => 'body', 'label' => 'Body', 'type' => 'text'],
+                ['key' => 'eyebrow', 'label' => 'Eyebrow', 'type' => 'text'], ['key' => 'heading', 'label' => 'Heading', 'type' => 'text'], ['key' => 'body', 'label' => 'Body', 'type' => 'textarea'],
                 ['key' => 'imageSrc', 'label' => 'Image', 'type' => 'media'], ['key' => 'imageAlt', 'label' => 'Image Alt', 'type' => 'text'],
                 ['key' => 'imagePosition', 'label' => 'Image Position', 'type' => 'select', 'options' => [['label' => 'Left', 'value' => 'left'], ['label' => 'Right', 'value' => 'right']]],
                 ['key' => 'linkLabel', 'label' => 'Link Label', 'type' => 'text'], ['key' => 'linkUrl', 'label' => 'Link URL', 'type' => 'text'],
@@ -600,22 +638,22 @@ return [
         'ProductDetailBlock' => [
             'type' => 'ProductDetailBlock', 'label' => 'Product Detail', 'category' => 'interactive', 'icon' => 'package',
             'defaultProps' => ['bindingVersion' => 1, 'sourceKey' => '', 'vendor' => 'Independent maker', 'title' => 'Linen throw', 'priceLabel' => '$48.00', 'description' => 'A tactile everyday layer made with considered materials.', 'options' => ['Natural', 'Charcoal'], 'images' => [['src' => '', 'alt' => 'Product image'], ['src' => '', 'alt' => 'Product detail']], 'buttonLabel' => 'Add to cart', 'meta' => 'Taxes and shipping are calculated by the connected store.', 'padding' => 40, 'backgroundColor' => 'transparent'],
-            'inspectorFields' => [['key' => 'sourceKey', 'label' => 'Product Source', 'type' => 'text'], ['key' => 'vendor', 'label' => 'Vendor', 'type' => 'text'], ['key' => 'title', 'label' => 'Title', 'type' => 'text'], ['key' => 'priceLabel', 'label' => 'Price', 'type' => 'text'], ['key' => 'description', 'label' => 'Description', 'type' => 'text'], ['key' => 'buttonLabel', 'label' => 'Button Label', 'type' => 'text'], ['key' => 'meta', 'label' => 'Supporting Text', 'type' => 'text'], ['key' => 'images', 'label' => 'Images', 'type' => 'repeater', 'subFields' => [['key' => 'src', 'label' => 'Image', 'type' => 'media'], ['key' => 'alt', 'label' => 'Alt', 'type' => 'text']]]],
+            'inspectorFields' => [['key' => 'sourceKey', 'label' => 'Product Source', 'type' => 'text'], ['key' => 'vendor', 'label' => 'Vendor', 'type' => 'text'], ['key' => 'title', 'label' => 'Title', 'type' => 'text'], ['key' => 'priceLabel', 'label' => 'Price', 'type' => 'text'], ['key' => 'description', 'label' => 'Description', 'type' => 'textarea'], ['key' => 'buttonLabel', 'label' => 'Button Label', 'type' => 'text'], ['key' => 'meta', 'label' => 'Supporting Text', 'type' => 'text'], ['key' => 'images', 'label' => 'Images', 'type' => 'repeater', 'subFields' => [['key' => 'src', 'label' => 'Image', 'type' => 'media'], ['key' => 'alt', 'label' => 'Alt', 'type' => 'text']]]],
         ],
         'CartBlock' => [
             'type' => 'CartBlock', 'label' => 'Shopping Cart', 'category' => 'interactive', 'icon' => 'shopping-cart',
             'defaultProps' => ['eyebrow' => 'Your selection', 'heading' => 'Shopping bag', 'body' => 'Review your items before continuing to checkout.', 'emptyHeading' => 'Your bag is empty', 'emptyBody' => 'Explore the current collection and find something considered.', 'continueUrl' => '/shop', 'checkoutLabel' => 'Continue to checkout', 'padding' => 40, 'backgroundColor' => 'transparent'],
-            'inspectorFields' => [['key' => 'eyebrow', 'label' => 'Eyebrow', 'type' => 'text'], ['key' => 'heading', 'label' => 'Heading', 'type' => 'text'], ['key' => 'body', 'label' => 'Body', 'type' => 'text'], ['key' => 'emptyHeading', 'label' => 'Empty Cart Heading', 'type' => 'text'], ['key' => 'emptyBody', 'label' => 'Empty Cart Body', 'type' => 'text'], ['key' => 'continueUrl', 'label' => 'Continue Shopping URL', 'type' => 'text'], ['key' => 'checkoutLabel', 'label' => 'Checkout Label', 'type' => 'text']],
+            'inspectorFields' => [['key' => 'eyebrow', 'label' => 'Eyebrow', 'type' => 'text'], ['key' => 'heading', 'label' => 'Heading', 'type' => 'text'], ['key' => 'body', 'label' => 'Body', 'type' => 'textarea'], ['key' => 'emptyHeading', 'label' => 'Empty Cart Heading', 'type' => 'text'], ['key' => 'emptyBody', 'label' => 'Empty Cart Body', 'type' => 'textarea'], ['key' => 'continueUrl', 'label' => 'Continue Shopping URL', 'type' => 'text'], ['key' => 'checkoutLabel', 'label' => 'Checkout Label', 'type' => 'text']],
         ],
         'NewsletterBlock' => [
             'type' => 'NewsletterBlock', 'label' => 'Store Newsletter', 'category' => 'interactive', 'icon' => 'send',
             'defaultProps' => ['eyebrow' => 'Stay in touch', 'heading' => 'Notes from the shop', 'body' => 'New collections and thoughtful stories, occasionally.', 'placeholder' => 'Email address', 'buttonLabel' => 'Subscribe', 'padding' => 0, 'backgroundColor' => 'transparent'],
-            'inspectorFields' => [['key' => 'eyebrow', 'label' => 'Eyebrow', 'type' => 'text'], ['key' => 'heading', 'label' => 'Heading', 'type' => 'text'], ['key' => 'body', 'label' => 'Body', 'type' => 'text'], ['key' => 'placeholder', 'label' => 'Placeholder', 'type' => 'text'], ['key' => 'buttonLabel', 'label' => 'Button Label', 'type' => 'text']],
+            'inspectorFields' => [['key' => 'eyebrow', 'label' => 'Eyebrow', 'type' => 'text'], ['key' => 'heading', 'label' => 'Heading', 'type' => 'text'], ['key' => 'body', 'label' => 'Body', 'type' => 'textarea'], ['key' => 'placeholder', 'label' => 'Placeholder', 'type' => 'text'], ['key' => 'buttonLabel', 'label' => 'Button Label', 'type' => 'text']],
         ],
         'TrustValuesBlock' => [
             'type' => 'TrustValuesBlock', 'label' => 'Store Values', 'category' => 'content', 'icon' => 'shield-check',
             'defaultProps' => ['items' => [['title' => 'Considered sourcing', 'body' => 'Materials and makers selected with care.'], ['title' => 'Personal service', 'body' => 'Helpful guidance from real people.'], ['title' => 'Secure checkout', 'body' => 'Purchasing is handled by your connected store.']], 'padding' => 40, 'backgroundColor' => 'transparent'],
-            'inspectorFields' => [['key' => 'items', 'label' => 'Values', 'type' => 'repeater', 'subFields' => [['key' => 'title', 'label' => 'Title', 'type' => 'text'], ['key' => 'body', 'label' => 'Body', 'type' => 'text']]]],
+            'inspectorFields' => [['key' => 'items', 'label' => 'Values', 'type' => 'repeater', 'subFields' => [['key' => 'title', 'label' => 'Title', 'type' => 'text'], ['key' => 'body', 'label' => 'Body', 'type' => 'textarea']]]],
         ],
         'MenuBlock' => [
             'type' => 'MenuBlock',
@@ -647,7 +685,7 @@ return [
                 ['key' => 'items', 'label' => 'Menu Items', 'type' => 'repeater', 'subFields' => [
                     ['key' => 'category', 'label' => 'Category', 'type' => 'text', 'placeholder' => 'Starters'],
                     ['key' => 'name', 'label' => 'Name', 'type' => 'text', 'placeholder' => 'Dish name'],
-                    ['key' => 'description', 'label' => 'Description', 'type' => 'text', 'placeholder' => 'Short description'],
+                    ['key' => 'description', 'label' => 'Description', 'type' => 'textarea', 'placeholder' => 'Short description'],
                     ['key' => 'price', 'label' => 'Price', 'type' => 'text', 'placeholder' => '$0'],
                 ]],
                 ['key' => 'padding', 'label' => 'Padding (px)', 'type' => 'range', 'min' => 0, 'max' => 150],

@@ -160,6 +160,10 @@ const resolvedBgColor = computed(() => {
         :style="{
             padding: (node.props?.padding ?? 0) + 'px',
             backgroundColor: resolvedBgColor,
+            marginTop: node.props?.marginTop !== undefined ? node.props.marginTop + 'px' : undefined,
+            marginBottom: node.props?.marginBottom !== undefined ? node.props.marginBottom + 'px' : undefined,
+            opacity: node.props?.opacity !== undefined ? node.props.opacity / 100 : undefined,
+            borderRadius: node.props?.borderRadius ? node.props.borderRadius : undefined,
         }"
         class="editor-block-node relative my-2 cursor-pointer border-2 border-transparent transition-[border-color,background-color]"
         :class="{
